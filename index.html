@@ -288,6 +288,41 @@
   .toggle input:checked + .slider{background:var(--accent);}
   .toggle input:checked + .slider:before{transform:translateX(18px);}
 
+  .item-picker{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
+    gap:8px;
+    max-height:220px;
+    overflow-y:auto;
+    padding:4px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:#fff;
+  }
+  .item-picker-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:6px 4px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    color:var(--ink-faint);
+    text-align:center;
+  }
+  .item-picker-cell:hover{background:var(--card);}
+  .item-picker-cell.selected{background:var(--accent-soft); color:var(--ink);}
+  .item-picker-cell input{margin:0;}
+  .item-picker-cell img{width:56px; height:56px; object-fit:contain; background:var(--card); border-radius:2px;}
+  .item-picker-cell span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:64px;
+  }
+
   .panel-footer{
     display:flex;
     justify-content:flex-end;
@@ -994,49 +1029,170 @@ async function saveProfile(){
   }
 }
 
+// Real stimulus filenames per test, sourced directly from each
+// test_creator/<Test>_Stimuli.csv's `standard_stim` column. Used to render
+// the item picker (thumbnails live at test_creator/<testId>_Stimuli/<file>).
+const TEST_ITEMS = {
+  AC1: ['AC_1.png'],
+  AC2: ['AC_1.png'], // AC2 has no stimuli file of its own — reuses AC1's item (different instructions/expected answer). Confirm with Mitch.
+  ACF: ['ACF_Final2.png'],
+  AO: ['AO_1.png','AO_2.png','AO_3.png','AO_4.png','AO_5.png','AO_6.png','AO_7.png','AO_8.png','AO_9.png','AO_10.png','AO_11.png','AO_12.png','AO_13.png','AO_14.png','AO_15.png','AO_16.png','AO_17.png','AO_18.png','AO_19.png','AO_20.png','AO_21.png','AO_22.png','AO_23.png','AO_24.png','AO_25.png'],
+  DAT: ['DAT_6.png','DAT_10.png','DAT_13.png','DAT_16.png','DAT_23.png','DAT_37.png','DAT_39.png','DAT_42.png','DAT_43.png','DAT_44.png','DAT_46.png','DAT_49.png'],
+  Demos: ['D_age.png','D_sex.png','D_race.png','D_ethnicity.png','D_GPA.png','D_math.png','D_physics.png','D_parents_ed.png','D_language.png','D_vision.png'],
+  Flags: ['F_1.png','F_2.png','F_6.png','F_13.png','F_15.png','F_16.png','F_17.png','F_18.png','F_19.png','F_20.png'],
+  MC: ['MC1.png','MC2.png','MC4.png','MC5.png','MC6.png','MC7.png','MC8.png','MC18.png','PR_1.png','PR_2.png','PR_3.png','PR_8.png','PR_10.png','PR_14.png','PR_15.png'],
+  PFT: ['PFT_2.png','PFT_3.png','PFT_5.png','PFT_7.png','PFT_9.png','PFT_12.png','PFT_13.png','PFT_16.png','PFT_17.png','PFT_19.png'],
+  PSVT: ['PSVT_1.png','PSVT_2.png','PSVT_3.png','PSVT_4.png','PSVT_5.png','PSVT_6.png','PSVT_7.png','PSVT_12.png','PSVT_13.png','PSVT_14.png','PSVT_18.png','PSVT_21.png','PSVT_24.png','PSVT_26.png','PSVT_28.png'],
+  SBST: ['SBST_1.png','SBST_4.png'],
+  SD: ['SD_1.png','SD_2.png','SD_3.png','SD_5.png','SD_7.png','SD_8.png','SD_9.png','SD_10.png','SD_11.png','SD_12.png'],
+  VK: ['VK_1.png','VK_2.png','VK_5.png','VK_6.png','VK_9.png','VK_10.png','VK_13.png','VK_14.png','VK_17.png','VK_18.png'],
+  WS: ['WS_1.png','WS_2.png','WS_3.png','WS_4.png','WS_5.png','WS_6.png','WS_7.png','WS_8.png','WS_9.png','WS_10.png','WS_11.png','WS_12.png','WS_13.png','WS_14.png'],
+};
+
+// Shared config fields every real test gets: which items (specific picks or
+// just a count), timing, randomization, and whether it counts toward scoring.
+// `choices` (answer-box layout) is intentionally NOT here — it's fixed by the
+// stimulus images themselves and lives in spatial_battery.js's TEST_DEFINITIONS.
+function standardFields(testId, defaultCount){
+  const n = TEST_ITEMS[testId].length;
+  return [
+    { key: 'selectedItems', label: 'Specific items', hint: `optional — pick from ${n} available, overrides count below`, type: 'itemPicker', testId, default: [] },
+    { key: 'itemCount', label: 'Number of items', hint: `used if no specific items chosen, up to ${n}`, type: 'number', min: 1, max: n, step: 1, default: Math.min(defaultCount, n) },
+    { key: 'timeMin', label: 'Min time per item', hint: 'seconds', type: 'number', min: 0, max: 120, step: 1, default: 5 },
+    { key: 'timeMax', label: 'Max time per item', hint: 'seconds', type: 'number', min: 5, max: 300, step: 1, default: 60 },
+    { key: 'totalTimeLimit', label: 'Total time limit', hint: 'seconds, 0 = no limit', type: 'number', min: 0, max: 3600, step: 30, default: 0 },
+    { key: 'randomizeItems', label: 'Randomize item order', hint: '', type: 'toggle', default: true },
+    { key: 'includeScore', label: 'Count toward score', hint: '', type: 'toggle', default: true },
+  ];
+}
+
 const TESTS = [
   {
-    id: 'mrt',
+    id: 'VK',
     name: 'Mental Rotations Test',
     shortName: 'Vandenberg & Kuse MRT',
     description: 'Two-of-four forced choice mental rotation task using Shepard-Metzler cube figures.',
     cubeSpeed: '',
-    stats: { items: 24, timeLabel: '10 min' },
-    fields: [
-      { key: 'itemCount', label: 'Number of items', hint: 'range 8–96', type: 'number', min: 8, max: 96, step: 4, default: 24 },
-      { key: 'timeLimit', label: 'Time limit', hint: 'minutes', type: 'number', min: 3, max: 30, step: 1, default: 10 },
-      { key: 'scoring', label: 'Scoring rule', hint: '', type: 'select', options: ['Strict (both correct)', 'Partial credit'], default: 'Strict (both correct)' },
-      { key: 'practice', label: 'Include practice trials', hint: '', type: 'toggle', default: true }
-    ]
+    stats: { items: TEST_ITEMS.VK.length, timeLabel: '' },
+    fields: standardFields('VK', 10)
   },
   {
-    id: 'psvtr',
+    id: 'PSVT',
     name: 'Purdue Spatial Visualization Test: Rotations',
     shortName: 'PSVT:R',
     description: 'Single-choice rotation-matching task using rotated solid objects, widely used in engineering education research.',
     cubeSpeed: 'speed-2',
-    stats: { items: 30, timeLabel: '20 min' },
-    fields: [
-      { key: 'itemCount', label: 'Number of items', hint: 'range 10–30', type: 'number', min: 10, max: 30, step: 5, default: 30 },
-      { key: 'timeLimit', label: 'Time limit', hint: 'minutes', type: 'number', min: 5, max: 30, step: 1, default: 20 },
-      { key: 'responseOptions', label: 'Response options', hint: 'per item', type: 'select', options: ['5 options', '4 options'], default: '5 options' },
-      { key: 'practice', label: 'Include practice trials', hint: '', type: 'toggle', default: true }
-    ]
+    stats: { items: TEST_ITEMS.PSVT.length, timeLabel: '' },
+    fields: standardFields('PSVT', 15)
   },
   {
-    id: 'flags',
+    id: 'Flags',
     name: 'Flags Test',
     shortName: 'Flags (Thurstone)',
-    description: 'Timed same–different judgment task on rotated and mirrored flag silhouettes, measuring spatial orientation speed.',
+    description: 'Timed multi-select judgment task on rotated and mirrored flag silhouettes, measuring spatial orientation speed.',
     cubeSpeed: 'speed-3',
-    stats: { items: 20, timeLabel: '15 s / trial' },
-    fields: [
-      { key: 'trialCount', label: 'Number of trials', hint: 'range 8–40', type: 'number', min: 8, max: 40, step: 4, default: 20 },
-      { key: 'timePerTrial', label: 'Time per trial', hint: 'seconds', type: 'number', min: 5, max: 30, step: 1, default: 15 },
-      { key: 'rotationIncrement', label: 'Rotation increment', hint: '', type: 'select', options: ['45°', '90°', 'Continuous'], default: '45°' },
-      { key: 'feedback', label: 'Show feedback after each trial', hint: '', type: 'toggle', default: false }
-    ]
-  }
+    stats: { items: TEST_ITEMS.Flags.length, timeLabel: '' },
+    fields: standardFields('Flags', 10)
+  },
+  {
+    id: 'DAT',
+    name: 'Differential Aptitude Test: Space Relations',
+    shortName: 'DAT:SR',
+    description: 'Multiple-choice task matching 2D unfolded patterns to their corresponding 3D solid shapes.',
+    cubeSpeed: '',
+    stats: { items: TEST_ITEMS.DAT.length, timeLabel: '' },
+    fields: standardFields('DAT', 12)
+  },
+  {
+    id: 'SBST',
+    name: 'Santa Barbara Solids Test',
+    shortName: 'SBST',
+    description: 'Cross-section identification task — select the 2D shape produced by a cutting plane through a 3D solid.',
+    cubeSpeed: 'speed-2',
+    stats: { items: TEST_ITEMS.SBST.length, timeLabel: '' },
+    fields: standardFields('SBST', 2)
+  },
+  {
+    id: 'AO',
+    name: 'Assembling Objects',
+    shortName: 'AO',
+    description: 'Multiple-choice task selecting how disassembled parts fit together when connected.',
+    cubeSpeed: 'speed-3',
+    stats: { items: TEST_ITEMS.AO.length, timeLabel: '' },
+    fields: standardFields('AO', 20)
+  },
+  {
+    id: 'SD',
+    name: 'Surface Development Test',
+    shortName: 'SD',
+    description: 'Typed-answer task matching a folded surface pattern to the labeled edge it corresponds to on the finished solid.',
+    cubeSpeed: '',
+    stats: { items: TEST_ITEMS.SD.length, timeLabel: '' },
+    fields: standardFields('SD', 10)
+  },
+  {
+    id: 'PFT',
+    name: 'Paper Folding Test',
+    shortName: 'PFT',
+    description: 'Multiple-choice task predicting hole-punch patterns after a sequence of paper folds.',
+    cubeSpeed: 'speed-2',
+    stats: { items: TEST_ITEMS.PFT.length, timeLabel: '' },
+    fields: standardFields('PFT', 10)
+  },
+  {
+    id: 'MC',
+    name: 'Mental Cutting Test',
+    shortName: 'MC',
+    description: 'Multiple-choice cross-section task — select the shape revealed when a cutting plane slices a 3D object.',
+    cubeSpeed: 'speed-3',
+    stats: { items: TEST_ITEMS.MC.length, timeLabel: '' },
+    fields: standardFields('MC', 15)
+  },
+  {
+    id: 'WS',
+    name: 'WS Test',
+    shortName: 'WS',
+    description: 'Full name/description not yet documented — confirm with Mitch before publishing this catalog entry.',
+    cubeSpeed: '',
+    stats: { items: TEST_ITEMS.WS.length, timeLabel: '' },
+    fields: standardFields('WS', 14)
+  },
+  {
+    id: 'AC1',
+    name: 'Attention Check 1',
+    shortName: 'AC1',
+    description: 'Typed-answer attention-check item.',
+    cubeSpeed: '',
+    stats: { items: TEST_ITEMS.AC1.length, timeLabel: '' },
+    fields: standardFields('AC1', 1)
+  },
+  {
+    id: 'AC2',
+    name: 'Attention Check 2',
+    shortName: 'AC2',
+    description: 'Typed-answer attention-check item.',
+    cubeSpeed: '',
+    stats: { items: TEST_ITEMS.AC2.length, timeLabel: '' },
+    fields: standardFields('AC2', 1)
+  },
+  {
+    id: 'ACF',
+    name: 'Attention Check (Final)',
+    shortName: 'ACF',
+    description: 'Click-selection attention-check item.',
+    cubeSpeed: '',
+    stats: { items: TEST_ITEMS.ACF.length, timeLabel: '' },
+    fields: standardFields('ACF', 1)
+  },
+  {
+    id: 'Demos',
+    name: 'Demographics',
+    shortName: 'Demos',
+    description: 'Participant demographic questionnaire (age, sex, race, ethnicity, GPA, and more).',
+    cubeSpeed: '',
+    stats: { items: TEST_ITEMS.Demos.length, timeLabel: '' },
+    fields: standardFields('Demos', 10)
+  },
 ];
 
 let currentTest = null;
@@ -1086,7 +1242,7 @@ function renderCatalog(){
       <p class="desc">${t.description}</p>
       <div class="stat-row">
         <span><strong>${t.stats.items}</strong> items</span>
-        <span><strong>${t.stats.timeLabel}</strong></span>
+        ${t.stats.timeLabel ? `<span><strong>${t.stats.timeLabel}</strong></span>` : ''}
       </div>
       <button class="btn" onclick="openCustomize('${t.id}')">Configure</button>
     </div>
@@ -1160,6 +1316,16 @@ function renderFields(){
         <input type="checkbox" ${currentValues[f.key] ? 'checked' : ''} onchange="updateValue('${f.key}', this.checked, 'bool')">
         <span class="slider"></span>
       </label>`;
+    } else if (f.type === 'itemPicker'){
+      const items = TEST_ITEMS[f.testId] || [];
+      const selected = currentValues[f.key] || [];
+      control = `<div class="item-picker">${items.map(item => `
+        <label class="item-picker-cell ${selected.includes(item) ? 'selected' : ''}">
+          <input type="checkbox" ${selected.includes(item) ? 'checked' : ''} onchange="toggleItemSelection('${f.key}', '${item}', this.checked)">
+          <img src="test_creator/${f.testId}_Stimuli/${item}" loading="lazy" alt="${item}">
+          <span>${item}</span>
+        </label>
+      `).join('')}</div>`;
     }
     return `<div class="field-row">
       <div class="field-label">${f.label}${f.hint ? `<span class="field-hint">${f.hint}</span>` : ''}</div>
@@ -1172,6 +1338,12 @@ function updateValue(key, value, type){
   if (type === 'number') value = Number(value);
   if (type === 'bool') value = Boolean(value);
   currentValues[key] = value;
+}
+
+function toggleItemSelection(key, item, checked){
+  const current = currentValues[key] || [];
+  currentValues[key] = checked ? [...current, item] : current.filter(i => i !== item);
+  renderFields();
 }
 
 function showView(id){
@@ -1192,9 +1364,14 @@ function goToBattery(){
 function paramSummary(test, params){
   return test.fields.map(f => {
     let val = params[f.key];
-    if (typeof val === 'boolean') val = val ? 'yes' : 'no';
+    if (Array.isArray(val)){
+      if (val.length === 0) return null; // no specific items chosen — itemCount governs instead
+      val = `${val.length} chosen`;
+    } else if (typeof val === 'boolean'){
+      val = val ? 'yes' : 'no';
+    }
     return `${f.label.toLowerCase()}: ${val}`;
-  }).join(' · ');
+  }).filter(Boolean).join(' · ');
 }
 
 function renderBatteryList(){

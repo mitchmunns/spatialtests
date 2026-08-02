@@ -11,7 +11,65 @@ let expInfo = {
 
 // Start code blocks for 'Before Experiment'
 // Run 'Before Experiment' code from code_2
-jQuery.getScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
+const supabaseScriptPromise = jQuery.getScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
+
+const SUPABASE_URL = "https://lfboldtuuwfayloofdnm.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EfNrQHSaudaeiW-DYB5S0A_W863mPxN";
+let supabaseClient;
+
+// Fixed per-test asset locations, keyed by testId. The researcher-configurable
+// settings (choices/timing/randomize/etc.) come from the battery config fetched
+// at runtime; these attributes never change per battery, so they live here
+// instead of being sent over the wire.
+const TEST_DEFINITIONS = {
+  AC1:  { stim_folder: 'AC1_Stimuli',  stim_file: 'AC1_Stimuli.csv',  type_of_test: 'fill in the blank',    instructions_file: 'AC1_Instructions.csv',  selector_box_image: '',             choices: 0 },
+  AC2:  { stim_folder: 'AC1_Stimuli',  stim_file: 'AC1_Stimuli.csv',  type_of_test: 'fill in the blank',    instructions_file: 'AC2_Instructions.csv',  selector_box_image: '',             choices: 0 },
+  ACF:  { stim_folder: 'ACF_Stimuli',  stim_file: 'ACF_Stimuli.csv',  type_of_test: 'multiple choice',      instructions_file: 'ACF_Instructions.csv',  selector_box_image: 'selector.png', choices: 2 },
+  AO:   { stim_folder: 'AO_Stimuli',   stim_file: 'AO_Stimuli.csv',   type_of_test: 'multiple choice',      instructions_file: 'AO_Instructions.csv',   selector_box_image: 'selector.png', choices: 4 },
+  DAT:  { stim_folder: 'DAT_Stimuli',  stim_file: 'DAT_Stimuli.csv',  type_of_test: 'multiple choice',      instructions_file: 'DAT_Instructions.csv',  selector_box_image: 'selector.png', choices: 4 },
+  Demos:{ stim_folder: 'Demos_Stimuli',stim_file: 'Demos_Stimuli.csv',type_of_test: 'multiple choice',      instructions_file: 'Demos_Instructions.csv',selector_box_image: 'selector.png', choices: 0 },
+  Flags:{ stim_folder: 'Flags_Stimuli',stim_file: 'Flags_Stimuli.csv',type_of_test: 'multiple selections',  instructions_file: 'Flags_Instructions.csv',selector_box_image: 'selector.png', choices: 12 },
+  MC:   { stim_folder: 'MC_Stimuli',   stim_file: 'MC_Stimuli.csv',   type_of_test: 'multiple choice',      instructions_file: 'MC_Instructions.csv',   selector_box_image: 'selector.png', choices: 5 },
+  PFT:  { stim_folder: 'PFT_Stimuli',  stim_file: 'PFT_Stimuli.csv',  type_of_test: 'multiple choice',      instructions_file: 'PFT_Instructions.csv',  selector_box_image: 'selector.png', choices: 5 },
+  PSVT: { stim_folder: 'PSVT_Stimuli', stim_file: 'PSVT_Stimuli.csv', type_of_test: 'multiple choice',      instructions_file: 'PSVT_Instructions.csv', selector_box_image: 'selector.png', choices: 5 },
+  SBST: { stim_folder: 'SBST_Stimuli', stim_file: 'SBST_Stimuli.csv', type_of_test: 'multiple choice',      instructions_file: 'SBST_Instructions.csv', selector_box_image: 'selector.png', choices: 4 },
+  SD:   { stim_folder: 'SD_Stimuli',   stim_file: 'SD_Stimuli.csv',   type_of_test: 'fill in the blank',    instructions_file: 'SD_Instructions.csv',   selector_box_image: '',             choices: 0 },
+  VK:   { stim_folder: 'VK_Stimuli',   stim_file: 'VK_Stimuli.csv',   type_of_test: 'multiple selections',  instructions_file: 'VK_Instructions.csv',   selector_box_image: 'selector.png', choices: 4 },
+  WS:   { stim_folder: 'WS_Stimuli',   stim_file: 'WS_Stimuli.csv',   type_of_test: 'multiple choice',      instructions_file: 'WS_Instructions.csv',   selector_box_image: 'selector.png', choices: 5 },
+};
+
+// Falls back to the static test_list.csv (today's default battery) whenever
+// there's no ?session= param, or the battery config can't be fetched.
+var testListRows = 'test_list.csv';
+
+function buildTestListRows(items) {
+  return items.map((item, index) => {
+    const def = TEST_DEFINITIONS[item.testId];
+    if (!def) {
+      console.error('Unknown testId in battery config, skipping:', item.testId);
+      return null;
+    }
+    const params = item.params || {};
+    return {
+      name_of_test: item.testId,
+      stim_folder: def.stim_folder,
+      stim_file: def.stim_file,
+      type_of_test: def.type_of_test,
+      instructions_file: def.instructions_file,
+      selector_box_image: def.selector_box_image,
+      choices: def.choices,
+      time_min: params.timeMin,
+      time_max: params.timeMax,
+      total_time_limit: params.totalTimeLimit || 0,
+      randomize: params.randomizeItems ? 1 : 0,
+      test_order: index,
+      prev_scores: '[]',
+      include_score: params.includeScore ? 1 : 0,
+      selectedItems: params.selectedItems,
+      itemCount: params.itemCount,
+    };
+  }).filter(row => row !== null);
+}
 
 // init psychoJS:
 const psychoJS = new PsychoJS({
@@ -709,6 +767,30 @@ async function experimentInit() {
   psychoJS._saveResults = 0;  // stop it from trying to POST to Pavlovia
   var urlParams = new URLSearchParams(window.location.search);
   sessionId = urlParams.get('session');
+
+  // Set up Supabase (shared by the battery-config fetch below and the
+  // results save in the end routine) and, if a session id is present, try
+  // to fetch that session's battery config. Falls back to the static
+  // test_list.csv (testListRows' default) on any failure so a bad/missing
+  // session never blocks the experiment from running.
+  await supabaseScriptPromise;
+  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (sessionId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('batteries')
+        .select('items')
+        .eq('id', sessionId)
+        .single();
+      if (error) {
+        console.error('Failed to fetch battery config, using default test_list.csv:', error);
+      } else if (data && Array.isArray(data.items) && data.items.length > 0) {
+        testListRows = buildTestListRows(data.items);
+      }
+    } catch (e) {
+      console.error('Failed to fetch battery config, using default test_list.csv:', e);
+    }
+  }
   // Create some handy timers
   globalClock = new util.Clock();  // to track the time since experiment started
   routineTimer = new util.CountdownTimer();  // to track time remaining of each (non-slip) routine
@@ -727,7 +809,7 @@ function init_loopLoopBegin(init_loopLoopScheduler, snapshot) {
       psychoJS: psychoJS,
       nReps: 1, method: TrialHandler.Method.SEQUENTIAL,
       extraInfo: expInfo, originPath: undefined,
-      trialList: 'test_list.csv',
+      trialList: testListRows,
       seed: undefined, name: 'init_loop'
     });
     psychoJS.experiment.addLoop(init_loop); // add the loop to the experiment
@@ -789,7 +871,7 @@ function test_loopLoopBegin(test_loopLoopScheduler, snapshot) {
       psychoJS: psychoJS,
       nReps: 1, method: TrialHandler.Method.SEQUENTIAL,
       extraInfo: expInfo, originPath: undefined,
-      trialList: 'test_list.csv',
+      trialList: testListRows,
       seed: undefined, name: 'test_loop'
     });
     psychoJS.experiment.addLoop(test_loop); // add the loop to the experiment
@@ -960,11 +1042,34 @@ function item_loopLoopBegin(item_loopLoopScheduler, snapshot) {
     TrialHandler.fromSnapshot(snapshot); // update internal variables (.thisN etc) of the loop
     
     // set up handler to look after randomisation of conditions etc
+    // Resolve the full item list up front so battery-config item selection
+    // (selectedItems/itemCount) can trim it before the TrialHandler is built —
+    // that way nTotal/nStim reflect the trimmed count from the start, rather
+    // than needing to be recomputed after the fact.
+    function shuffleItems(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+    let itemTrialList = TrialHandler.importConditions(psychoJS.serverManager, stim_file);
+    const configSelectedItems = test_loop.thisTrial['selectedItems'];
+    const configItemCount = test_loop.thisTrial['itemCount'];
+    if (Array.isArray(configSelectedItems) && configSelectedItems.length > 0) {
+      const selectedSet = new Set(configSelectedItems);
+      itemTrialList = itemTrialList.filter((row) => selectedSet.has(row['standard_stim']));
+    } else if (typeof configItemCount === 'number' && configItemCount > 0 && configItemCount < itemTrialList.length) {
+      if (test_loop.thisTrial['randomize'] == 1) {
+        shuffleItems(itemTrialList);
+      }
+      itemTrialList = itemTrialList.slice(0, configItemCount);
+    }
     item_loop = new TrialHandler({
       psychoJS: psychoJS,
       nReps: 1, method: TrialHandler.Method.SEQUENTIAL,
       extraInfo: expInfo, originPath: undefined,
-      trialList: stim_file,
+      trialList: itemTrialList,
       seed: undefined, name: 'item_loop'
     });
     psychoJS.experiment.addLoop(item_loop); // add the loop to the experiment
@@ -3184,8 +3289,8 @@ function score_breakRoutineBegin(snapshot) {
             tests_complete--;
         }
     }
-    //minus 3 for att checks
-    tests_total = test_loop.trialList.length - 4;
+    // exclude attention checks / demographics from the "tests completed" count
+    tests_total = test_loop.trialList.filter((test) => !['AC1', 'AC2', 'ACF', 'Demos'].includes(test['name_of_test'])).length;
     
     break_message_text.text = 'You have completed ' + tests_complete.toString() + ' out of ' + tests_total.toString() + ' tests.';
     break_message_text.setPos([0, 400 * scale]);
@@ -3571,10 +3676,6 @@ function endRoutineBegin(snapshot) {
     routineTimer.reset();
     endMaxDurationReached = false;
     // update component parameters for each repeat
-    const supabaseClient = supabase.createClient(
-      "https://lfboldtuuwfayloofdnm.supabase.co",
-      "sb_publishable_EfNrQHSaudaeiW-DYB5S0A_W863mPxN"
-    );
     const { error: supabaseError } = await supabaseClient.from('psychojs_results').insert({
       session_id: sessionId,
       trials: psychoJS._experiment._trialsData
