@@ -1584,7 +1584,7 @@ function set_varsRoutineBegin(snapshot) {
                                                                          size: [200 * scale, 200 * scale],
                                                                          pos: [0, 0], 
                                                                          lineColor: new util.Color([-1,-1,-1]), 
-                                                                         fillColor: new util.Color([1,1,1]), 
+                                                                         fillColor: undefined, 
                                                                          lineWidth: 5 * scale,
                                                                          units: 'pix',        // Specify units
                                                                          opacity: 1.0,       // Fully opaque
@@ -2003,7 +2003,7 @@ function instructionsRoutineBegin(snapshot) {
                 Pcoords = [((-1 * screen_size[0]/2) + Pcoords[0] + sel_size[0]/2), ((screen_size[1]/2) - Pcoords[1] - sel_size[1]/2)];
                 click_boxes["click_box" + i.toString()].setPos(Pcoords);
                 click_boxes["click_box" + i.toString()].setSize([sel_size[0] * 2, sel_size[1] * 2]);
-                click_boxes["click_box" + i.toString()].setFillColor(new util.Color([1,1,1]));
+                click_boxes["click_box" + i.toString()].setFillColor(undefined);
                 click_boxes["click_box" + i.toString()].setAutoDraw(false);
                 click_boxes["click_box" + i.toString()].setAutoDraw(true);
             }
@@ -2692,7 +2692,7 @@ function itemRoutineBegin(snapshot) {
                                                                              size: [200 * scale, 200 * scale],
                                                                              pos: [0, 0], 
                                                                              lineColor: new util.Color([-1,-1,-1]), 
-                                                                             fillColor: new util.Color([1,1,1]), 
+                                                                             fillColor: undefined, 
                                                                              lineWidth: 5 * scale,
                                                                              units: 'pix',        // Specify units
                                                                              opacity: 1.0,       // Fully opaque
@@ -2755,7 +2755,7 @@ function itemRoutineBegin(snapshot) {
             coords = [((-1 * screen_size[0]/2) + coords[0] + sel_size[0]/2), ((screen_size[1]/2) - coords[1] - sel_size[1]/2)];
             click_boxes["click_box" + i.toString()].setPos(coords);
             click_boxes["click_box" + i.toString()].setSize([sel_size[0] * 2, sel_size[1] * 2]);
-            click_boxes["click_box" + i.toString()].setFillColor(new util.Color([1,1,1]));
+            click_boxes["click_box" + i.toString()].setFillColor(undefined);
             click_boxes["click_box" + i.toString()].setAutoDraw(false);
             click_boxes["click_box" + i.toString()].setAutoDraw(true);
         }
