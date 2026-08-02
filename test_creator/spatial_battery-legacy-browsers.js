@@ -46,9 +46,6 @@ flowScheduler.add(init_loopLoopScheduler);
 flowScheduler.add(init_loopLoopEnd);
 
 
-flowScheduler.add(consentRoutineBegin());
-flowScheduler.add(consentRoutineEachFrame());
-flowScheduler.add(consentRoutineEnd());
 flowScheduler.add(intro_screenRoutineBegin());
 flowScheduler.add(intro_screenRoutineEachFrame());
 flowScheduler.add(intro_screenRoutineEnd());
@@ -424,9 +421,6 @@ var previous_attempts;
 var current_state;
 var randomized_blocks;
 var text_entry_box;
-var consentClock;
-var consent_image;
-var consent_key;
 var intro_screenClock;
 var intro_image;
 var key_resp_4;
@@ -554,23 +548,6 @@ async function experimentInit() {
     anchor: 'center',
     depth: -1.0 
   });
-  
-  // Initialize components for Routine "consent"
-  consentClock = new util.Clock();
-  consent_image = new visual.ImageStim({
-    win : psychoJS.window,
-    name : 'consent_image', units : undefined, 
-    image : 'consent.png', mask : undefined,
-    anchor : 'center',
-    ori : 0.0, 
-    pos : [0, 0], 
-    draggable: false,
-    size : [0.5, 0.5],
-    color : new util.Color([1,1,1]), opacity : undefined,
-    flipHoriz : false, flipVert : false,
-    texRes : 128.0, interpolate : true, depth : 0.0 
-  });
-  consent_key = new core.Keyboard({psychoJS: psychoJS, clock: new util.Clock(), waitForStart: true});
   
   // Initialize components for Routine "intro_screen"
   intro_screenClock = new util.Clock();
@@ -1166,146 +1143,6 @@ function initRoutineEnd(snapshot) {
       }
     });
     // the Routine "init" was not non-slip safe, so reset the non-slip timer
-    routineTimer.reset();
-    
-    // Routines running outside a loop should always advance the datafile row
-    if (currentLoop === psychoJS.experiment) {
-      psychoJS.experiment.nextEntry(snapshot);
-    }
-    return Scheduler.Event.NEXT;
-  }
-}
-
-
-var consentMaxDurationReached;
-var _consent_key_allKeys;
-var consentMaxDuration;
-var consentComponents;
-function consentRoutineBegin(snapshot) {
-  return async function () {
-    TrialHandler.fromSnapshot(snapshot); // ensure that .thisN vals are up to date
-    
-    //--- Prepare to start Routine 'consent' ---
-    t = 0;
-    frameN = -1;
-    continueRoutine = true; // until we're told otherwise
-    consentClock.reset();
-    routineTimer.reset();
-    consentMaxDurationReached = false;
-    // update component parameters for each repeat
-    consent_image.size = [1920 * scale, 1080 * scale];
-    consent_image.setAutoDraw(false);
-    consent_image.setAutoDraw(true);
-    consent_key.keys = undefined;
-    consent_key.rt = undefined;
-    _consent_key_allKeys = [];
-    psychoJS.experiment.addData('consent.started', globalClock.getTime());
-    consentMaxDuration = null
-    // keep track of which components have finished
-    consentComponents = [];
-    consentComponents.push(consent_image);
-    consentComponents.push(consent_key);
-    
-    consentComponents.forEach( function(thisComponent) {
-      if ('status' in thisComponent)
-        thisComponent.status = PsychoJS.Status.NOT_STARTED;
-       });
-    return Scheduler.Event.NEXT;
-  }
-}
-
-
-function consentRoutineEachFrame() {
-  return async function () {
-    //--- Loop for each frame of Routine 'consent' ---
-    // get current time
-    t = consentClock.getTime();
-    frameN = frameN + 1;// number of completed frames (so 0 is the first frame)
-    // update/draw components on each frame
-    
-    // *consent_image* updates
-    if (t >= 0.0 && consent_image.status === PsychoJS.Status.NOT_STARTED) {
-      // keep track of start time/frame for later
-      consent_image.tStart = t;  // (not accounting for frame time here)
-      consent_image.frameNStart = frameN;  // exact frame index
-      
-      consent_image.setAutoDraw(true);
-    }
-    
-    
-    // *consent_key* updates
-    if (t >= 0.0 && consent_key.status === PsychoJS.Status.NOT_STARTED) {
-      // keep track of start time/frame for later
-      consent_key.tStart = t;  // (not accounting for frame time here)
-      consent_key.frameNStart = frameN;  // exact frame index
-      
-      // keyboard checking is just starting
-      psychoJS.window.callOnFlip(function() { consent_key.clock.reset(); });  // t=0 on next screen flip
-      psychoJS.window.callOnFlip(function() { consent_key.start(); }); // start on screen flip
-      psychoJS.window.callOnFlip(function() { consent_key.clearEvents(); });
-    }
-    
-    if (consent_key.status === PsychoJS.Status.STARTED) {
-      let theseKeys = consent_key.getKeys({keyList: ['return'], waitRelease: false});
-      _consent_key_allKeys = _consent_key_allKeys.concat(theseKeys);
-      if (_consent_key_allKeys.length > 0) {
-        consent_key.keys = _consent_key_allKeys[_consent_key_allKeys.length - 1].name;  // just the last key pressed
-        consent_key.rt = _consent_key_allKeys[_consent_key_allKeys.length - 1].rt;
-        consent_key.duration = _consent_key_allKeys[_consent_key_allKeys.length - 1].duration;
-        // a response ends the routine
-        continueRoutine = false;
-      }
-    }
-    
-    // check for quit (typically the Esc key)
-    if (psychoJS.experiment.experimentEnded || psychoJS.eventManager.getKeys({keyList:['escape']}).length > 0) {
-      return quitPsychoJS('The [Escape] key was pressed. Goodbye!', false);
-    }
-    
-    // check if the Routine should terminate
-    if (!continueRoutine) {  // a component has requested a forced-end of Routine
-      return Scheduler.Event.NEXT;
-    }
-    
-    continueRoutine = false;  // reverts to True if at least one component still running
-    consentComponents.forEach( function(thisComponent) {
-      if ('status' in thisComponent && thisComponent.status !== PsychoJS.Status.FINISHED) {
-        continueRoutine = true;
-      }
-    });
-    
-    // refresh the screen if continuing
-    if (continueRoutine) {
-      return Scheduler.Event.FLIP_REPEAT;
-    } else {
-      return Scheduler.Event.NEXT;
-    }
-  };
-}
-
-
-function consentRoutineEnd(snapshot) {
-  return async function () {
-    //--- Ending Routine 'consent' ---
-    consentComponents.forEach( function(thisComponent) {
-      if (typeof thisComponent.setAutoDraw === 'function') {
-        thisComponent.setAutoDraw(false);
-      }
-    });
-    psychoJS.experiment.addData('consent.stopped', globalClock.getTime());
-    // update the trial handler
-    if (currentLoop instanceof MultiStairHandler) {
-      currentLoop.addResponse(consent_key.corr, level);
-    }
-    psychoJS.experiment.addData('consent_key.keys', consent_key.keys);
-    if (typeof consent_key.keys !== 'undefined') {  // we had a response
-        psychoJS.experiment.addData('consent_key.rt', consent_key.rt);
-        psychoJS.experiment.addData('consent_key.duration', consent_key.duration);
-        routineTimer.reset();
-        }
-    
-    consent_key.stop();
-    // the Routine "consent" was not non-slip safe, so reset the non-slip timer
     routineTimer.reset();
     
     // Routines running outside a loop should always advance the datafile row

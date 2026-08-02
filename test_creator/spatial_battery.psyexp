@@ -1143,7 +1143,6 @@
     </LoopInitiator>
     <Routine name="init"/>
     <LoopTerminator name="init_loop"/>
-    <Routine name="consent"/>
     <Routine name="intro_screen"/>
     <LoopInitiator loopType="TrialHandler" name="test_loop">
       <Param name="Selected rows" updates="None" val="" valType="str"/>
