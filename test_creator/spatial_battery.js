@@ -79,73 +79,7 @@ function buildTestListRows(items) {
   }).filter(row => row !== null);
 }
 
-// init psychoJS:
-const psychoJS = new PsychoJS({
-  debug: true
-});
-
-// open window:
-psychoJS.openWindow({
-  fullscr: true,
-  color: new util.Color([1.0, 1.0, 1.0]),
-  units: 'pix',
-  waitBlanking: true,
-  backgroundImage: '',
-  backgroundFit: 'none',
-});
-// schedule the experiment:
-psychoJS.schedule(psychoJS.gui.DlgFromDict({
-  dictionary: expInfo,
-  title: expName
-}));
-
-const flowScheduler = new Scheduler(psychoJS);
-const dialogCancelScheduler = new Scheduler(psychoJS);
-psychoJS.scheduleCondition(function() { return (psychoJS.gui.dialogComponent.button === 'OK'); },flowScheduler, dialogCancelScheduler);
-
-// flowScheduler gets run if the participants presses OK
-flowScheduler.add(updateInfo); // add timeStamp
-flowScheduler.add(experimentInit);
-const init_loopLoopScheduler = new Scheduler(psychoJS);
-flowScheduler.add(init_loopLoopBegin(init_loopLoopScheduler));
-flowScheduler.add(init_loopLoopScheduler);
-flowScheduler.add(init_loopLoopEnd);
-
-
-flowScheduler.add(intro_screenRoutineBegin());
-flowScheduler.add(intro_screenRoutineEachFrame());
-flowScheduler.add(intro_screenRoutineEnd());
-const test_loopLoopScheduler = new Scheduler(psychoJS);
-flowScheduler.add(test_loopLoopBegin(test_loopLoopScheduler));
-flowScheduler.add(test_loopLoopScheduler);
-flowScheduler.add(test_loopLoopEnd);
-
-
-
-
-
-
-
-
-
-
-
-
-flowScheduler.add(feedbackRoutineBegin());
-flowScheduler.add(feedbackRoutineEachFrame());
-flowScheduler.add(feedbackRoutineEnd());
-flowScheduler.add(endRoutineBegin());
-flowScheduler.add(endRoutineEachFrame());
-flowScheduler.add(endRoutineEnd());
-flowScheduler.add(quitPsychoJS, '', true);
-
-// quit if user presses Cancel in dialog box:
-dialogCancelScheduler.add(quitPsychoJS, '', false);
-
-psychoJS.start({
-  expName: expName,
-  expInfo: expInfo,
-  resources: [
+const ALL_RESOURCES = [
     // resources:
     {'name': 'test_list.csv', 'path': 'test_list.csv'},
     {'name': 'SBST_Stimuli.csv', 'path': 'SBST_Stimuli.csv'},
@@ -434,8 +368,140 @@ psychoJS.start({
     {'name': 'test_list.csv', 'path': 'test_list.csv'},
     {'name': 'VK_Instructions.csv', 'path': 'VK_Instructions.csv'},
     {'name': 'VK_Stimuli.csv', 'path': 'VK_Stimuli.csv'},
-  ]
+];
+
+
+// init psychoJS:
+const psychoJS = new PsychoJS({
+  debug: true
 });
+
+// open window:
+psychoJS.openWindow({
+  fullscr: true,
+  color: new util.Color([1.0, 1.0, 1.0]),
+  units: 'pix',
+  waitBlanking: true,
+  backgroundImage: '',
+  backgroundFit: 'none',
+});
+// schedule the experiment:
+psychoJS.schedule(psychoJS.gui.DlgFromDict({
+  dictionary: expInfo,
+  title: expName
+}));
+
+const flowScheduler = new Scheduler(psychoJS);
+const dialogCancelScheduler = new Scheduler(psychoJS);
+psychoJS.scheduleCondition(function() { return (psychoJS.gui.dialogComponent.button === 'OK'); },flowScheduler, dialogCancelScheduler);
+
+// flowScheduler gets run if the participants presses OK
+flowScheduler.add(updateInfo); // add timeStamp
+flowScheduler.add(experimentInit);
+const init_loopLoopScheduler = new Scheduler(psychoJS);
+flowScheduler.add(init_loopLoopBegin(init_loopLoopScheduler));
+flowScheduler.add(init_loopLoopScheduler);
+flowScheduler.add(init_loopLoopEnd);
+
+
+flowScheduler.add(intro_screenRoutineBegin());
+flowScheduler.add(intro_screenRoutineEachFrame());
+flowScheduler.add(intro_screenRoutineEnd());
+const test_loopLoopScheduler = new Scheduler(psychoJS);
+flowScheduler.add(test_loopLoopBegin(test_loopLoopScheduler));
+flowScheduler.add(test_loopLoopScheduler);
+flowScheduler.add(test_loopLoopEnd);
+
+
+
+
+
+
+
+
+
+
+
+
+flowScheduler.add(feedbackRoutineBegin());
+flowScheduler.add(feedbackRoutineEachFrame());
+flowScheduler.add(feedbackRoutineEnd());
+flowScheduler.add(endRoutineBegin());
+flowScheduler.add(endRoutineEachFrame());
+flowScheduler.add(endRoutineEnd());
+flowScheduler.add(quitPsychoJS, '', true);
+
+// quit if user presses Cancel in dialog box:
+dialogCancelScheduler.add(quitPsychoJS, '', false);
+
+const SHARED_RESOURCE_NAMES = ['test_list.csv', 'selector.png', 'x_selector.png', 'intro.png', 'break_image.png'];
+
+// Given the testIds in a dynamic battery, returns just the resources needed
+// for those tests (their top-level CSVs, built directly from TEST_DEFINITIONS
+// so it doesn't depend on ALL_RESOURCES having a matching entry, plus every
+// image whose path falls under one of those tests' stim_folder) instead of
+// preloading assets for all 14 tests every time.
+function resourcesForTests(testIds) {
+  const entries = new Map();
+  SHARED_RESOURCE_NAMES.forEach((name) => entries.set(name, { name, path: name }));
+  const folders = new Set();
+  testIds.forEach((id) => {
+    const def = TEST_DEFINITIONS[id];
+    if (!def) return;
+    entries.set(def.stim_file, { name: def.stim_file, path: def.stim_file });
+    entries.set(def.instructions_file, { name: def.instructions_file, path: def.instructions_file });
+    folders.add(def.stim_folder);
+  });
+  ALL_RESOURCES.forEach((r) => {
+    for (const folder of folders) {
+      if (r.name.indexOf(folder + '/') === 0) {
+        entries.set(r.name, r);
+        break;
+      }
+    }
+  });
+  return Array.from(entries.values());
+}
+
+// Fetches the battery config (if a session id is present) before starting
+// PsychoJS, so the resource preload list can be pruned to just the tests
+// that are actually in the battery instead of always downloading all 270+
+// files. Falls back to ALL_RESOURCES (today's behavior) whenever there's no
+// session, the fetch fails, or the config is empty.
+async function prepareAndStart() {
+  var urlParams = new URLSearchParams(window.location.search);
+  sessionId = urlParams.get('session');
+
+  await supabaseScriptPromise;
+  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let resourcesToUse = ALL_RESOURCES;
+  if (sessionId) {
+    try {
+      const { data, error } = await supabaseClient
+        .from('batteries')
+        .select('items')
+        .eq('id', sessionId)
+        .single();
+      if (error) {
+        console.error('Failed to fetch battery config, using default test_list.csv:', error);
+      } else if (data && Array.isArray(data.items) && data.items.length > 0) {
+        testListRows = buildTestListRows(data.items);
+        resourcesToUse = resourcesForTests(testListRows.map((row) => row.name_of_test));
+      }
+    } catch (e) {
+      console.error('Failed to fetch battery config, using default test_list.csv:', e);
+    }
+  }
+
+  psychoJS.start({
+    expName: expName,
+    expInfo: expInfo,
+    resources: resourcesToUse
+  });
+}
+
+prepareAndStart();
 
 psychoJS.experimentLogger.setLevel(core.Logger.ServerLevel.EXP);
 
@@ -773,32 +839,8 @@ async function experimentInit() {
   // Initialize components for Routine "end"
   endClock = new util.Clock();
   psychoJS._saveResults = 0;  // stop it from trying to POST to Pavlovia
-  var urlParams = new URLSearchParams(window.location.search);
-  sessionId = urlParams.get('session');
-
-  // Set up Supabase (shared by the battery-config fetch below and the
-  // results save in the end routine) and, if a session id is present, try
-  // to fetch that session's battery config. Falls back to the static
-  // test_list.csv (testListRows' default) on any failure so a bad/missing
-  // session never blocks the experiment from running.
-  await supabaseScriptPromise;
-  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  if (sessionId) {
-    try {
-      const { data, error } = await supabaseClient
-        .from('batteries')
-        .select('items')
-        .eq('id', sessionId)
-        .single();
-      if (error) {
-        console.error('Failed to fetch battery config, using default test_list.csv:', error);
-      } else if (data && Array.isArray(data.items) && data.items.length > 0) {
-        testListRows = buildTestListRows(data.items);
-      }
-    } catch (e) {
-      console.error('Failed to fetch battery config, using default test_list.csv:', e);
-    }
-  }
+  // sessionId / supabaseClient / testListRows are already set by
+  // prepareAndStart() before this routine runs.
   // Create some handy timers
   globalClock = new util.Clock();  // to track the time since experiment started
   routineTimer = new util.CountdownTimer();  // to track time remaining of each (non-slip) routine
