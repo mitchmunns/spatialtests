@@ -28,13 +28,13 @@ const TEST_DEFINITIONS = {
   AO:   { stim_folder: 'AO_Stimuli',   stim_file: 'AO_Stimuli.csv',   type_of_test: 'multiple choice',      instructions_file: 'AO_Instructions.csv',   selector_box_image: 'selector.png', choices: 4 },
   DAT:  { stim_folder: 'DAT_Stimuli',  stim_file: 'DAT_Stimuli.csv',  type_of_test: 'multiple choice',      instructions_file: 'DAT_Instructions.csv',  selector_box_image: 'selector.png', choices: 4 },
   Demos:{ stim_folder: 'Demos_Stimuli',stim_file: 'Demos_Stimuli.csv',type_of_test: 'multiple choice',      instructions_file: 'Demos_Instructions.csv',selector_box_image: 'selector.png', choices: 0 },
-  Flags:{ stim_folder: 'Flags_Stimuli',stim_file: 'Flags_Stimuli.csv',type_of_test: 'multiple selections',  instructions_file: 'Flags_Instructions.csv',selector_box_image: 'selector.png', choices: 12 },
+  Flags:{ stim_folder: 'Flags_Stimuli',stim_file: 'Flags_Stimuli.csv',type_of_test: 'multiple selections',  instructions_file: 'Flags_Instructions.csv',selector_box_image: 'o_selector.png', choices: 12 },
   MC:   { stim_folder: 'MC_Stimuli',   stim_file: 'MC_Stimuli.csv',   type_of_test: 'multiple choice',      instructions_file: 'MC_Instructions.csv',   selector_box_image: 'selector.png', choices: 5 },
   PFT:  { stim_folder: 'PFT_Stimuli',  stim_file: 'PFT_Stimuli.csv',  type_of_test: 'multiple choice',      instructions_file: 'PFT_Instructions.csv',  selector_box_image: 'selector.png', choices: 5 },
   PSVT: { stim_folder: 'PSVT_Stimuli', stim_file: 'PSVT_Stimuli.csv', type_of_test: 'multiple choice',      instructions_file: 'PSVT_Instructions.csv', selector_box_image: 'selector.png', choices: 5 },
   SBST: { stim_folder: 'SBST_Stimuli', stim_file: 'SBST_Stimuli.csv', type_of_test: 'multiple choice',      instructions_file: 'SBST_Instructions.csv', selector_box_image: 'selector.png', choices: 4 },
   SD:   { stim_folder: 'SD_Stimuli',   stim_file: 'SD_Stimuli.csv',   type_of_test: 'fill in the blank',    instructions_file: 'SD_Instructions.csv',   selector_box_image: '',             choices: 0 },
-  VK:   { stim_folder: 'VK_Stimuli',   stim_file: 'VK_Stimuli.csv',   type_of_test: 'multiple selections',  instructions_file: 'VK_Instructions.csv',   selector_box_image: 'selector.png', choices: 4 },
+  VK:   { stim_folder: 'VK_Stimuli',   stim_file: 'VK_Stimuli.csv',   type_of_test: 'multiple selections',  instructions_file: 'VK_Instructions.csv',   selector_box_image: 'x_selector.png', choices: 4 },
   WS:   { stim_folder: 'WS_Stimuli',   stim_file: 'WS_Stimuli.csv',   type_of_test: 'multiple choice',      instructions_file: 'WS_Instructions.csv',   selector_box_image: 'selector.png', choices: 5 },
 };
 
@@ -248,6 +248,7 @@ const ALL_RESOURCES = [
     {'name': 'MC_Stimuli/PR_15.png', 'path': 'MC_Stimuli/PR_15.png'},
     {'name': 'break_image.png', 'path': 'break_image.png'},
     {'name': 'x_selector.png', 'path': 'x_selector.png'},
+    {'name': 'o_selector.png', 'path': 'o_selector.png'},
     {'name': 'DAT_Stimuli/DAT_6.png', 'path': 'DAT_Stimuli/DAT_6.png'},
     {'name': 'DAT_Stimuli/DAT_10.png', 'path': 'DAT_Stimuli/DAT_10.png'},
     {'name': 'DAT_Stimuli/DAT_13.png', 'path': 'DAT_Stimuli/DAT_13.png'},
@@ -442,6 +443,9 @@ function resourcesForTests(testIds) {
     if (!def) return;
     entries.set(def.stim_file, { name: def.stim_file, path: def.stim_file });
     entries.set(def.instructions_file, { name: def.instructions_file, path: def.instructions_file });
+    if (def.selector_box_image) {
+      entries.set(def.selector_box_image, { name: def.selector_box_image, path: def.selector_box_image });
+    }
     folders.add(def.stim_folder);
   });
   ALL_RESOURCES.forEach((r) => {
