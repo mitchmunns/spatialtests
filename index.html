@@ -88,6 +88,40 @@
     line-height:1.55;
   }
 
+  /* ---------- Home / overview ---------- */
+  .home-steps{
+    display:grid;
+    gap:18px;
+    margin:8px 0 36px;
+    max-width:56ch;
+  }
+  .home-step{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+  }
+  .home-step-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--accent-dark);
+    padding-top:2px;
+    flex-shrink:0;
+  }
+  .home-step strong{
+    display:block;
+    font-size:14.5px;
+    margin-bottom:2px;
+  }
+  .home-step p{
+    color:var(--ink-soft);
+    font-size:13.5px;
+    margin:0;
+    line-height:1.5;
+  }
+  .landing-intro{
+    margin-bottom:28px;
+  }
+
   /* ---------- Catalog ---------- */
   .catalog-grid{
     display:grid;
@@ -729,6 +763,11 @@
 
 <!-- AUTH SCREEN -->
 <div id="view-auth" class="auth-shell">
+  <div class="landing-intro">
+    <p class="eyebrow">Spatial Test Repository</p>
+    <h1 class="view-title">Build and run spatial cognition batteries</h1>
+    <p class="view-sub">Pick from a catalog of real spatial-cognition tests, configure exactly which items and settings each one uses, and generate a single link that runs the whole battery for a participant. Log in to get started.</p>
+  </div>
   <div class="auth-card">
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Log in</button>
@@ -751,6 +790,7 @@
   <header class="top">
     <div class="brand">Spatial<span>Test</span>Repository</div>
     <div class="user-bar">
+      <button onclick="goToHome()">Home</button>
       <button onclick="goToDatasets()">Datasets</button>
       <button class="battery-btn" onclick="goToBattery()">Battery <span class="battery-count" id="battery-count">0</span></button>
       <span class="user-email" id="user-email"></span>
@@ -759,8 +799,22 @@
     </div>
   </header>
 
+  <!-- HOME / OVERVIEW VIEW -->
+  <div id="view-home">
+    <p class="eyebrow">Overview</p>
+    <h1 class="view-title">What you can do here</h1>
+    <p class="view-sub">Assemble a battery from the test catalog, configure each test's items and settings, then send participants a single link that runs everything in order.</p>
+    <div class="home-steps">
+      <div class="home-step"><span class="home-step-num">01</span><div><strong>Select tests</strong><p>Browse the catalog and add one or more tests to a battery.</p></div></div>
+      <div class="home-step"><span class="home-step-num">02</span><div><strong>Configure</strong><p>Choose specific items, timing, randomization, and scoring per test.</p></div></div>
+      <div class="home-step"><span class="home-step-num">03</span><div><strong>Generate a link</strong><p>One link runs the whole battery for a participant, in order.</p></div></div>
+      <div class="home-step"><span class="home-step-num">04</span><div><strong>Export data</strong><p>Track participant counts and download results as CSV from Datasets.</p></div></div>
+    </div>
+    <button class="btn accent" onclick="goToCatalog()">Browse test catalog →</button>
+  </div>
+
   <!-- CATALOG VIEW -->
-  <div id="view-catalog">
+  <div id="view-catalog" class="hidden">
     <p class="eyebrow">01 — Select tests</p>
     <h1 class="view-title">Test catalog</h1>
     <p class="view-sub">Add one or more tests to a battery. Configure each one, then generate a single link that runs the whole set for a participant — even a battery of one.</p>
@@ -918,6 +972,7 @@ function showApp(session){
   document.getElementById('user-email').textContent = DEV_MODE
     ? `${session.user.email} (dev mode)`
     : session.user.email;
+  showView('view-home');
 }
 
 function showAuth(){
@@ -1349,9 +1404,13 @@ function toggleItemSelection(key, item, checked){
 }
 
 function showView(id){
-  ['view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets'].forEach(v => {
+  ['view-home', 'view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
+}
+
+function goToHome(){
+  showView('view-home');
 }
 
 function goToCatalog(){
