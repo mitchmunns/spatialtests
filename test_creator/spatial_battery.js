@@ -1583,7 +1583,7 @@ function set_varsRoutineBegin(snapshot) {
                                                                          //edges: 4,
                                                                          size: [200 * scale, 200 * scale],
                                                                          pos: [0, 0], 
-                                                                         lineColor: new util.Color([-1,-1,-1]), 
+                                                                         lineColor: undefined, 
                                                                          fillColor: undefined, 
                                                                          lineWidth: 5 * scale,
                                                                          units: 'pix',        // Specify units
@@ -2691,7 +2691,7 @@ function itemRoutineBegin(snapshot) {
                                                                              //edges: 4,
                                                                              size: [200 * scale, 200 * scale],
                                                                              pos: [0, 0], 
-                                                                             lineColor: new util.Color([-1,-1,-1]), 
+                                                                             lineColor: undefined, 
                                                                              fillColor: undefined, 
                                                                              lineWidth: 5 * scale,
                                                                              units: 'pix',        // Specify units
