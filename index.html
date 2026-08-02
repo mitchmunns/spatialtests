@@ -849,7 +849,7 @@
 // a real session, so you can test the click-through flow straight from a
 // file:// path without deploying anywhere. Set to false before testing the
 // real auth flow (which requires serving over http/https — see prior notes).
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 const DEV_USER = { id: 'dev-local-user', email: 'dev@local' };
 let devProfile = { name: '', institution: '' };
@@ -857,6 +857,8 @@ let devProfile = { name: '', institution: '' };
 // ----------------------------
 // SUPABASE CONNECTION
 // ----------------------------
+const RUNNER_URL = "https://mitchmunns.github.io/spatialtests/test_creator/index.html";
+
 const SUPABASE_URL = "https://lfboldtuuwfayloofdnm.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_EfNrQHSaudaeiW-DYB5S0A_W863mPxN";
 
@@ -1478,7 +1480,7 @@ async function generateLink(){
   genBtn.textContent = 'Generate participant link';
   genBtn.disabled = false;
 
-  const link = `https://spatial-tests.app/run?session=${sessionId}`;
+  const link = `${RUNNER_URL}?session=${sessionId}`;
   document.getElementById('link-text').textContent = link;
 
   const summary = document.getElementById('link-summary');
@@ -1560,7 +1562,7 @@ function renderDatasets(rows){
 }
 
 function copyDatasetLink(sessionId){
-  const link = `https://spatial-tests.app/run?session=${sessionId}`;
+  const link = `${RUNNER_URL}?session=${sessionId}`;
   navigator.clipboard.writeText(link);
 }
 
