@@ -433,7 +433,6 @@ var current_state;
 var randomized_blocks;
 var text_entry_box;
 var consentClock;
-var consent_image;
 var consent_key;
 var intro_screenClock;
 var intro_image;
@@ -565,19 +564,6 @@ async function experimentInit() {
   
   // Initialize components for Routine "consent"
   consentClock = new util.Clock();
-  consent_image = new visual.ImageStim({
-    win : psychoJS.window,
-    name : 'consent_image', units : undefined, 
-    image : 'consent.png', mask : undefined,
-    anchor : 'center',
-    ori : 0.0, 
-    pos : [0, 0], 
-    draggable: false,
-    size : [0.5, 0.5],
-    color : new util.Color([1,1,1]), opacity : undefined,
-    flipHoriz : false, flipVert : false,
-    texRes : 128.0, interpolate : true, depth : 0.0 
-  });
   consent_key = new core.Keyboard({psychoJS: psychoJS, clock: new util.Clock(), waitForStart: true});
   
   // Initialize components for Routine "intro_screen"
@@ -1195,9 +1181,6 @@ function consentRoutineBegin(snapshot) {
     routineTimer.reset();
     consentMaxDurationReached = false;
     // update component parameters for each repeat
-    consent_image.size = [1920 * scale, 1080 * scale];
-    consent_image.setAutoDraw(false);
-    consent_image.setAutoDraw(true);
     consent_key.keys = undefined;
     consent_key.rt = undefined;
     _consent_key_allKeys = [];
@@ -1205,7 +1188,6 @@ function consentRoutineBegin(snapshot) {
     consentMaxDuration = null
     // keep track of which components have finished
     consentComponents = [];
-    consentComponents.push(consent_image);
     consentComponents.push(consent_key);
     
     for (const thisComponent of consentComponents)
@@ -1223,16 +1205,6 @@ function consentRoutineEachFrame() {
     t = consentClock.getTime();
     frameN = frameN + 1;// number of completed frames (so 0 is the first frame)
     // update/draw components on each frame
-    
-    // *consent_image* updates
-    if (t >= 0.0 && consent_image.status === PsychoJS.Status.NOT_STARTED) {
-      // keep track of start time/frame for later
-      consent_image.tStart = t;  // (not accounting for frame time here)
-      consent_image.frameNStart = frameN;  // exact frame index
-      
-      consent_image.setAutoDraw(true);
-    }
-    
     
     // *consent_key* updates
     if (t >= 0.0 && consent_key.status === PsychoJS.Status.NOT_STARTED) {
