@@ -1585,7 +1585,7 @@ function set_varsRoutineBegin(snapshot) {
                                                                          pos: [0, 0], 
                                                                          lineColor: undefined, 
                                                                          fillColor: undefined, 
-                                                                         lineWidth: 5 * scale,
+                                                                         lineWidth: 0,
                                                                          units: 'pix',        // Specify units
                                                                          opacity: 1.0,       // Fully opaque
                                                                          depth: -100,           // Default depth  
@@ -2693,7 +2693,7 @@ function itemRoutineBegin(snapshot) {
                                                                              pos: [0, 0], 
                                                                              lineColor: undefined, 
                                                                              fillColor: undefined, 
-                                                                             lineWidth: 5 * scale,
+                                                                             lineWidth: 0,
                                                                              units: 'pix',        // Specify units
                                                                              opacity: 1.0,       // Fully opaque
                                                                              depth: -100,           // Default depth  
