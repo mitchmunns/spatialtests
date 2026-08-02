@@ -401,7 +401,6 @@ async function updateInfo() {
 
   // add info from the URL:
   util.addInfoFromUrl(expInfo);
-  psychoJS.setRedirectUrls(('https://ucsb.sona-systems.com/webstudy_credit.aspx?experiment_id=4585&credit_token=ad221f37cfd8466c87ed8a426a1d2cce&survey_code=' + expInfo['participant']), '');
 
 
   
@@ -3571,10 +3570,13 @@ function endRoutineBegin(snapshot) {
       "https://lfboldtuuwfayloofdnm.supabase.co",
       "sb_publishable_EfNrQHSaudaeiW-DYB5S0A_W863mPxN"
     );
-    supabaseClient.from('psychojs_results').insert({
+    const { error: supabaseError } = await supabaseClient.from('psychojs_results').insert({
       session_id: sessionId,
       trials: psychoJS._experiment._trialsData
     });
+    if (supabaseError) {
+      console.error('Supabase insert failed:', supabaseError);
+    }
     psychoJS.experiment.addData('end.started', globalClock.getTime());
     endMaxDuration = null
     // keep track of which components have finished
