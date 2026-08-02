@@ -1,0 +1,8 @@
+﻿instructions_page,answer_positionPX,answer_positionPY,selector_sizeP,correct_answerP,practice_item,feedback,att_check,retry
+AO_Instructions1.png,"[522, 815, 1109, 1403]","[529, 529, 529, 529]","[286, 375]",Pans_box_C,1,0,0,0
+AO_Instructions2.png,"[522, 815, 1109, 1403]","[375, 375, 375, 375]","[286, 375]",Pans_box_C,0,1,0,0
+AO_Instructions3.png,"[523, 817, 1110, 1404]","[390, 390, 390, 390]","[286, 375]",Pans_box_D,1,0,0,0
+AO_Instructions3F.png,"[523, 817, 1110, 1404]","[390, 390, 390, 390]","[286, 375]",Pans_box_D,0,1,0,1
+AO_Instructions3R.png,"[523, 817, 1110, 1404]","[390, 390, 390, 390]","[286, 375]",Pans_box_D,1,0,0,-1
+AO_Instructions3F2.png,"[523, 817, 1110, 1404]","[390, 390, 390, 390]","[286, 375]",Pans_box_D,0,1,0,-1
+AO_Instructions5.png,"[523, 817, 1110, 1404]","[390, 390, 390, 390]","[286, 375]",Pans_box_D,0,0,0,0

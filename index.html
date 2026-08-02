@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spatial Test Repository</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#EEF2F6;
+    --grid:rgba(20,40,63,0.055);
+    --ink:#14283F;
+    --ink-soft:#4B6480;
+    --ink-faint:#8098B3;
+    --line:#C7D6E3;
+    --line-strong:#9FB6C9;
+    --card:#FFFFFF;
+    --accent:#B4682A;
+    --accent-dark:#8C4E18;
+    --accent-soft:#F3E3D3;
+    --wire:#1B3A5C;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+  }
+
+  .shell{
+    max-width:880px;
+    margin:0 auto;
+    padding:48px 24px 96px;
+  }
+
+  header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:1px solid var(--line-strong);
+    padding-bottom:20px;
+    margin-bottom:40px;
+  }
+  header.top .brand{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-0.01em;
+  }
+  header.top .brand span{color:var(--accent);}
+  header.top .tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--accent-dark);
+    margin:0 0 8px;
+  }
+  h1.view-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  p.view-sub{
+    color:var(--ink-soft);
+    font-size:15px;
+    margin:0 0 36px;
+    max-width:56ch;
+    line-height:1.55;
+  }
+
+  /* ---------- Catalog ---------- */
+  .catalog-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+    gap:20px;
+  }
+  .test-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:24px 22px 22px;
+    display:flex;
+    flex-direction:column;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .test-card:hover{
+    border-color:var(--line-strong);
+    transform:translateY(-2px);
+  }
+
+  .cube-stage{
+    width:100%;
+    height:96px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    perspective:420px;
+    margin-bottom:18px;
+  }
+  .cube{
+    width:52px;
+    height:52px;
+    position:relative;
+    transform-style:preserve-3d;
+    animation:spin 13s linear infinite;
+  }
+  .cube.speed-2{animation-duration:17s;}
+  .cube.speed-3{animation-duration:10s;}
+  .face{
+    position:absolute;
+    width:52px;
+    height:52px;
+    border:1.4px solid var(--wire);
+    background:rgba(27,58,92,0.03);
+  }
+  .face.front{transform:translateZ(26px);}
+  .face.back{transform:translateZ(-26px) rotateY(180deg);}
+  .face.right{transform:rotateY(90deg) translateZ(26px);}
+  .face.left{transform:rotateY(-90deg) translateZ(26px);}
+  .face.top{transform:rotateX(90deg) translateZ(26px);}
+  .face.bottom{transform:rotateX(-90deg) translateZ(26px);}
+
+  @keyframes spin{
+    from{transform:rotateX(-18deg) rotateY(0deg);}
+    to{transform:rotateX(-18deg) rotateY(360deg);}
+  }
+
+  .test-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:17px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .test-card .subname{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+    margin:0 0 12px;
+  }
+  .test-card p.desc{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin:0 0 18px;
+    flex-grow:1;
+  }
+  .stat-row{
+    display:flex;
+    gap:16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line);
+    padding-top:12px;
+    margin-bottom:16px;
+  }
+  .stat-row strong{color:var(--ink); font-weight:600;}
+
+  button{
+    font-family:'Inter', sans-serif;
+    cursor:pointer;
+  }
+  .btn{
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    font-size:13.5px;
+    font-weight:500;
+    padding:10px 16px;
+    border-radius:3px;
+    width:100%;
+    transition:background .15s ease, opacity .15s ease;
+  }
+  .btn:hover{background:#0D1D30;}
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--line-strong);
+  }
+  .btn.secondary:hover{background:rgba(20,40,63,0.04);}
+  .btn.accent{
+    background:var(--accent);
+    border-color:var(--accent);
+  }
+  .btn.accent:hover{background:var(--accent-dark);}
+
+  /* ---------- Customize ---------- */
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    padding:0;
+    margin-bottom:22px;
+  }
+  .back-link:hover{color:var(--ink);}
+
+  .config-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px 28px 8px;
+  }
+  .field-row{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:20px;
+    align-items:center;
+    padding:16px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .field-row:last-of-type{border-bottom:none;}
+  .field-label{
+    font-size:13.5px;
+    font-weight:500;
+  }
+  .field-hint{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    margin-top:3px;
+    font-weight:400;
+  }
+  input[type=number], select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+    padding:9px 10px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+    width:100%;
+    max-width:220px;
+  }
+  input[type=number]:focus, select:focus{
+    outline:2px solid var(--accent-soft);
+    border-color:var(--accent);
+  }
+
+  .toggle{
+    position:relative;
+    display:inline-block;
+    width:40px;
+    height:22px;
+  }
+  .toggle input{opacity:0; width:0; height:0;}
+  .toggle .slider{
+    position:absolute; inset:0;
+    background:var(--line-strong);
+    border-radius:22px;
+    transition:.15s;
+    cursor:pointer;
+  }
+  .toggle .slider:before{
+    content:"";
+    position:absolute;
+    width:16px; height:16px;
+    left:3px; top:3px;
+    background:#fff;
+    border-radius:50%;
+    transition:.15s;
+  }
+  .toggle input:checked + .slider{background:var(--accent);}
+  .toggle input:checked + .slider:before{transform:translateX(18px);}
+
+  .panel-footer{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    padding:22px 0 22px;
+  }
+  .panel-footer .btn{width:auto;}
+
+  /* ---------- Link view ---------- */
+  .link-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:32px;
+    text-align:center;
+  }
+  .status-dot{
+    display:inline-block;
+    width:8px; height:8px;
+    border-radius:50%;
+    background:#3B8A5E;
+    margin-right:7px;
+  }
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:22px;
+  }
+  .link-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--bg);
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    padding:14px 16px;
+    max-width:520px;
+    margin:0 auto 22px;
+  }
+  .link-box code{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--wire);
+    flex:1;
+    text-align:left;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .copy-btn{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:3px;
+    font-size:11.5px;
+    font-family:'IBM Plex Mono', monospace;
+    padding:8px 12px;
+    flex-shrink:0;
+  }
+  .copy-btn:hover{background:#0D1D30;}
+  .copy-btn.copied{background:#3B8A5E;}
+
+  .link-actions{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+  }
+  .link-actions .btn{width:auto; padding:10px 18px;}
+
+  .summary-table{
+    margin:26px auto 0;
+    max-width:420px;
+    text-align:left;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    border-top:1px solid var(--line);
+    padding-top:16px;
+  }
+  .summary-table div{
+    display:flex;
+    justify-content:space-between;
+    padding:5px 0;
+    color:var(--ink-soft);
+  }
+  .summary-table div span:last-child{color:var(--ink); font-weight:500;}
+
+  .hidden{display:none !important;}
+
+  /* ---------- Battery ---------- */
+  .battery-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .battery-item{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:16px 18px;
+    display:grid;
+    grid-template-columns:28px 1fr auto;
+    gap:16px;
+    align-items:center;
+  }
+  .battery-order{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+  }
+  .order-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-faint);
+    margin-bottom:2px;
+  }
+  .reorder-btn{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:2px;
+    width:20px; height:16px;
+    font-size:9px;
+    line-height:1;
+    color:var(--ink-soft);
+    padding:0;
+  }
+  .reorder-btn:hover{border-color:var(--line-strong); color:var(--ink);}
+  .reorder-btn:disabled{opacity:0.3; cursor:default;}
+  .battery-item h4{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .battery-item .param-summary{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+  .battery-item-actions{
+    display:flex;
+    gap:8px;
+  }
+  .battery-item-actions button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:12px;
+    padding:7px 12px;
+    color:var(--ink-soft);
+  }
+  .battery-item-actions button:hover{color:var(--ink); border-color:var(--ink-soft);}
+  .battery-item-actions button.remove:hover{color:#A32D2D; border-color:#A32D2D;}
+
+  .battery-empty{
+    background:var(--card);
+    border:1px dashed var(--line-strong);
+    border-radius:4px;
+    padding:40px 24px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:14px;
+    margin-bottom:24px;
+  }
+
+  .battery-footer{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .battery-footer .btn{width:auto;}
+
+  /* ---------- Datasets ---------- */
+  .dataset-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .dataset-row{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px 20px;
+    display:grid;
+    grid-template-columns:1fr auto auto;
+    gap:20px;
+    align-items:center;
+  }
+  .dataset-main .chips{
+    margin-bottom:8px;
+  }
+  .test-chip{
+    display:inline-block;
+    background:var(--accent-soft);
+    color:var(--accent-dark);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    font-weight:600;
+    padding:3px 8px;
+    border-radius:3px;
+    margin-right:6px;
+  }
+  .dataset-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+  }
+  .dataset-meta .session-id{color:var(--ink-soft);}
+  .dataset-metric{
+    text-align:center;
+    min-width:88px;
+  }
+  .dataset-metric .num{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:22px;
+    font-weight:600;
+    line-height:1;
+  }
+  .dataset-metric .lbl{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-top:4px;
+  }
+  .dataset-actions{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .dataset-actions button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:12px;
+    padding:7px 12px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .dataset-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
+  .dataset-actions button:disabled{opacity:0.4; cursor:default;}
+
+  .dataset-empty{
+    background:var(--card);
+    border:1px dashed var(--line-strong);
+    border-radius:4px;
+    padding:40px 24px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .dataset-empty .btn{width:auto; margin-top:16px; padding:10px 18px;}
+
+  .pending-note{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:10px 14px;
+    margin-bottom:24px;
+  }
+
+  /* ---------- Auth ---------- */
+  .auth-shell{
+    max-width:400px;
+    margin:96px auto 0;
+    padding:0 24px;
+  }
+  .auth-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:32px 28px;
+  }
+  .auth-tabs{
+    display:flex;
+    gap:2px;
+    margin-bottom:22px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .auth-tab{
+    flex:1;
+    padding:9px 0;
+    text-align:center;
+    font-size:13px;
+    font-weight:500;
+    background:#fff;
+    border:none;
+    color:var(--ink-soft);
+  }
+  .auth-tab.active{background:var(--ink); color:#fff;}
+  .field-block{margin-bottom:14px;}
+  .field-block label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink-faint);
+    margin-bottom:6px;
+  }
+  .field-block input{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    padding:10px 11px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .field-block input:focus{
+    outline:2px solid var(--accent-soft);
+    border-color:var(--accent);
+  }
+  .auth-msg{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:14px;
+    line-height:1.5;
+    min-height:16px;
+  }
+  .auth-msg.error{color:#A32D2D;}
+
+  /* ---------- Header user bar ---------- */
+  .user-bar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .user-email{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .user-bar button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:12px;
+    padding:6px 11px;
+    color:var(--ink-soft);
+  }
+  .user-bar button:hover{color:var(--ink); border-color:var(--ink-soft);}
+  .battery-btn{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .battery-count{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:16px;
+    height:16px;
+    padding:0 4px;
+    border-radius:8px;
+    background:var(--accent);
+    color:#fff;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    font-weight:600;
+  }
+
+  /* ---------- Profile modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(20,40,63,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+  }
+  .modal-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:26px 26px 20px;
+    width:340px;
+  }
+  .modal-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:16px;
+    margin:0 0 18px;
+  }
+  .modal-footer{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="view-auth" class="auth-shell">
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Log in</button>
+      <button class="auth-tab" id="tab-signup" onclick="setAuthMode('signup')">Create account</button>
+    </div>
+    <div class="field-block">
+      <label>Email</label>
+      <input id="auth-email" type="email" placeholder="name@university.edu">
+    </div>
+    <div class="field-block">
+      <label>Password</label>
+      <input id="auth-password" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn accent" id="auth-submit" onclick="submitAuth()">Log in</button>
+    <div class="auth-msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<div class="shell hidden" id="app-shell">
+  <header class="top">
+    <div class="brand">Spatial<span>Test</span>Repository</div>
+    <div class="user-bar">
+      <button onclick="goToDatasets()">Datasets</button>
+      <button class="battery-btn" onclick="goToBattery()">Battery <span class="battery-count" id="battery-count">0</span></button>
+      <span class="user-email" id="user-email"></span>
+      <button onclick="openProfile()">Profile</button>
+      <button onclick="signOut()">Log out</button>
+    </div>
+  </header>
+
+  <!-- CATALOG VIEW -->
+  <div id="view-catalog">
+    <p class="eyebrow">01 — Select tests</p>
+    <h1 class="view-title">Test catalog</h1>
+    <p class="view-sub">Add one or more tests to a battery. Configure each one, then generate a single link that runs the whole set for a participant — even a battery of one.</p>
+    <div class="catalog-grid" id="catalog-grid"></div>
+  </div>
+
+  <!-- CUSTOMIZE VIEW -->
+  <div id="view-customize" class="hidden">
+    <button class="back-link" id="cust-back-btn">&larr; back</button>
+    <p class="eyebrow" id="cust-eyebrow">02 — Configure</p>
+    <h1 class="view-title" id="cust-title"></h1>
+    <p class="view-sub" id="cust-sub"></p>
+    <div class="config-panel" id="cust-fields"></div>
+    <div class="panel-footer">
+      <button class="btn secondary" id="cust-cancel-btn">Cancel</button>
+      <button class="btn accent" id="cust-submit-btn" onclick="submitCustomize()">Add to battery</button>
+    </div>
+  </div>
+
+  <!-- BATTERY VIEW -->
+  <div id="view-battery" class="hidden">
+    <p class="eyebrow">02 — Review battery</p>
+    <h1 class="view-title">Your battery</h1>
+    <p class="view-sub">This is the set a participant will run through, in order. Reorder, edit, or remove tests, then generate the link.</p>
+    <div id="battery-list-wrap"></div>
+    <div class="battery-footer">
+      <button class="btn secondary" onclick="goToCatalog()">+ Add another test</button>
+      <button class="btn accent" id="battery-generate-btn" onclick="generateLink()">Generate participant link</button>
+    </div>
+  </div>
+
+  <!-- LINK VIEW -->
+  <div id="view-link" class="hidden">
+    <p class="eyebrow">03 — Ready</p>
+    <h1 class="view-title">Battery ready</h1>
+    <p class="view-sub">Send this link to your participant. It opens the Unity WebGL build and runs each test below in order.</p>
+    <div class="link-panel">
+      <div class="status-line"><span class="status-dot"></span>session created</div>
+      <div class="link-box">
+        <code id="link-text"></code>
+        <button class="copy-btn" id="copy-btn" onclick="copyLink()">copy</button>
+      </div>
+      <div class="link-actions">
+        <button class="btn secondary" onclick="startNewBattery()">Start a new battery</button>
+        <button class="btn accent" onclick="goToBattery()">Edit this battery</button>
+      </div>
+      <div class="summary-table" id="link-summary"></div>
+    </div>
+  </div>
+
+  <!-- DATASETS VIEW -->
+  <div id="view-datasets" class="hidden">
+    <p class="eyebrow">Data</p>
+    <h1 class="view-title">Your datasets</h1>
+    <p class="view-sub">One row per battery you've generated a link for. Participant counts and export will populate once trial results are wired up on the Unity side.</p>
+    <div class="pending-note">participant counts below are placeholders — connect the results table to make these live</div>
+    <div id="dataset-list-wrap"></div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="modal-overlay hidden" id="profile-modal">
+  <div class="modal-card">
+    <h3>Researcher profile</h3>
+    <div class="field-block">
+      <label>Full name</label>
+      <input id="profile-name" type="text">
+    </div>
+    <div class="field-block">
+      <label>Institution</label>
+      <input id="profile-institution" type="text">
+    </div>
+    <div class="auth-msg" id="profile-msg"></div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeProfile()">Cancel</button>
+      <button class="btn accent" onclick="saveProfile()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ----------------------------
+// DEV MODE
+// ----------------------------
+// When true: skips the login screen and stubs out Supabase calls that need
+// a real session, so you can test the click-through flow straight from a
+// file:// path without deploying anywhere. Set to false before testing the
+// real auth flow (which requires serving over http/https — see prior notes).
+const DEV_MODE = true;
+
+const DEV_USER = { id: 'dev-local-user', email: 'dev@local' };
+let devProfile = { name: '', institution: '' };
+
+// ----------------------------
+// SUPABASE CONNECTION
+// ----------------------------
+const SUPABASE_URL = "https://lfboldtuuwfayloofdnm.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EfNrQHSaudaeiW-DYB5S0A_W863mPxN";
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ----------------------------
+// AUTH
+// ----------------------------
+let authMode = 'login';
+
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+  document.getElementById('auth-submit').textContent = mode === 'login' ? 'Log in' : 'Create account';
+  document.getElementById('auth-msg').textContent = '';
+  document.getElementById('auth-msg').classList.remove('error');
+}
+
+async function submitAuth(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const msg = document.getElementById('auth-msg');
+  msg.classList.remove('error');
+  msg.textContent = authMode === 'login' ? 'Logging in…' : 'Creating account…';
+
+  if (authMode === 'signup'){
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error){
+      msg.textContent = error.message;
+      msg.classList.add('error');
+    } else {
+      msg.textContent = 'Account created. Check your email if confirmation is enabled, then log in.';
+      setAuthMode('login');
+    }
+  } else {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error){
+      msg.textContent = error.message;
+      msg.classList.add('error');
+    }
+    // success is handled by onAuthStateChange below
+  }
+}
+
+async function signOut(){
+  if (DEV_MODE){
+    alert('Log out is disabled in dev mode (DEV_MODE = true at the top of the script). Set it to false to test the real login flow.');
+    return;
+  }
+  await supabaseClient.auth.signOut();
+}
+
+function showApp(session){
+  document.getElementById('view-auth').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  document.getElementById('user-email').textContent = DEV_MODE
+    ? `${session.user.email} (dev mode)`
+    : session.user.email;
+}
+
+function showAuth(){
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('view-auth').classList.remove('hidden');
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+  document.getElementById('auth-msg').textContent = '';
+}
+
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session){
+    showApp(session);
+  } else if (event === 'SIGNED_OUT'){
+    showAuth();
+  }
+});
+
+// Check for an existing session on load (e.g. page refresh)
+if (DEV_MODE){
+  showApp({ user: DEV_USER });
+} else {
+  supabaseClient.auth.getSession().then(({ data }) => {
+    if (data.session){
+      showApp(data.session);
+    } else {
+      showAuth();
+    }
+  });
+}
+
+// ----------------------------
+// PROFILE
+// ----------------------------
+// Returns the current user, or null (and bounces back to the login screen)
+// if the session is missing — e.g. because the browser blocked storage access.
+async function requireUser(){
+  if (DEV_MODE) return DEV_USER;
+  const { data, error } = await supabaseClient.auth.getUser();
+  if (error || !data.user){
+    showAuth();
+    document.getElementById('auth-msg').textContent = 'Your session was lost — please log in again.';
+    document.getElementById('auth-msg').classList.add('error');
+    return null;
+  }
+  return data.user;
+}
+
+async function openProfile(){
+  const modal = document.getElementById('profile-modal');
+  const msg = document.getElementById('profile-msg');
+  msg.textContent = '';
+  msg.classList.remove('error');
+
+  const user = await requireUser();
+  if (!user) return;
+
+  if (DEV_MODE){
+    document.getElementById('profile-name').value = devProfile.name;
+    document.getElementById('profile-institution').value = devProfile.institution;
+    modal.classList.remove('hidden');
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from('researchers')
+    .select('name, institution')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (data){
+    document.getElementById('profile-name').value = data.name || '';
+    document.getElementById('profile-institution').value = data.institution || '';
+  }
+  if (error){
+    msg.textContent = 'Could not load existing profile — you can still fill it in.';
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeProfile(){
+  document.getElementById('profile-modal').classList.add('hidden');
+}
+
+async function saveProfile(){
+  const msg = document.getElementById('profile-msg');
+  const user = await requireUser();
+  if (!user) return;
+  const name = document.getElementById('profile-name').value;
+  const institution = document.getElementById('profile-institution').value;
+
+  if (DEV_MODE){
+    devProfile = { name, institution };
+    msg.textContent = 'Saved. (dev mode — not written to Supabase)';
+    msg.classList.remove('error');
+    setTimeout(closeProfile, 700);
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from('researchers')
+    .upsert({ id: user.id, name, institution });
+
+  if (error){
+    msg.textContent = error.message;
+    msg.classList.add('error');
+  } else {
+    msg.textContent = 'Saved.';
+    msg.classList.remove('error');
+    setTimeout(closeProfile, 700);
+  }
+}
+
+const TESTS = [
+  {
+    id: 'mrt',
+    name: 'Mental Rotations Test',
+    shortName: 'Vandenberg & Kuse MRT',
+    description: 'Two-of-four forced choice mental rotation task using Shepard-Metzler cube figures.',
+    cubeSpeed: '',
+    stats: { items: 24, timeLabel: '10 min' },
+    fields: [
+      { key: 'itemCount', label: 'Number of items', hint: 'range 8–96', type: 'number', min: 8, max: 96, step: 4, default: 24 },
+      { key: 'timeLimit', label: 'Time limit', hint: 'minutes', type: 'number', min: 3, max: 30, step: 1, default: 10 },
+      { key: 'scoring', label: 'Scoring rule', hint: '', type: 'select', options: ['Strict (both correct)', 'Partial credit'], default: 'Strict (both correct)' },
+      { key: 'practice', label: 'Include practice trials', hint: '', type: 'toggle', default: true }
+    ]
+  },
+  {
+    id: 'psvtr',
+    name: 'Purdue Spatial Visualization Test: Rotations',
+    shortName: 'PSVT:R',
+    description: 'Single-choice rotation-matching task using rotated solid objects, widely used in engineering education research.',
+    cubeSpeed: 'speed-2',
+    stats: { items: 30, timeLabel: '20 min' },
+    fields: [
+      { key: 'itemCount', label: 'Number of items', hint: 'range 10–30', type: 'number', min: 10, max: 30, step: 5, default: 30 },
+      { key: 'timeLimit', label: 'Time limit', hint: 'minutes', type: 'number', min: 5, max: 30, step: 1, default: 20 },
+      { key: 'responseOptions', label: 'Response options', hint: 'per item', type: 'select', options: ['5 options', '4 options'], default: '5 options' },
+      { key: 'practice', label: 'Include practice trials', hint: '', type: 'toggle', default: true }
+    ]
+  },
+  {
+    id: 'flags',
+    name: 'Flags Test',
+    shortName: 'Flags (Thurstone)',
+    description: 'Timed same–different judgment task on rotated and mirrored flag silhouettes, measuring spatial orientation speed.',
+    cubeSpeed: 'speed-3',
+    stats: { items: 20, timeLabel: '15 s / trial' },
+    fields: [
+      { key: 'trialCount', label: 'Number of trials', hint: 'range 8–40', type: 'number', min: 8, max: 40, step: 4, default: 20 },
+      { key: 'timePerTrial', label: 'Time per trial', hint: 'seconds', type: 'number', min: 5, max: 30, step: 1, default: 15 },
+      { key: 'rotationIncrement', label: 'Rotation increment', hint: '', type: 'select', options: ['45°', '90°', 'Continuous'], default: '45°' },
+      { key: 'feedback', label: 'Show feedback after each trial', hint: '', type: 'toggle', default: false }
+    ]
+  }
+];
+
+let currentTest = null;
+let currentValues = {};
+let editingIndex = null; // null = adding a new item; number = editing battery[index]
+let battery = []; // [{ testId, params }]
+
+// Local record of generated links, used only to sketch the datasets view in
+// DEV_MODE (real mode reads from the `batteries` table instead). Seeded with
+// a couple of examples so the page isn't empty on first look.
+let localDatasets = DEV_MODE ? [
+  {
+    id: 'k3f7m2pq',
+    createdAt: new Date(Date.now() - 3 * 86400000),
+    items: [
+      { testId: 'mrt', params: { itemCount: 24, timeLimit: 10, scoring: 'Strict (both correct)', practice: true } },
+      { testId: 'flags', params: { trialCount: 20, timePerTrial: 15, rotationIncrement: '45°', feedback: false } }
+    ],
+    participantCount: 14
+  },
+  {
+    id: 'x9d2h5wr',
+    createdAt: new Date(Date.now() - 1 * 86400000),
+    items: [
+      { testId: 'psvtr', params: { itemCount: 30, timeLimit: 20, responseOptions: '5 options', practice: true } }
+    ],
+    participantCount: 3
+  }
+] : [];
+
+function renderCatalog(){
+  const grid = document.getElementById('catalog-grid');
+  grid.innerHTML = TESTS.map(t => `
+    <div class="test-card">
+      <div class="cube-stage">
+        <div class="cube ${t.cubeSpeed}">
+          <div class="face front"></div>
+          <div class="face back"></div>
+          <div class="face right"></div>
+          <div class="face left"></div>
+          <div class="face top"></div>
+          <div class="face bottom"></div>
+        </div>
+      </div>
+      <h3>${t.name}</h3>
+      <p class="subname">${t.shortName}</p>
+      <p class="desc">${t.description}</p>
+      <div class="stat-row">
+        <span><strong>${t.stats.items}</strong> items</span>
+        <span><strong>${t.stats.timeLabel}</strong></span>
+      </div>
+      <button class="btn" onclick="openCustomize('${t.id}')">Configure</button>
+    </div>
+  `).join('');
+}
+
+function updateBatteryBadge(){
+  document.getElementById('battery-count').textContent = battery.length;
+}
+
+// Open the customize form to ADD a new item to the battery
+function openCustomize(id){
+  currentTest = TESTS.find(t => t.id === id);
+  currentValues = {};
+  currentTest.fields.forEach(f => currentValues[f.key] = f.default);
+  editingIndex = null;
+
+  document.getElementById('cust-title').textContent = currentTest.name;
+  document.getElementById('cust-sub').textContent = 'Adjust parameters, then add this test to your battery. Defaults reflect the standard published protocol.';
+  document.getElementById('cust-submit-btn').textContent = 'Add to battery';
+  document.getElementById('cust-back-btn').textContent = '← back to catalog';
+  document.getElementById('cust-back-btn').onclick = goToCatalog;
+  document.getElementById('cust-cancel-btn').onclick = goToCatalog;
+
+  renderFields();
+  showView('view-customize');
+}
+
+// Open the customize form to EDIT an existing battery item
+function editBatteryItem(index){
+  const item = battery[index];
+  currentTest = TESTS.find(t => t.id === item.testId);
+  currentValues = { ...item.params };
+  editingIndex = index;
+
+  document.getElementById('cust-title').textContent = currentTest.name;
+  document.getElementById('cust-sub').textContent = 'Adjust parameters for this item in your battery.';
+  document.getElementById('cust-submit-btn').textContent = 'Save changes';
+  document.getElementById('cust-back-btn').textContent = '← back to battery';
+  document.getElementById('cust-back-btn').onclick = goToBattery;
+  document.getElementById('cust-cancel-btn').onclick = goToBattery;
+
+  renderFields();
+  showView('view-customize');
+}
+
+function submitCustomize(){
+  if (editingIndex === null){
+    battery.push({ testId: currentTest.id, params: { ...currentValues } });
+    updateBatteryBadge();
+    goToCatalog();
+  } else {
+    battery[editingIndex].params = { ...currentValues };
+    editingIndex = null;
+    goToBattery();
+  }
+}
+
+function renderFields(){
+  const container = document.getElementById('cust-fields');
+  container.innerHTML = currentTest.fields.map(f => {
+    let control = '';
+    if (f.type === 'number'){
+      control = `<input type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${currentValues[f.key]}" onchange="updateValue('${f.key}', this.value, 'number')">`;
+    } else if (f.type === 'select'){
+      control = `<select onchange="updateValue('${f.key}', this.value, 'string')">
+        ${f.options.map(o => `<option value="${o}" ${o === currentValues[f.key] ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (f.type === 'toggle'){
+      control = `<label class="toggle">
+        <input type="checkbox" ${currentValues[f.key] ? 'checked' : ''} onchange="updateValue('${f.key}', this.checked, 'bool')">
+        <span class="slider"></span>
+      </label>`;
+    }
+    return `<div class="field-row">
+      <div class="field-label">${f.label}${f.hint ? `<span class="field-hint">${f.hint}</span>` : ''}</div>
+      <div>${control}</div>
+    </div>`;
+  }).join('');
+}
+
+function updateValue(key, value, type){
+  if (type === 'number') value = Number(value);
+  if (type === 'bool') value = Boolean(value);
+  currentValues[key] = value;
+}
+
+function showView(id){
+  ['view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets'].forEach(v => {
+    document.getElementById(v).classList.toggle('hidden', v !== id);
+  });
+}
+
+function goToCatalog(){
+  showView('view-catalog');
+}
+
+function goToBattery(){
+  renderBatteryList();
+  showView('view-battery');
+}
+
+function paramSummary(test, params){
+  return test.fields.map(f => {
+    let val = params[f.key];
+    if (typeof val === 'boolean') val = val ? 'yes' : 'no';
+    return `${f.label.toLowerCase()}: ${val}`;
+  }).join(' · ');
+}
+
+function renderBatteryList(){
+  const wrap = document.getElementById('battery-list-wrap');
+  const genBtn = document.getElementById('battery-generate-btn');
+
+  if (battery.length === 0){
+    wrap.innerHTML = `<div class="battery-empty">Your battery is empty. Add a test from the catalog to get started.</div>`;
+    genBtn.disabled = true;
+    genBtn.style.opacity = '0.5';
+    return;
+  }
+
+  genBtn.disabled = false;
+  genBtn.style.opacity = '1';
+
+  wrap.innerHTML = `<div class="battery-list">${battery.map((item, i) => {
+    const test = TESTS.find(t => t.id === item.testId);
+    return `
+      <div class="battery-item">
+        <div class="battery-order">
+          <span class="order-num">${i + 1}</span>
+          <button class="reorder-btn" onclick="moveBatteryItem(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
+          <button class="reorder-btn" onclick="moveBatteryItem(${i}, 1)" ${i === battery.length - 1 ? 'disabled' : ''}>▼</button>
+        </div>
+        <div>
+          <h4>${test.name}</h4>
+          <div class="param-summary">${paramSummary(test, item.params)}</div>
+        </div>
+        <div class="battery-item-actions">
+          <button onclick="editBatteryItem(${i})">Edit</button>
+          <button class="remove" onclick="removeFromBattery(${i})">Remove</button>
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+function moveBatteryItem(index, direction){
+  const target = index + direction;
+  if (target < 0 || target >= battery.length) return;
+  [battery[index], battery[target]] = [battery[target], battery[index]];
+  renderBatteryList();
+}
+
+function removeFromBattery(index){
+  battery.splice(index, 1);
+  updateBatteryBadge();
+  renderBatteryList();
+}
+
+function startNewBattery(){
+  battery = [];
+  updateBatteryBadge();
+  goToCatalog();
+}
+
+async function generateLink(){
+  if (battery.length === 0) return;
+
+  const genBtn = document.getElementById('battery-generate-btn');
+  genBtn.textContent = 'Generating…';
+  genBtn.disabled = true;
+
+  const user = await requireUser();
+  if (!user){
+    genBtn.textContent = 'Generate participant link';
+    genBtn.disabled = false;
+    return;
+  }
+
+  let sessionId;
+  if (DEV_MODE){
+    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+    sessionId = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  } else {
+    const { data, error } = await supabaseClient
+      .from('batteries')
+      .insert({
+        researcher_id: user.id,
+        items: battery
+      })
+      .select()
+      .single();
+
+    if (error){
+      genBtn.textContent = 'Generate participant link';
+      genBtn.disabled = false;
+      alert('Could not create session: ' + error.message);
+      return;
+    }
+    sessionId = data.id;
+  }
+
+  if (DEV_MODE){
+    localDatasets.unshift({
+      id: sessionId,
+      createdAt: new Date(),
+      items: battery.map(i => ({ ...i })),
+      participantCount: 0
+    });
+  }
+
+  genBtn.textContent = 'Generate participant link';
+  genBtn.disabled = false;
+
+  const link = `https://spatial-tests.app/run?session=${sessionId}`;
+  document.getElementById('link-text').textContent = link;
+
+  const summary = document.getElementById('link-summary');
+  summary.innerHTML = battery.map((item, i) => {
+    const test = TESTS.find(t => t.id === item.testId);
+    return `<div><span>${i + 1}. ${test.shortName}</span><span>${paramSummary(test, item.params)}</span></div>`;
+  }).join('');
+
+  const copyBtn = document.getElementById('copy-btn');
+  copyBtn.textContent = 'copy';
+  copyBtn.classList.remove('copied');
+
+  showView('view-link');
+}
+
+async function goToDatasets(){
+  showView('view-datasets');
+  const wrap = document.getElementById('dataset-list-wrap');
+  wrap.innerHTML = `<div class="dataset-empty">Loading…</div>`;
+
+  let rows = [];
+  if (DEV_MODE){
+    rows = localDatasets;
+  } else {
+    const user = await requireUser();
+    if (!user) return;
+    const { data, error } = await supabaseClient
+      .from('batteries')
+      .select('id, items, created_at')
+      .eq('researcher_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error){
+      wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${error.message}</div>`;
+      return;
+    }
+    rows = data.map(r => ({ id: r.id, createdAt: new Date(r.created_at), items: r.items, participantCount: null }));
+  }
+
+  renderDatasets(rows);
+}
+
+function renderDatasets(rows){
+  const wrap = document.getElementById('dataset-list-wrap');
+
+  if (rows.length === 0){
+    wrap.innerHTML = `<div class="dataset-empty">
+      No datasets yet — generate a battery link to create your first one.
+      <br><button class="btn accent" onclick="goToCatalog()">Go to catalog</button>
+    </div>`;
+    return;
+  }
+
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+  wrap.innerHTML = `<div class="dataset-list">${rows.map(row => {
+    const chips = row.items.map(i => {
+      const test = TESTS.find(t => t.id === i.testId);
+      return `<span class="test-chip">${test ? test.shortName : i.testId}</span>`;
+    }).join('');
+    const countDisplay = row.participantCount === null ? '—' : row.participantCount;
+    return `
+      <div class="dataset-row">
+        <div class="dataset-main">
+          <div class="chips">${chips}</div>
+          <div class="dataset-meta">created ${dateFmt.format(row.createdAt)} · session <span class="session-id">${row.id}</span></div>
+        </div>
+        <div class="dataset-metric">
+          <div class="num">${countDisplay}</div>
+          <div class="lbl">participants</div>
+        </div>
+        <div class="dataset-actions">
+          <button onclick="copyDatasetLink('${row.id}')">Copy link</button>
+          <button disabled title="Needs a results table wired up">Export CSV</button>
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+function copyDatasetLink(sessionId){
+  const link = `https://spatial-tests.app/run?session=${sessionId}`;
+  navigator.clipboard.writeText(link);
+}
+
+function copyLink(){
+  const text = document.getElementById('link-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+renderCatalog();
+</script>
+
+</body>
+</html>

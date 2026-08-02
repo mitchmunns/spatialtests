@@ -1,0 +1,11 @@
+﻿standard_stim,answer_positionX,answer_positionY,selector_size,correct_answer,textbox_position,textbox_size,type_of_item
+D_age.png,"[1300, 495] ","[287, 90]","[143, 201]",-1,"[600, 0] ","[287, 90]",fill in the blank
+D_sex.png,"[1136, 1136, 1136] ","[436, 519, 601]","[44, 44]",-1,,,multiple choice
+D_race.png,"[1004, 1004,1004, 1004, 1004, 1004, 1004] ","[211, 313, 416, 518, 620, 722, 824]","[44, 44]",-1,,,multiple choice
+D_ethnicity.png,"[1255, 1255] ","[471, 565]","[44, 44]",-1,,,multiple choice
+D_GPA.png,"[1300, 495] ","[287, 90]","[143, 201]",-1,"[600, 0] ","[287, 90]",fill in the blank
+D_math.png,"[1271, 1271, 1271, 1271, 1271, 1271, 1271, 1271, 1271, 1271] ","[62, 164, 267, 369, 471, 573, 675, 777, 879, 981]","[44, 44]",[],,,multiple selections
+D_physics.png,"[1300, 495] ","[287, 90]","[143, 201]",-1,"[600, 0] ","[287, 90]",fill in the blank
+D_parents_ed.png,"[1182, 1182, 1182, 1182, 1882] ","[313, 470, 572, 674, 776]","[44, 44]",-1,,,multiple choice
+D_language.png,"[1300, 495] ","[287, 90]","[143, 201]",-1,"[600, 0] ","[287, 90]",fill in the blank
+D_vision.png,"[1213, 1213, 1213] ","[426, 520, 612]","[44, 44]",-1,,,multiple choice

@@ -1,0 +1,8 @@
+﻿instructions_page,textbox_position,textbox_size,correct_answerP,practice_item,feedback,att_check,retry
+SD_Instructions1.png,"[1460, 487]","[200,50]",H,1,0,0,0
+SD_Instructions2.png,"[1460, 487]","[200,50]",H,0,1,0,0
+SD_Instructions3.png,"[1460, 487]","[200,50]",B,1,0,0,0
+SD_Instructions3F.png,"[1460, 487]","[200,50]",B,0,1,0,1
+SD_Instructions3R.png,"[1460, 487]","[200,50]",B,1,0,0,-1
+SD_Instructions3F2.png,"[1460, 487]","[200,50]",B,0,1,0,-1
+SD_Instructions5.png,"[1460, 487]","[200,50]",H,0,0,0,0
