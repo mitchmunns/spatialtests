@@ -455,6 +455,7 @@ var feedback_text;
 var endClock;
 var globalClock;
 var routineTimer;
+var sessionId;
 async function experimentInit() {
   // Initialize components for Routine "init"
   initClock = new util.Clock();
@@ -716,7 +717,7 @@ async function experimentInit() {
   endClock = new util.Clock();
   psychoJS._saveResults = 0;  // stop it from trying to POST to Pavlovia
   var urlParams = new URLSearchParams(window.location.search);
-  var sessionId = urlParams.get('session');
+  sessionId = urlParams.get('session');
   // Create some handy timers
   globalClock = new util.Clock();  // to track the time since experiment started
   routineTimer = new util.CountdownTimer();  // to track time remaining of each (non-slip) routine
