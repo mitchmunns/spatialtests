@@ -1518,6 +1518,19 @@ async function goToDatasets(){
       return;
     }
     rows = data.map(r => ({ id: r.id, createdAt: new Date(r.created_at), items: r.items, participantCount: null }));
+
+    const ids = rows.map(r => r.id);
+    if (ids.length > 0){
+      const { data: resultRows, error: countError } = await supabaseClient
+        .from('psychojs_results')
+        .select('session_id')
+        .in('session_id', ids);
+      if (!countError && resultRows){
+        const counts = {};
+        resultRows.forEach(r => { counts[r.session_id] = (counts[r.session_id] || 0) + 1; });
+        rows.forEach(r => { r.participantCount = counts[r.id] || 0; });
+      }
+    }
   }
 
   renderDatasets(rows);
@@ -1554,7 +1567,7 @@ function renderDatasets(rows){
         </div>
         <div class="dataset-actions">
           <button onclick="copyDatasetLink('${row.id}')">Copy link</button>
-          <button disabled title="Needs a results table wired up">Export CSV</button>
+          <button onclick="downloadDatasetCSV('${row.id}')">Export CSV</button>
         </div>
       </div>
     `;
@@ -1564,6 +1577,75 @@ function renderDatasets(rows){
 function copyDatasetLink(sessionId){
   const link = `${RUNNER_URL}?session=${sessionId}`;
   navigator.clipboard.writeText(link);
+}
+
+// Flattens every participant's trial data for a battery into one CSV, one
+// row per trial. Trial shape varies a lot across tests, so columns are the
+// union of every key seen across every trial — anything a given trial
+// doesn't have is left blank. Meant as a reasonable default to post-process
+// further (e.g. splitting by test) rather than a final analysis-ready file.
+async function downloadDatasetCSV(sessionId){
+  if (DEV_MODE){
+    alert('CSV export needs a real Supabase session — not available in dev mode.');
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from('psychojs_results')
+    .select('*')
+    .eq('session_id', sessionId);
+
+  if (error){
+    alert('Could not load results: ' + error.message);
+    return;
+  }
+  if (!data || data.length === 0){
+    alert('No participant data yet for this battery.');
+    return;
+  }
+
+  const rows = [];
+  data.forEach((resultRow) => {
+    const trials = Array.isArray(resultRow.trials) ? resultRow.trials : [];
+    trials.forEach((trial) => rows.push(trial));
+  });
+
+  if (rows.length === 0){
+    alert('No trial data found in the results for this battery.');
+    return;
+  }
+
+  const columns = [];
+  const seenColumns = new Set();
+  rows.forEach((row) => {
+    Object.keys(row).forEach((key) => {
+      if (!seenColumns.has(key)){
+        seenColumns.add(key);
+        columns.push(key);
+      }
+    });
+  });
+
+  const escapeCsv = (val) => {
+    if (val === null || val === undefined) return '';
+    const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+    return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+  };
+
+  const lines = [columns.map(escapeCsv).join(',')];
+  rows.forEach((row) => {
+    lines.push(columns.map((col) => escapeCsv(row[col])).join(','));
+  });
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `battery_${sessionId}_results.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function copyLink(){
