@@ -1575,23 +1575,26 @@ function set_varsRoutineBegin(snapshot) {
     
     if ((type_of_test === "multiple selections")) {
         click_boxes = {};
+        // Flags' S/O labels sit too close together for a visible click-target
+        // box (it covers the text); VK's classic checkbox look is intentional.
+        const click_box_visible = (name_of_test !== 'Flags');
         for (var i, _pj_c = 0, _pj_a = util.range(choices), _pj_b = _pj_a.length; (_pj_c < _pj_b); _pj_c += 1) {
             i = _pj_a[_pj_c];
-            click_boxes[("click_box" + i.toString())] = new visual.Rect({ 
+            click_boxes[("click_box" + i.toString())] = new visual.Rect({
                                                                          win: psychoJS.window,                                                                     name: "Rclick_box" + i.toString(),
                                                                          //edges: 4,
                                                                          size: [200 * scale, 200 * scale],
-                                                                         pos: [0, 0], 
-                                                                         lineColor: undefined, 
-                                                                         fillColor: undefined, 
-                                                                         lineWidth: 0,
+                                                                         pos: [0, 0],
+                                                                         lineColor: click_box_visible ? new util.Color([-1,-1,-1]) : undefined,
+                                                                         fillColor: click_box_visible ? new util.Color([1,1,1]) : undefined,
+                                                                         lineWidth: click_box_visible ? (5 * scale) : 0,
                                                                          units: 'pix',        // Specify units
                                                                          opacity: 1.0,       // Fully opaque
-                                                                         depth: -100,           // Default depth  
+                                                                         depth: -100,           // Default depth
                                                                          autoDraw: true,       // Draw automatically
                                                                          colorSpace: "rgb"
-                                                                         });                                                       
-    
+                                                                         });
+
         }
     } else if (type_of_test == 'multiple choice') {
             selector_box.setImage(test_loop.thisTrial['selector_box_image']);
@@ -2003,11 +2006,11 @@ function instructionsRoutineBegin(snapshot) {
                 Pcoords = [((-1 * screen_size[0]/2) + Pcoords[0] + sel_size[0]/2), ((screen_size[1]/2) - Pcoords[1] - sel_size[1]/2)];
                 click_boxes["click_box" + i.toString()].setPos(Pcoords);
                 click_boxes["click_box" + i.toString()].setSize([sel_size[0] * 2, sel_size[1] * 2]);
-                click_boxes["click_box" + i.toString()].setFillColor(undefined);
+                click_boxes["click_box" + i.toString()].setFillColor(name_of_test !== 'Flags' ? new util.Color([1,1,1]) : undefined);
                 click_boxes["click_box" + i.toString()].setAutoDraw(false);
                 click_boxes["click_box" + i.toString()].setAutoDraw(true);
             }
-            
+
             currently_selected = [];
         } else if (type_of_test == 'same different'){
             if (already_set_up == false){
@@ -2686,16 +2689,17 @@ function itemRoutineBegin(snapshot) {
         
         if (type_of_test == 'multiple selections'){
             click_boxes = {};
+            const click_box_visible = (name_of_test !== 'Flags');
             for (var i, _pj_c = 0, _pj_a = util.range(item_loop.thisTrial['answer_positionX'].length), _pj_b = _pj_a.length; (_pj_c < _pj_b); _pj_c += 1) {
                 i = _pj_a[_pj_c];
-                click_boxes[("click_box" + i.toString())] = new visual.Rect({ 
+                click_boxes[("click_box" + i.toString())] = new visual.Rect({
                                                                              win: psychoJS.window,                                                                     name: "Rclick_box" + i.toString(),
                                                                              //edges: 4,
                                                                              size: [200 * scale, 200 * scale],
-                                                                             pos: [0, 0], 
-                                                                             lineColor: undefined, 
-                                                                             fillColor: undefined, 
-                                                                             lineWidth: 0,
+                                                                             pos: [0, 0],
+                                                                             lineColor: click_box_visible ? new util.Color([-1,-1,-1]) : undefined,
+                                                                             fillColor: click_box_visible ? new util.Color([1,1,1]) : undefined,
+                                                                             lineWidth: click_box_visible ? (5 * scale) : 0,
                                                                              units: 'pix',        // Specify units
                                                                              opacity: 1.0,       // Fully opaque
                                                                              depth: -100,           // Default depth  
@@ -2757,11 +2761,12 @@ function itemRoutineBegin(snapshot) {
             coords = [((-1 * screen_size[0]/2) + coords[0] + sel_size[0]/2), ((screen_size[1]/2) - coords[1] - sel_size[1]/2)];
             click_boxes["click_box" + i.toString()].setPos(coords);
             click_boxes["click_box" + i.toString()].setSize([sel_size[0] * 2, sel_size[1] * 2]);
-            click_boxes["click_box" + i.toString()].setFillColor(undefined);
+            click_boxes["click_box" + i.toString()].setFillColor(name_of_test !== 'Flags' ? new util.Color([1,1,1]) : undefined);
             click_boxes["click_box" + i.toString()].setAutoDraw(false);
             click_boxes["click_box" + i.toString()].setAutoDraw(true);
         }
-    
+
+
         currently_selected = [];
     }
     if ((type_of_test === "fill in the blank")) {
