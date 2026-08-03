@@ -151,28 +151,47 @@
     perspective:420px;
     margin-bottom:18px;
   }
-  .cube{
-    width:52px;
-    height:52px;
+  /* Per-test 3D icon rig: a spinning "rotor" positioned at the stage center,
+     populated with absolutely-positioned box/plane pieces built in JS
+     (see box3d()/plane()/rule() and ICONS below) so each test gets a shape
+     styled after its own stimuli, not a generic cube. */
+  .icon-rotor{
     position:relative;
     transform-style:preserve-3d;
     animation:spin 13s linear infinite;
   }
-  .cube.speed-2{animation-duration:17s;}
-  .cube.speed-3{animation-duration:10s;}
-  .face{
+  .icon-rotor.speed-2{animation-duration:17s;}
+  .icon-rotor.speed-3{animation-duration:10s;}
+  .bf, .flat, .tri{
     position:absolute;
-    width:52px;
-    height:52px;
     border:1.4px solid var(--wire);
-    background:rgba(27,58,92,0.03);
+    background:rgba(27,58,92,0.05);
   }
-  .face.front{transform:translateZ(26px);}
-  .face.back{transform:translateZ(-26px) rotateY(180deg);}
-  .face.right{transform:rotateY(90deg) translateZ(26px);}
-  .face.left{transform:rotateY(-90deg) translateZ(26px);}
-  .face.top{transform:rotateX(90deg) translateZ(26px);}
-  .face.bottom{transform:rotateX(-90deg) translateZ(26px);}
+  .bf.accent, .flat.accent, .tri.accent{
+    background:var(--accent-soft);
+    border-color:var(--accent-dark);
+  }
+  .dot{
+    position:absolute;
+    border-radius:50%;
+    border:1.2px solid var(--wire);
+    background:var(--card);
+  }
+  .rule{
+    position:absolute;
+    background:var(--wire);
+    opacity:0.55;
+  }
+  .lbl{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--wire);
+    font-weight:500;
+  }
 
   @keyframes spin{
     from{transform:rotateX(-18deg) rotateY(0deg);}
@@ -531,6 +550,43 @@
   }
   .battery-footer .btn{width:auto;}
 
+  .attention-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px 20px 6px;
+    margin-bottom:24px;
+  }
+  .attention-panel h4{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .attention-panel .attention-sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0 0 12px;
+  }
+  .attention-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:12px 0;
+    border-top:1px solid var(--line);
+  }
+  .attention-row:first-of-type{border-top:none;}
+  .attention-row .attention-label{flex:1;}
+  .attention-row .attention-label strong{
+    display:block;
+    font-size:13.5px;
+  }
+  .attention-row .attention-label span{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+  }
+
   /* ---------- Datasets ---------- */
   .dataset-list{
     display:flex;
@@ -839,6 +895,7 @@
     <p class="eyebrow">02 — Review battery</p>
     <h1 class="view-title">Your battery</h1>
     <p class="view-sub">This is the set a participant will run through, in order. Reorder, edit, or remove tests, then generate the link.</p>
+    <div id="attention-panel-wrap"></div>
     <div id="battery-list-wrap"></div>
     <div class="battery-footer">
       <button class="btn secondary" onclick="goToCatalog()">+ Add another test</button>
@@ -1129,7 +1186,7 @@ const TESTS = [
     name: 'Mental Rotations Test',
     shortName: 'Vandenberg & Kuse MRT',
     description: 'Two-of-four forced choice mental rotation task using Shepard-Metzler cube figures.',
-    cubeSpeed: '',
+    iconSpeed: '',
     stats: { items: TEST_ITEMS.VK.length, timeLabel: '' },
     fields: standardFields('VK', 10)
   },
@@ -1138,7 +1195,7 @@ const TESTS = [
     name: 'Purdue Spatial Visualization Test: Rotations',
     shortName: 'PSVT:R',
     description: 'Single-choice rotation-matching task using rotated solid objects, widely used in engineering education research.',
-    cubeSpeed: 'speed-2',
+    iconSpeed: 'speed-2',
     stats: { items: TEST_ITEMS.PSVT.length, timeLabel: '' },
     fields: standardFields('PSVT', 15)
   },
@@ -1147,7 +1204,7 @@ const TESTS = [
     name: 'Flags Test',
     shortName: 'Flags (Thurstone)',
     description: 'Timed multi-select judgment task on rotated and mirrored flag silhouettes, measuring spatial orientation speed.',
-    cubeSpeed: 'speed-3',
+    iconSpeed: 'speed-3',
     stats: { items: TEST_ITEMS.Flags.length, timeLabel: '' },
     fields: standardFields('Flags', 10)
   },
@@ -1156,7 +1213,7 @@ const TESTS = [
     name: 'Differential Aptitude Test: Space Relations',
     shortName: 'DAT:SR',
     description: 'Multiple-choice task matching 2D unfolded patterns to their corresponding 3D solid shapes.',
-    cubeSpeed: '',
+    iconSpeed: '',
     stats: { items: TEST_ITEMS.DAT.length, timeLabel: '' },
     fields: standardFields('DAT', 12)
   },
@@ -1165,7 +1222,7 @@ const TESTS = [
     name: 'Santa Barbara Solids Test',
     shortName: 'SBST',
     description: 'Cross-section identification task — select the 2D shape produced by a cutting plane through a 3D solid.',
-    cubeSpeed: 'speed-2',
+    iconSpeed: 'speed-2',
     stats: { items: TEST_ITEMS.SBST.length, timeLabel: '' },
     fields: standardFields('SBST', 2)
   },
@@ -1174,7 +1231,7 @@ const TESTS = [
     name: 'Assembling Objects',
     shortName: 'AO',
     description: 'Multiple-choice task selecting how disassembled parts fit together when connected.',
-    cubeSpeed: 'speed-3',
+    iconSpeed: 'speed-3',
     stats: { items: TEST_ITEMS.AO.length, timeLabel: '' },
     fields: standardFields('AO', 20)
   },
@@ -1183,7 +1240,7 @@ const TESTS = [
     name: 'Surface Development Test',
     shortName: 'SD',
     description: 'Typed-answer task matching a folded surface pattern to the labeled edge it corresponds to on the finished solid.',
-    cubeSpeed: '',
+    iconSpeed: '',
     stats: { items: TEST_ITEMS.SD.length, timeLabel: '' },
     fields: standardFields('SD', 10)
   },
@@ -1192,7 +1249,7 @@ const TESTS = [
     name: 'Paper Folding Test',
     shortName: 'PFT',
     description: 'Multiple-choice task predicting hole-punch patterns after a sequence of paper folds.',
-    cubeSpeed: 'speed-2',
+    iconSpeed: 'speed-2',
     stats: { items: TEST_ITEMS.PFT.length, timeLabel: '' },
     fields: standardFields('PFT', 10)
   },
@@ -1201,7 +1258,7 @@ const TESTS = [
     name: 'Mental Cutting Test',
     shortName: 'MC',
     description: 'Multiple-choice cross-section task — select the shape revealed when a cutting plane slices a 3D object.',
-    cubeSpeed: 'speed-3',
+    iconSpeed: 'speed-3',
     stats: { items: TEST_ITEMS.MC.length, timeLabel: '' },
     fields: standardFields('MC', 15)
   },
@@ -1210,7 +1267,7 @@ const TESTS = [
     name: 'Wordsum+',
     shortName: 'WS (Wordsum+)',
     description: 'Vocabulary knowledge task (Cor et al., 2012), typically included as a verbal control measure alongside spatial tasks.',
-    cubeSpeed: '',
+    iconSpeed: '',
     stats: { items: TEST_ITEMS.WS.length, timeLabel: '' },
     fields: standardFields('WS', 14)
   },
@@ -1219,7 +1276,8 @@ const TESTS = [
     name: 'Attention Check 1',
     shortName: 'AC1',
     description: 'Typed-answer attention-check item.',
-    cubeSpeed: '',
+    attentionCheck: true,
+    iconSpeed: '',
     stats: { items: TEST_ITEMS.AC1.length, timeLabel: '' },
     fields: standardFields('AC1', 1)
   },
@@ -1228,7 +1286,8 @@ const TESTS = [
     name: 'Attention Check 2',
     shortName: 'AC2',
     description: 'Typed-answer attention-check item.',
-    cubeSpeed: '',
+    attentionCheck: true,
+    iconSpeed: '',
     stats: { items: TEST_ITEMS.AC2.length, timeLabel: '' },
     fields: standardFields('AC2', 1)
   },
@@ -1237,7 +1296,8 @@ const TESTS = [
     name: 'Attention Check (Final)',
     shortName: 'ACF',
     description: 'Click-selection attention-check item.',
-    cubeSpeed: '',
+    attentionCheck: true,
+    iconSpeed: '',
     stats: { items: TEST_ITEMS.ACF.length, timeLabel: '' },
     fields: standardFields('ACF', 1)
   },
@@ -1246,7 +1306,7 @@ const TESTS = [
     name: 'Demographics',
     shortName: 'Demos',
     description: 'Participant demographic questionnaire (age, sex, race, ethnicity, GPA, and more).',
-    cubeSpeed: '',
+    iconSpeed: '',
     stats: { items: TEST_ITEMS.Demos.length, timeLabel: '' },
     fields: standardFields('Demos', 10)
   },
@@ -1280,19 +1340,128 @@ let localDatasets = DEV_MODE ? [
   }
 ] : [];
 
+// ---------------------------------------------------------------------
+// Per-test 3D icons. Each catalog card gets a small wireframe shape built
+// from absolutely-positioned box/plane pieces (not a generic cube) so the
+// icon nods at that test's actual stimuli. box3d() draws a 6-face
+// rectangular prism (a cube is just w=h=d); plane()/rule() draw single
+// flat faces/lines for card- and sheet-like shapes. All pieces are placed
+// relative to a shared center (0,0,0) inside the spinning .icon-rotor.
+// ---------------------------------------------------------------------
+function box3d(w, h, d, opts = {}){
+  const { x = 0, y = 0, z = 0, rotY = 0, rotX = 0, accent = false } = opts;
+  const hw = w / 2, hh = h / 2, hd = d / 2;
+  const sideLeft = (w - d) / 2, topOff = (h - d) / 2;
+  const cls = accent ? 'bf accent' : 'bf';
+  return `<div class="b3d" style="position:absolute;width:${w}px;height:${h}px;left:${x - hw}px;top:${y - hh}px;transform-style:preserve-3d;transform:translateZ(${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg);">
+    <div class="${cls}" style="width:${w}px;height:${h}px;transform:translateZ(${hd}px)"></div>
+    <div class="${cls}" style="width:${w}px;height:${h}px;transform:translateZ(${-hd}px) rotateY(180deg)"></div>
+    <div class="${cls}" style="width:${d}px;height:${h}px;left:${sideLeft}px;transform:rotateY(90deg) translateZ(${hw}px)"></div>
+    <div class="${cls}" style="width:${d}px;height:${h}px;left:${sideLeft}px;transform:rotateY(-90deg) translateZ(${hw}px)"></div>
+    <div class="${cls}" style="width:${w}px;height:${d}px;top:${topOff}px;transform:rotateX(90deg) translateZ(${hh}px)"></div>
+    <div class="${cls}" style="width:${w}px;height:${d}px;top:${topOff}px;transform:rotateX(-90deg) translateZ(${hh}px)"></div>
+  </div>`;
+}
+function plane(w, h, x = 0, y = 0, z = 0, rotY = 0, rotX = 0, extra = '', accent = false){
+  const cls = accent ? 'flat accent' : 'flat';
+  return `<div class="${cls}" style="width:${w}px;height:${h}px;left:${x - w / 2}px;top:${y - h / 2}px;transform:translateZ(${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg);">${extra}</div>`;
+}
+function rule(w, x, y, z, rotY = 0, rotX = 0){
+  return `<div class="rule" style="width:${w}px;height:2px;left:${x - w / 2}px;top:${y - 1}px;transform:translateZ(${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg);"></div>`;
+}
+
+const ICONS = {
+  // Shepard-Metzler jointed cube pair — matches the VK stimuli directly
+  VK: () => `
+    ${box3d(26, 26, 26, { x: -9, y: 8 })}
+    ${box3d(26, 26, 26, { x: 15, y: -8 })}
+  `,
+  // Stepped block (wide base + narrow riser) — echoes the notched/stair solids
+  PSVT: () => `
+    ${box3d(50, 20, 30, { x: 0, y: 14 })}
+    ${box3d(20, 34, 20, { x: -13, y: -11 })}
+  `,
+  // Flat two-tone silhouette card — the rotated/mirrored flag stimuli are flat shapes
+  Flags: () => `
+    ${plane(23, 32, -23, 0, 0)}
+    ${plane(23, 32, 0, 0, 0.5, 0, 0, '', true)}
+  `,
+  // Flat unfolded net with one end flap folded up — the DAT net-folding stimulus
+  DAT: () => `
+    ${plane(18, 30, -18, 0, 0)}
+    ${plane(18, 30, 0, 0, 0)}
+    <div class="flat" style="width:18px;height:30px;left:9px;top:-15px;transform-origin:0% 50%;transform:rotateY(-55deg)"></div>
+    <div class="rule" style="width:30px;height:2px;left:-6px;top:-1px;transform:translateZ(0.3px) rotateZ(90deg)"></div>
+  `,
+  // Pyramid solid with a wide cutting plane through the middle — mirrors the SBST cross-section
+  // diagram. Each slant face pivots about its own apex (transform-origin: top center) by the
+  // slope angle theta=atan(b/h), so all 4 apexes stay pinned on the central axis and the shape
+  // closes into a real point — a translateZ-based version pushes the apex off-axis too, which
+  // splays the faces open like an umbrella instead of a closed solid.
+  SBST: () => `
+    <div class="tri" style="width:36px;height:49.4px;left:-18px;top:-23px;clip-path:polygon(50% 0%,0% 100%,100% 100%);transform-origin:50% 0%;transform:rotateY(0deg) rotateX(21.4deg)"></div>
+    <div class="tri" style="width:36px;height:49.4px;left:-18px;top:-23px;clip-path:polygon(50% 0%,0% 100%,100% 100%);transform-origin:50% 0%;transform:rotateY(90deg) rotateX(21.4deg)"></div>
+    <div class="tri" style="width:36px;height:49.4px;left:-18px;top:-23px;clip-path:polygon(50% 0%,0% 100%,100% 100%);transform-origin:50% 0%;transform:rotateY(180deg) rotateX(21.4deg)"></div>
+    <div class="tri" style="width:36px;height:49.4px;left:-18px;top:-23px;clip-path:polygon(50% 0%,0% 100%,100% 100%);transform-origin:50% 0%;transform:rotateY(270deg) rotateX(21.4deg)"></div>
+    <div class="bf" style="width:36px;height:36px;left:-18px;top:0px;transform:rotateX(-90deg) translateZ(23px)"></div>
+    <div class="bf accent" style="width:58px;height:36px;left:-29px;top:-1px;transform:rotateX(90deg);opacity:0.8"></div>
+  `,
+  // Two blocks joined by a bidirectional arrow — assembling disassembled parts
+  AO: () => `
+    ${box3d(22, 22, 22, { x: -20, y: 12, z: -6 })}
+    ${box3d(22, 22, 22, { x: 20, y: -12, z: 6 })}
+    <div class="flat accent" style="width:30px;height:7px;left:-15px;top:-3.5px;"></div>
+    <div class="tri accent" style="width:13px;height:20px;left:-27px;top:-10px;clip-path:polygon(100% 0%,100% 100%,0% 50%);"></div>
+    <div class="tri accent" style="width:13px;height:20px;left:15px;top:-10px;clip-path:polygon(0% 0%,0% 100%,100% 50%);"></div>
+  `,
+  // Flattened, labelled net — surface development / labelled-edge matching
+  SD: () => `
+    ${plane(20, 32, -20, 0, 0, 0, 0, '<span class="lbl">A</span>')}
+    ${plane(20, 32, 0, 0, 0, 0, 0, '<span class="lbl">B</span>')}
+    ${plane(20, 32, 20, 0, 0, 0, 0, '<span class="lbl">C</span>')}
+  `,
+  // A page folded ~50°, punched through near the crease — paper folding + hole punch
+  PFT: () => `
+    <div class="flat" style="width:19px;height:38px;left:-19px;top:-19px;">
+      <div class="dot" style="width:8px;height:8px;left:6px;top:13px;"></div>
+    </div>
+    <div class="flat" style="width:19px;height:38px;left:0px;top:-19px;transform-origin:0% 50%;transform:rotateY(-50deg);">
+      <div class="dot" style="width:8px;height:8px;left:5px;top:13px;"></div>
+    </div>
+  `,
+  // Solid cube sliced by a diagonal cutting plane, larger than the solid — mental cutting
+  MC: () => `
+    ${box3d(44, 44, 44, {})}
+    <div class="bf accent" style="width:76px;height:60px;left:-38px;top:-30px;transform:rotateY(35deg);opacity:0.8"></div>
+  `,
+  // Thick closed dictionary — spine band + page-edge striations
+  WS: () => `
+    ${box3d(34, 46, 16, {})}
+    <div class="bf accent" style="width:6px;height:46px;left:-17px;top:-23px;transform:translateZ(8.3px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-15px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-8px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-1px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:6px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:13px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+  `,
+  // Clipboard sheet with field lines — demographic questionnaire
+  Demos: () => `
+    ${box3d(40, 48, 6, {})}
+    ${rule(26, 0, -14, 4)}
+    ${rule(26, 0, -4, 4)}
+    ${rule(26, 0, 6, 4)}
+    ${rule(26, 0, 16, 4)}
+  `,
+};
+
 function renderCatalog(){
   const grid = document.getElementById('catalog-grid');
-  grid.innerHTML = TESTS.map(t => `
+  // Attention checks aren't full tests to configure — they're offered as a
+  // quick add-on toggle from the battery view instead (see renderAttentionChecks()).
+  grid.innerHTML = TESTS.filter(t => !t.attentionCheck).map(t => `
     <div class="test-card">
       <div class="cube-stage">
-        <div class="cube ${t.cubeSpeed}">
-          <div class="face front"></div>
-          <div class="face back"></div>
-          <div class="face right"></div>
-          <div class="face left"></div>
-          <div class="face top"></div>
-          <div class="face bottom"></div>
-        </div>
+        <div class="icon-rotor ${t.iconSpeed}">${ICONS[t.id] ? ICONS[t.id]() : ''}</div>
       </div>
       <h3>${t.name}</h3>
       <p class="subname">${t.shortName}</p>
@@ -1435,7 +1604,56 @@ function paramSummary(test, params){
   }).filter(Boolean).join(' · ');
 }
 
+// Attention checks aren't picked from the catalog — they're single-item
+// add-ons offered here as toggles. Turning one on drops it straight into the
+// battery (with its standard defaults) at the end; turning it off removes it.
+// Once added, it behaves like any other battery item (reorder/edit/remove).
+const ATTENTION_CHECK_IDS = ['AC1', 'AC2', 'ACF'];
+
+function renderAttentionChecks(){
+  const wrap = document.getElementById('attention-panel-wrap');
+  wrap.innerHTML = `
+    <div class="attention-panel">
+      <h4>Attention checks</h4>
+      <p class="attention-sub">Optional — add a quick attention-check item to the battery. Once added, reorder it like any other item below.</p>
+      ${ATTENTION_CHECK_IDS.map(id => {
+        const test = TESTS.find(t => t.id === id);
+        const active = battery.some(b => b.testId === id);
+        return `
+          <div class="attention-row">
+            <div class="attention-label">
+              <strong>${test.name}</strong>
+              <span>${test.description}</span>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleAttentionCheck('${id}', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function toggleAttentionCheck(id, checked){
+  if (checked){
+    if (!battery.some(b => b.testId === id)){
+      const test = TESTS.find(t => t.id === id);
+      const params = {};
+      test.fields.forEach(f => params[f.key] = f.default);
+      battery.push({ testId: id, params });
+    }
+  } else {
+    const idx = battery.findIndex(b => b.testId === id);
+    if (idx !== -1) battery.splice(idx, 1);
+  }
+  updateBatteryBadge();
+  renderBatteryList();
+}
+
 function renderBatteryList(){
+  renderAttentionChecks();
   const wrap = document.getElementById('battery-list-wrap');
   const genBtn = document.getElementById('battery-generate-btn');
 
