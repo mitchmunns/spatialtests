@@ -376,6 +376,24 @@
     max-width:64px;
   }
 
+  .item-preview{
+    display:none;
+    position:fixed;
+    z-index:1000;
+    pointer-events:none;
+    padding:8px;
+    background:var(--card);
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    box-shadow:0 12px 32px rgba(20,40,63,0.22);
+  }
+  .item-preview img{
+    display:block;
+    max-width:min(360px, 60vw);
+    max-height:min(360px, 60vh);
+    object-fit:contain;
+  }
+
   .panel-footer{
     display:flex;
     justify-content:flex-end;
@@ -950,6 +968,11 @@
       <button class="btn accent" onclick="saveProfile()">Save</button>
     </div>
   </div>
+</div>
+
+<!-- Floating preview for item-picker thumbnails, positioned near the cursor on hover -->
+<div class="item-preview" id="item-preview">
+  <img id="item-preview-img" src="" alt="">
 </div>
 
 <script>
@@ -1548,7 +1571,10 @@ function renderFields(){
       control = `<div class="item-picker">${items.map(item => `
         <label class="item-picker-cell ${selected.includes(item) ? 'selected' : ''}">
           <input type="checkbox" ${selected.includes(item) ? 'checked' : ''} onchange="toggleItemSelection('${f.key}', '${item}', this.checked)">
-          <img src="test_creator/${f.testId}_Stimuli/${item}" loading="lazy" alt="${item}">
+          <img src="test_creator/${f.testId}_Stimuli/${item}" loading="lazy" alt="${item}"
+               onmouseenter="showItemPreview(event, 'test_creator/${f.testId}_Stimuli/${item}')"
+               onmousemove="positionItemPreview(event)"
+               onmouseleave="hideItemPreview()">
           <span>${item}</span>
         </label>
       `).join('')}</div>`;
@@ -1570,6 +1596,26 @@ function toggleItemSelection(key, item, checked){
   const current = currentValues[key] || [];
   currentValues[key] = checked ? [...current, item] : current.filter(i => i !== item);
   renderFields();
+}
+
+// Floating larger preview of an item-picker thumbnail, shown near the cursor on hover.
+function showItemPreview(evt, src){
+  document.getElementById('item-preview-img').src = src;
+  document.getElementById('item-preview').style.display = 'block';
+  positionItemPreview(evt);
+}
+function positionItemPreview(evt){
+  const box = document.getElementById('item-preview');
+  const pad = 18;
+  let x = evt.clientX + pad;
+  let y = evt.clientY + pad;
+  if (x + box.offsetWidth + 10 > window.innerWidth) x = evt.clientX - box.offsetWidth - pad;
+  if (y + box.offsetHeight + 10 > window.innerHeight) y = evt.clientY - box.offsetHeight - pad;
+  box.style.left = Math.max(10, x) + 'px';
+  box.style.top = Math.max(10, y) + 'px';
+}
+function hideItemPreview(){
+  document.getElementById('item-preview').style.display = 'none';
 }
 
 function showView(id){
