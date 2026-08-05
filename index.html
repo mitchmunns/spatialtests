@@ -564,9 +564,15 @@
   .battery-footer{
     display:flex;
     justify-content:space-between;
+    flex-wrap:wrap;
     gap:10px;
   }
   .battery-footer .btn{width:auto;}
+  .battery-footer-right{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
 
   .attention-panel{
     background:var(--card);
@@ -687,6 +693,23 @@
   }
   .dataset-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
   .dataset-actions button:disabled{opacity:0.4; cursor:default;}
+  .dataset-actions button.remove:hover{color:#A32D2D; border-color:#A32D2D;}
+
+  .status-badge{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    padding:2px 7px;
+    border-radius:3px;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+  .status-badge.status-draft{background:var(--line); color:var(--ink-soft);}
+  .status-badge.status-pilot{background:var(--accent-soft); color:var(--accent-dark);}
+  .status-badge.status-run{background:var(--ink); color:#fff;}
 
   .dataset-empty{
     background:var(--card);
@@ -924,7 +947,7 @@
   <div id="view-battery" class="hidden">
     <p class="eyebrow">02 — Review battery</p>
     <h1 class="view-title">Your battery</h1>
-    <p class="view-sub">This is the set a participant will run through, in order. Reorder, edit, or remove tests, then generate the link.</p>
+    <p class="view-sub">This is the set a participant will run through, in order. Reorder, edit, or remove tests, then save it, pilot it, or set it to run.</p>
     <div class="field-block" style="max-width:420px;margin-bottom:24px;">
       <label for="battery-name-input">Battery name</label>
       <input id="battery-name-input" type="text" placeholder="e.g. Fall 2026 Pilot" value="" oninput="batteryName = this.value">
@@ -933,7 +956,11 @@
     <div id="battery-list-wrap"></div>
     <div class="battery-footer">
       <button class="btn secondary" onclick="goToCatalog()">+ Add another test</button>
-      <button class="btn accent" id="battery-generate-btn" onclick="generateLink()">Generate participant link</button>
+      <div class="battery-footer-right">
+        <button class="btn secondary" id="battery-save-btn" onclick="saveBatteryDraft()">Save</button>
+        <button class="btn secondary" id="battery-pilot-btn" onclick="generatePilotLink()">Generate pilot link</button>
+        <button class="btn accent" id="battery-run-btn" onclick="generateRunLink()">Generate final link</button>
+      </div>
     </div>
   </div>
 
@@ -943,14 +970,15 @@
     <h1 class="view-title">Battery ready</h1>
     <p class="view-sub">Send this link to your participant. It opens the Unity WebGL build and runs each test below in order.</p>
     <div class="link-panel">
-      <div class="status-line"><span class="status-dot"></span>session created</div>
+      <div class="status-line" id="link-status-line"><span class="status-dot"></span>session created</div>
       <div class="link-box">
         <code id="link-text"></code>
         <button class="copy-btn" id="copy-btn" onclick="copyLink()">copy</button>
       </div>
       <div class="link-actions">
         <button class="btn secondary" onclick="startNewBattery()">Start a new battery</button>
-        <button class="btn accent" onclick="goToBattery()">Edit this battery</button>
+        <button class="btn accent" id="link-edit-btn" onclick="goToBattery()">Edit this battery</button>
+        <button class="btn accent hidden" id="link-duplicate-btn" onclick="duplicateCurrentBattery()">Duplicate to make changes</button>
       </div>
       <div class="summary-table" id="link-summary"></div>
     </div>
@@ -960,8 +988,7 @@
   <div id="view-datasets" class="hidden">
     <p class="eyebrow">Data</p>
     <h1 class="view-title">Your datasets</h1>
-    <p class="view-sub">One row per battery you've generated a link for. Participant counts and export will populate once trial results are wired up on the Unity side.</p>
-    <div class="pending-note">participant counts below are placeholders — connect the results table to make these live</div>
+    <p class="view-sub">Every battery you've saved, piloted, or run. Draft and pilot batteries can be edited or deleted; run batteries are locked — duplicate one to make a similar battery.</p>
     <div id="dataset-list-wrap"></div>
   </div>
 </div>
@@ -1357,6 +1384,13 @@ let currentValues = {};
 let editingIndex = null; // null = adding a new item; number = editing battery[index]
 let battery = []; // [{ testId, params }]
 let batteryName = '';
+// Tracks which saved `batteries` row (if any) the in-progress battery maps
+// to, so Save/pilot/run update that row instead of inserting a duplicate.
+// null = not saved yet. Status only ever advances draft -> pilot -> run;
+// once a battery reaches 'run' it's locked (see duplicateCurrentBattery()).
+let currentBatteryId = null;
+let batteryStatus = 'draft';
+let currentDatasetRows = [];
 
 // Local record of generated links, used only to sketch the datasets view in
 // DEV_MODE (real mode reads from the `batteries` table instead). Seeded with
@@ -1364,6 +1398,8 @@ let batteryName = '';
 let localDatasets = DEV_MODE ? [
   {
     id: 'k3f7m2pq',
+    name: 'Example run battery',
+    status: 'run',
     createdAt: new Date(Date.now() - 3 * 86400000),
     items: [
       { testId: 'mrt', params: { itemCount: 24, timeLimit: 10, scoring: 'Strict (both correct)', practice: true } },
@@ -1373,6 +1409,8 @@ let localDatasets = DEV_MODE ? [
   },
   {
     id: 'x9d2h5wr',
+    name: 'Example pilot battery',
+    status: 'pilot',
     createdAt: new Date(Date.now() - 1 * 86400000),
     items: [
       { testId: 'psvtr', params: { itemCount: 30, timeLimit: 20, responseOptions: '5 options', practice: true } }
@@ -1720,17 +1758,15 @@ function toggleAttentionCheck(id, checked){
 function renderBatteryList(){
   renderAttentionChecks();
   const wrap = document.getElementById('battery-list-wrap');
-  const genBtn = document.getElementById('battery-generate-btn');
+  const actionBtns = ['battery-save-btn', 'battery-pilot-btn', 'battery-run-btn'].map(id => document.getElementById(id));
 
   if (battery.length === 0){
     wrap.innerHTML = `<div class="battery-empty">Your battery is empty. Add a test from the catalog to get started.</div>`;
-    genBtn.disabled = true;
-    genBtn.style.opacity = '0.5';
+    actionBtns.forEach(btn => { btn.disabled = true; btn.style.opacity = '0.5'; });
     return;
   }
 
-  genBtn.disabled = false;
-  genBtn.style.opacity = '1';
+  actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = '1'; });
 
   wrap.innerHTML = `<div class="battery-list">${battery.map((item, i) => {
     const test = TESTS.find(t => t.id === item.testId);
@@ -1770,62 +1806,106 @@ function removeFromBattery(index){
 function startNewBattery(){
   battery = [];
   batteryName = '';
+  currentBatteryId = null;
+  batteryStatus = 'draft';
   updateBatteryBadge();
   goToCatalog();
 }
 
-async function generateLink(){
-  if (battery.length === 0) return;
+// Inserts (first save) or updates (every save after) the batteries row for
+// the in-progress battery. Status only ever advances — saving a battery
+// that's already 'pilot' or 'run' never downgrades it back to 'draft'.
+async function persistBattery(targetStatus){
+  const rank = { draft: 0, pilot: 1, run: 2 };
+  const nextStatus = rank[targetStatus] > rank[batteryStatus] ? targetStatus : batteryStatus;
 
-  const genBtn = document.getElementById('battery-generate-btn');
-  genBtn.textContent = 'Generating…';
-  genBtn.disabled = true;
+  if (DEV_MODE){
+    if (!currentBatteryId){
+      const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+      currentBatteryId = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      localDatasets.unshift({
+        id: currentBatteryId,
+        name: batteryName.trim(),
+        status: nextStatus,
+        createdAt: new Date(),
+        items: battery.map(i => ({ ...i })),
+        participantCount: 0
+      });
+    } else {
+      const row = localDatasets.find(d => d.id === currentBatteryId);
+      if (row){
+        row.name = batteryName.trim();
+        row.status = nextStatus;
+        row.items = battery.map(i => ({ ...i }));
+      }
+    }
+    batteryStatus = nextStatus;
+    return { id: currentBatteryId, status: nextStatus };
+  }
 
   const user = await requireUser();
-  if (!user){
-    genBtn.textContent = 'Generate participant link';
-    genBtn.disabled = false;
-    return;
+  if (!user) return null;
+
+  const payload = {
+    researcher_id: user.id,
+    name: batteryName.trim() || null,
+    items: battery,
+    status: nextStatus
+  };
+
+  const query = currentBatteryId
+    ? supabaseClient.from('batteries').update(payload).eq('id', currentBatteryId)
+    : supabaseClient.from('batteries').insert(payload);
+  const { data, error } = await query.select().single();
+
+  if (error){
+    alert('Could not save battery: ' + error.message);
+    return null;
   }
+  currentBatteryId = data.id;
+  batteryStatus = data.status;
+  return data;
+}
 
-  let sessionId;
-  if (DEV_MODE){
-    const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
-    sessionId = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  } else {
-    const { data, error } = await supabaseClient
-      .from('batteries')
-      .insert({
-        researcher_id: user.id,
-        name: batteryName.trim() || null,
-        items: battery
-      })
-      .select()
-      .single();
+async function saveBatteryDraft(){
+  if (battery.length === 0){ alert('Add at least one test first.'); return; }
+  const btn = document.getElementById('battery-save-btn');
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  const data = await persistBattery('draft');
+  btn.disabled = false;
+  btn.textContent = data ? 'Saved ✓' : 'Save';
+  updateBatteryBadge();
+  if (data) setTimeout(() => { btn.textContent = 'Save'; }, 1600);
+}
 
-    if (error){
-      genBtn.textContent = 'Generate participant link';
-      genBtn.disabled = false;
-      alert('Could not create session: ' + error.message);
-      return;
-    }
-    sessionId = data.id;
-  }
+async function generatePilotLink(){
+  if (battery.length === 0) return;
+  const btn = document.getElementById('battery-pilot-btn');
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+  const data = await persistBattery('pilot');
+  btn.disabled = false;
+  btn.textContent = 'Generate pilot link';
+  if (!data) return;
+  showLinkView(data.status);
+}
 
-  if (DEV_MODE){
-    localDatasets.unshift({
-      id: sessionId,
-      name: batteryName.trim(),
-      createdAt: new Date(),
-      items: battery.map(i => ({ ...i })),
-      participantCount: 0
-    });
-  }
+async function generateRunLink(){
+  if (battery.length === 0) return;
+  if (!confirm("Set this battery to Run? Once it's running it can't be edited or deleted — you'd duplicate it to make a similar battery later.")) return;
+  const btn = document.getElementById('battery-run-btn');
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+  const data = await persistBattery('run');
+  btn.disabled = false;
+  btn.textContent = 'Generate final link';
+  if (!data) return;
+  showLinkView(data.status);
+}
 
-  genBtn.textContent = 'Generate participant link';
-  genBtn.disabled = false;
-
-  const link = `${RUNNER_URL}?session=${sessionId}`;
+function showLinkView(status){
+  const link = `${RUNNER_URL}?session=${currentBatteryId}`;
   document.getElementById('link-text').textContent = link;
 
   const summary = document.getElementById('link-summary');
@@ -1838,7 +1918,22 @@ async function generateLink(){
   copyBtn.textContent = 'copy';
   copyBtn.classList.remove('copied');
 
+  document.getElementById('link-status-line').innerHTML = status === 'run'
+    ? '<span class="status-dot"></span>run session created — locked for editing'
+    : '<span class="status-dot"></span>pilot session created — still editable';
+  document.getElementById('link-edit-btn').classList.toggle('hidden', status === 'run');
+  document.getElementById('link-duplicate-btn').classList.toggle('hidden', status !== 'run');
+
   showView('view-link');
+}
+
+// Forks the currently loaded battery into a brand-new draft (new id, name
+// forced to stand out from the locked run battery it came from).
+function duplicateCurrentBattery(){
+  batteryName = (batteryName.trim() || 'Untitled battery') + ' (copy)';
+  currentBatteryId = null;
+  batteryStatus = 'draft';
+  goToBattery();
 }
 
 async function goToDatasets(){
@@ -1854,7 +1949,7 @@ async function goToDatasets(){
     if (!user) return;
     const { data, error } = await supabaseClient
       .from('batteries')
-      .select('id, name, items, created_at')
+      .select('id, name, status, items, created_at')
       .eq('researcher_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -1862,7 +1957,7 @@ async function goToDatasets(){
       wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${error.message}</div>`;
       return;
     }
-    rows = data.map(r => ({ id: r.id, name: r.name || '', createdAt: new Date(r.created_at), items: r.items, participantCount: null }));
+    rows = data.map(r => ({ id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at), items: r.items, participantCount: null }));
 
     const ids = rows.map(r => r.id);
     if (ids.length > 0){
@@ -1878,6 +1973,7 @@ async function goToDatasets(){
     }
   }
 
+  currentDatasetRows = rows;
   renderDatasets(rows);
 }
 
@@ -1886,13 +1982,14 @@ function renderDatasets(rows){
 
   if (rows.length === 0){
     wrap.innerHTML = `<div class="dataset-empty">
-      No datasets yet — generate a battery link to create your first one.
+      No datasets yet — save or generate a battery to create your first one.
       <br><button class="btn accent" onclick="goToCatalog()">Go to catalog</button>
     </div>`;
     return;
   }
 
   const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const statusLabel = { draft: 'Draft', pilot: 'Pilot', run: 'Run' };
 
   wrap.innerHTML = `<div class="dataset-list">${rows.map(row => {
     const chips = row.items.map(i => {
@@ -1900,10 +1997,15 @@ function renderDatasets(rows){
       return `<span class="test-chip">${test ? test.shortName : i.testId}</span>`;
     }).join('');
     const countDisplay = row.participantCount === null ? '—' : row.participantCount;
+    const locked = row.status === 'run';
+    const editAction = locked
+      ? `<button onclick="duplicateBattery('${row.id}')">Duplicate</button>`
+      : `<button onclick="editSavedBattery('${row.id}')">Edit</button>`;
+    const deleteAction = locked ? '' : `<button class="remove" onclick="deleteBattery('${row.id}')">Delete</button>`;
     return `
       <div class="dataset-row">
         <div class="dataset-main">
-          <div class="dataset-name">${row.name ? row.name : '<em>Untitled battery</em>'}</div>
+          <div class="dataset-name"><span class="status-badge status-${row.status}">${statusLabel[row.status] || row.status}</span>${row.name ? row.name : '<em>Untitled battery</em>'}</div>
           <div class="chips">${chips}</div>
           <div class="dataset-meta">created ${dateFmt.format(row.createdAt)} · session <span class="session-id">${row.id}</span></div>
         </div>
@@ -1912,12 +2014,67 @@ function renderDatasets(rows){
           <div class="lbl">participants</div>
         </div>
         <div class="dataset-actions">
+          ${editAction}
           <button onclick="copyDatasetLink('${row.id}')">Copy link</button>
           <button onclick="downloadDatasetCSV('${row.id}')">Export CSV</button>
+          ${deleteAction}
         </div>
       </div>
     `;
   }).join('')}</div>`;
+}
+
+function editSavedBattery(id){
+  const row = currentDatasetRows.find(r => r.id === id);
+  if (!row) return;
+  battery = row.items.map(i => ({ ...i }));
+  batteryName = row.name || '';
+  currentBatteryId = row.id;
+  batteryStatus = row.status;
+  updateBatteryBadge();
+  goToBattery();
+}
+
+// Only reachable for locked (run) batteries — see renderDatasets(). Forks
+// into a fresh draft rather than editing the locked row in place.
+function duplicateBattery(id){
+  const row = currentDatasetRows.find(r => r.id === id);
+  if (!row) return;
+  battery = row.items.map(i => ({ ...i }));
+  batteryName = (row.name || 'Untitled battery') + ' (copy)';
+  currentBatteryId = null;
+  batteryStatus = 'draft';
+  updateBatteryBadge();
+  goToBattery();
+}
+
+async function deleteBattery(id){
+  const row = currentDatasetRows.find(r => r.id === id);
+  if (!row || row.status === 'run') return;
+  const label = row.name || 'this untitled battery';
+  const participantNote = row.participantCount ? ` and its ${row.participantCount} participant result(s)` : '';
+  if (!confirm(`Delete "${label}"${participantNote}? This can't be undone.`)) return;
+
+  if (DEV_MODE){
+    localDatasets = localDatasets.filter(d => d.id !== id);
+    currentDatasetRows = localDatasets;
+    renderDatasets(currentDatasetRows);
+    return;
+  }
+
+  const { error: resultsError } = await supabaseClient.from('psychojs_results').delete().eq('session_id', id);
+  if (resultsError){
+    alert('Could not delete this battery\'s results: ' + resultsError.message);
+    return;
+  }
+  const { error: batteryError } = await supabaseClient.from('batteries').delete().eq('id', id);
+  if (batteryError){
+    alert('Could not delete battery: ' + batteryError.message);
+    return;
+  }
+
+  currentDatasetRows = currentDatasetRows.filter(r => r.id !== id);
+  renderDatasets(currentDatasetRows);
 }
 
 function copyDatasetLink(sessionId){
