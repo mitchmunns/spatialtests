@@ -70,7 +70,10 @@ function buildTestListRows(items) {
       time_max: params.timeMax,
       total_time_limit: params.totalTimeLimit || 0,
       randomize: params.randomizeItems ? 1 : 0,
-      test_order: index,
+      // 'R' throws this test into the shuffled pool (see set_vars's block-order
+      // logic below); a number pins it to that absolute slot in the final
+      // running order, same as the original test_list.csv convention.
+      test_order: params.randomizeOrder ? 'R' : index,
       prev_scores: '[]',
       include_score: params.includeScore ? 1 : 0,
       selectedItems: params.selectedItems,

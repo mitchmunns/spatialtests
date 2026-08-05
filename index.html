@@ -1215,6 +1215,7 @@ function standardFields(testId, defaultCount){
     { key: 'timeMax', label: 'Max time per item', hint: 'seconds', type: 'number', min: 5, max: 300, step: 1, default: 60 },
     { key: 'totalTimeLimit', label: 'Total time limit', hint: 'seconds, 0 = no limit', type: 'number', min: 0, max: 3600, step: 30, default: 0 },
     { key: 'randomizeItems', label: 'Randomize item order', hint: '', type: 'toggle', default: true },
+    { key: 'randomizeOrder', label: 'Randomize test position', hint: 'let this test land anywhere in the battery, instead of staying at its list position below', type: 'toggle', default: false },
     { key: 'includeScore', label: 'Count toward score', hint: '', type: 'toggle', default: true },
   ];
 }
