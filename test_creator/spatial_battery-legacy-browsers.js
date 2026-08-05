@@ -42,6 +42,12 @@ const TEST_DEFINITIONS = {
 // there's no ?session= param, or the battery config can't be fetched.
 var testListRows = 'test_list.csv';
 
+// Researcher-customizable text for the between-tests break screen (see
+// score_breakRoutineBegin below). null = use the built-in default copy.
+// customBreakMessageCounter supports {completed}/{total} tokens.
+var customBreakMessage = null;
+var customBreakMessageCounter = null;
+
 function buildTestListRows(items) {
   return items.map((item, index) => {
     const def = TEST_DEFINITIONS[item.testId];
@@ -482,7 +488,7 @@ async function prepareAndStart() {
     try {
       const { data, error } = await supabaseClient
         .from('batteries')
-        .select('items')
+        .select('items, break_message, break_message_counter')
         .eq('id', sessionId)
         .single();
       if (error) {
@@ -490,6 +496,8 @@ async function prepareAndStart() {
       } else if (data && Array.isArray(data.items) && data.items.length > 0) {
         testListRows = buildTestListRows(data.items);
         resourcesToUse = resourcesForTests(testListRows.map((row) => row.name_of_test));
+        if (data.break_message) customBreakMessage = data.break_message;
+        if (data.break_message_counter) customBreakMessageCounter = data.break_message_counter;
       }
     } catch (e) {
       console.error('Failed to fetch battery config, using default test_list.csv:', e);
@@ -3345,14 +3353,18 @@ function score_breakRoutineBegin(snapshot) {
     // exclude attention checks / demographics from the "tests completed" count
     tests_total = test_loop.trialList.filter((test) => !['AC1', 'AC2', 'ACF', 'Demos'].includes(test['name_of_test'])).length;
     
-    break_message_text.text = 'You have completed ' + tests_complete.toString() + ' out of ' + tests_total.toString() + ' tests.';
+    break_message_text.text = (customBreakMessageCounter || 'You have completed {completed} out of {total} tests.')
+        .replace('{completed}', tests_complete.toString())
+        .replace('{total}', tests_total.toString());
     break_message_text.setPos([0, 400 * scale]);
     break_message_text.height = 35 * scale;
     break_message_text.setWrapWidth(1200 * scale);
     break_message_text.setAutoDraw(false);
     break_message_text.setAutoDraw(true);
-    
-    if (tests_complete < tests_total){
+
+    if (customBreakMessage){
+        break_message.text = customBreakMessage;
+    } else if (tests_complete < tests_total){
         break_message.text = 'Good job! You have finished this test. Feel free to take a break now before beginning the next test, but try not to stop in the middle of a test. Press Enter when you are ready to move on to the next test.'
     } else {
         break_message.text = 'Good job! You have finished this test. Press Enter to continue.';

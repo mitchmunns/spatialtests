@@ -788,6 +788,30 @@
     outline:2px solid var(--accent-soft);
     border-color:var(--accent);
   }
+  .field-block textarea{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    padding:10px 11px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+  }
+  .field-block textarea:focus{
+    outline:2px solid var(--accent-soft);
+    border-color:var(--accent);
+  }
+  .field-block .field-hint{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    text-transform:none;
+    letter-spacing:normal;
+    margin-top:4px;
+  }
   .auth-msg{
     font-family:'IBM Plex Mono', monospace;
     font-size:12px;
@@ -951,6 +975,14 @@
     <div class="field-block" style="max-width:420px;margin-bottom:24px;">
       <label for="battery-name-input">Battery name</label>
       <input id="battery-name-input" type="text" placeholder="e.g. Fall 2026 Pilot" value="" oninput="batteryName = this.value">
+    </div>
+    <div class="field-block" style="max-width:560px;">
+      <label for="break-counter-input">Between-tests progress line<span class="field-hint">shown between every test — {completed} and {total} fill in automatically</span></label>
+      <input id="break-counter-input" type="text" placeholder="You have completed {completed} out of {total} tests." value="" oninput="breakMessageCounter = this.value">
+    </div>
+    <div class="field-block" style="max-width:560px;margin-bottom:24px;">
+      <label for="break-message-input">Between-tests message<span class="field-hint">shown below the progress line, every time — same wording after the last test too</span></label>
+      <textarea id="break-message-input" rows="3" placeholder="Good job! You have finished this test. Feel free to take a break now before beginning the next test, but try not to stop in the middle of a test. Press Enter when you are ready to move on to the next test." oninput="breakMessage = this.value"></textarea>
     </div>
     <div id="attention-panel-wrap"></div>
     <div id="battery-list-wrap"></div>
@@ -1384,6 +1416,10 @@ let currentValues = {};
 let editingIndex = null; // null = adding a new item; number = editing battery[index]
 let battery = []; // [{ testId, params }]
 let batteryName = '';
+// Customizable text for the between-tests break screen. Empty string =
+// use spatial_battery.js's built-in default copy.
+let breakMessage = '';
+let breakMessageCounter = '';
 // Tracks which saved `batteries` row (if any) the in-progress battery maps
 // to, so Save/pilot/run update that row instead of inserting a duplicate.
 // null = not saved yet. Status only ever advances draft -> pilot -> run;
@@ -1690,6 +1726,8 @@ function goToCatalog(){
 
 function goToBattery(){
   document.getElementById('battery-name-input').value = batteryName;
+  document.getElementById('break-counter-input').value = breakMessageCounter;
+  document.getElementById('break-message-input').value = breakMessage;
   renderBatteryList();
   showView('view-battery');
 }
@@ -1806,6 +1844,8 @@ function removeFromBattery(index){
 function startNewBattery(){
   battery = [];
   batteryName = '';
+  breakMessage = '';
+  breakMessageCounter = '';
   currentBatteryId = null;
   batteryStatus = 'draft';
   updateBatteryBadge();
@@ -1850,7 +1890,9 @@ async function persistBattery(targetStatus){
     researcher_id: user.id,
     name: batteryName.trim() || null,
     items: battery,
-    status: nextStatus
+    status: nextStatus,
+    break_message: breakMessage.trim() || null,
+    break_message_counter: breakMessageCounter.trim() || null
   };
 
   const query = currentBatteryId
@@ -1949,7 +1991,7 @@ async function goToDatasets(){
     if (!user) return;
     const { data, error } = await supabaseClient
       .from('batteries')
-      .select('id, name, status, items, created_at')
+      .select('id, name, status, items, break_message, break_message_counter, created_at')
       .eq('researcher_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -1957,7 +1999,11 @@ async function goToDatasets(){
       wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${error.message}</div>`;
       return;
     }
-    rows = data.map(r => ({ id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at), items: r.items, participantCount: null }));
+    rows = data.map(r => ({
+      id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at),
+      items: r.items, participantCount: null,
+      breakMessage: r.break_message || '', breakMessageCounter: r.break_message_counter || ''
+    }));
 
     const ids = rows.map(r => r.id);
     if (ids.length > 0){
@@ -2030,6 +2076,8 @@ function editSavedBattery(id){
   if (!row) return;
   battery = row.items.map(i => ({ ...i }));
   batteryName = row.name || '';
+  breakMessage = row.breakMessage || '';
+  breakMessageCounter = row.breakMessageCounter || '';
   currentBatteryId = row.id;
   batteryStatus = row.status;
   updateBatteryBadge();
@@ -2043,6 +2091,8 @@ function duplicateBattery(id){
   if (!row) return;
   battery = row.items.map(i => ({ ...i }));
   batteryName = (row.name || 'Untitled battery') + ' (copy)';
+  breakMessage = row.breakMessage || '';
+  breakMessageCounter = row.breakMessageCounter || '';
   currentBatteryId = null;
   batteryStatus = 'draft';
   updateBatteryBadge();
