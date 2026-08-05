@@ -397,9 +397,12 @@ flowScheduler.add(init_loopLoopScheduler);
 flowScheduler.add(init_loopLoopEnd);
 
 
-flowScheduler.add(intro_screenRoutineBegin());
-flowScheduler.add(intro_screenRoutineEachFrame());
-flowScheduler.add(intro_screenRoutineEnd());
+// Intro screen (time-estimate/effort warning before the battery starts) is
+// disabled for now — routine is still defined below so it's easy to make
+// this a per-battery researcher toggle later.
+// flowScheduler.add(intro_screenRoutineBegin());
+// flowScheduler.add(intro_screenRoutineEachFrame());
+// flowScheduler.add(intro_screenRoutineEnd());
 const test_loopLoopScheduler = new Scheduler(psychoJS);
 flowScheduler.add(test_loopLoopBegin(test_loopLoopScheduler));
 flowScheduler.add(test_loopLoopScheduler);

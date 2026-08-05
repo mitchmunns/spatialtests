@@ -621,6 +621,18 @@
     gap:20px;
     align-items:center;
   }
+  .dataset-name{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .dataset-name em{
+    font-family:'Inter', sans-serif;
+    font-style:normal;
+    font-weight:400;
+    color:var(--ink-faint);
+  }
   .dataset-main .chips{
     margin-bottom:8px;
   }
@@ -913,6 +925,10 @@
     <p class="eyebrow">02 — Review battery</p>
     <h1 class="view-title">Your battery</h1>
     <p class="view-sub">This is the set a participant will run through, in order. Reorder, edit, or remove tests, then generate the link.</p>
+    <div class="field-block" style="max-width:420px;margin-bottom:24px;">
+      <label for="battery-name-input">Battery name</label>
+      <input id="battery-name-input" type="text" placeholder="e.g. Fall 2026 Pilot" value="" oninput="batteryName = this.value">
+    </div>
     <div id="attention-panel-wrap"></div>
     <div id="battery-list-wrap"></div>
     <div class="battery-footer">
@@ -1339,6 +1355,7 @@ let currentTest = null;
 let currentValues = {};
 let editingIndex = null; // null = adding a new item; number = editing battery[index]
 let battery = []; // [{ testId, params }]
+let batteryName = '';
 
 // Local record of generated links, used only to sketch the datasets view in
 // DEV_MODE (real mode reads from the `batteries` table instead). Seeded with
@@ -1633,6 +1650,7 @@ function goToCatalog(){
 }
 
 function goToBattery(){
+  document.getElementById('battery-name-input').value = batteryName;
   renderBatteryList();
   showView('view-battery');
 }
@@ -1750,6 +1768,7 @@ function removeFromBattery(index){
 
 function startNewBattery(){
   battery = [];
+  batteryName = '';
   updateBatteryBadge();
   goToCatalog();
 }
@@ -1777,6 +1796,7 @@ async function generateLink(){
       .from('batteries')
       .insert({
         researcher_id: user.id,
+        name: batteryName.trim() || null,
         items: battery
       })
       .select()
@@ -1794,6 +1814,7 @@ async function generateLink(){
   if (DEV_MODE){
     localDatasets.unshift({
       id: sessionId,
+      name: batteryName.trim(),
       createdAt: new Date(),
       items: battery.map(i => ({ ...i })),
       participantCount: 0
@@ -1832,7 +1853,7 @@ async function goToDatasets(){
     if (!user) return;
     const { data, error } = await supabaseClient
       .from('batteries')
-      .select('id, items, created_at')
+      .select('id, name, items, created_at')
       .eq('researcher_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -1840,7 +1861,7 @@ async function goToDatasets(){
       wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${error.message}</div>`;
       return;
     }
-    rows = data.map(r => ({ id: r.id, createdAt: new Date(r.created_at), items: r.items, participantCount: null }));
+    rows = data.map(r => ({ id: r.id, name: r.name || '', createdAt: new Date(r.created_at), items: r.items, participantCount: null }));
 
     const ids = rows.map(r => r.id);
     if (ids.length > 0){
@@ -1881,6 +1902,7 @@ function renderDatasets(rows){
     return `
       <div class="dataset-row">
         <div class="dataset-main">
+          <div class="dataset-name">${row.name ? row.name : '<em>Untitled battery</em>'}</div>
           <div class="chips">${chips}</div>
           <div class="dataset-meta">created ${dateFmt.format(row.createdAt)} · session <span class="session-id">${row.id}</span></div>
         </div>
