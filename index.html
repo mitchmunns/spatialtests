@@ -2016,7 +2016,8 @@ function renderDatasets(rows){
         <div class="dataset-actions">
           ${editAction}
           <button onclick="copyDatasetLink('${row.id}')">Copy link</button>
-          <button onclick="downloadDatasetCSV('${row.id}')">Export CSV</button>
+          <button onclick="downloadDatasetCSV('${row.id}')">Export raw CSV</button>
+          <button onclick="downloadCleanCSV('${row.id}')">Export clean CSV</button>
           ${deleteAction}
         </div>
       </div>
@@ -2082,73 +2083,313 @@ function copyDatasetLink(sessionId){
   navigator.clipboard.writeText(link);
 }
 
+function csvEscape(val){
+  if (val === null || val === undefined) return '';
+  const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+  return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+}
+
+// Builds a CSV from an array of row objects. `columns` fixes the column
+// order/set; omit it to use the union of every key seen across every row
+// (each row gets blanks for keys it doesn't have).
+function rowsToCsv(rows, columns){
+  const cols = columns || (() => {
+    const seen = new Set();
+    const out = [];
+    rows.forEach(row => Object.keys(row).forEach(key => { if (!seen.has(key)){ seen.add(key); out.push(key); } }));
+    return out;
+  })();
+  const lines = [cols.map(csvEscape).join(',')];
+  rows.forEach(row => lines.push(cols.map(col => csvEscape(row[col])).join(',')));
+  return lines.join('\n');
+}
+
+function downloadCsv(csvText, filename){
+  const blob = new Blob([csvText], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function fetchBatteryTrials(sessionId){
+  const { data, error } = await supabaseClient
+    .from('psychojs_results')
+    .select('*')
+    .eq('session_id', sessionId);
+  if (error) throw new Error(error.message);
+
+  const rows = [];
+  (data || []).forEach(resultRow => {
+    const trials = Array.isArray(resultRow.trials) ? resultRow.trials : [];
+    trials.forEach(trial => rows.push(trial));
+  });
+  return rows;
+}
+
 // Flattens every participant's trial data for a battery into one CSV, one
 // row per trial. Trial shape varies a lot across tests, so columns are the
 // union of every key seen across every trial — anything a given trial
-// doesn't have is left blank. Meant as a reasonable default to post-process
-// further (e.g. splitting by test) rather than a final analysis-ready file.
+// doesn't have is left blank. This is the untouched PsychoJS output —
+// see downloadCleanCSV() for the filtered/scored version.
 async function downloadDatasetCSV(sessionId){
   if (DEV_MODE){
     alert('CSV export needs a real Supabase session — not available in dev mode.');
     return;
   }
 
-  const { data, error } = await supabaseClient
-    .from('psychojs_results')
-    .select('*')
-    .eq('session_id', sessionId);
-
-  if (error){
-    alert('Could not load results: ' + error.message);
+  let rows;
+  try {
+    rows = await fetchBatteryTrials(sessionId);
+  } catch (e){
+    alert('Could not load results: ' + e.message);
     return;
   }
-  if (!data || data.length === 0){
+  if (rows.length === 0){
     alert('No participant data yet for this battery.');
     return;
   }
 
-  const rows = [];
-  data.forEach((resultRow) => {
-    const trials = Array.isArray(resultRow.trials) ? resultRow.trials : [];
-    trials.forEach((trial) => rows.push(trial));
+  downloadCsv(rowsToCsv(rows), `battery_${sessionId}_results.csv`);
+}
+
+// ---------------------------------------------------------------------
+// "Clean" CSV export — a JS port of the lab's read_data_script.R. That
+// script filters raw per-participant PsychoJS trial rows down to the
+// real items (folding practice-item columns onto the same names as real
+// trials), dedupes reruns, patches a known SD scoring quirk (typing a
+// repeated letter still counts if it's the right one), and rolls
+// everything into a per-participant score/RT summary plus a cleaned
+// trial-level file — the same two outputs the R script produces
+// (`_participant.csv` / `_trial.csv`), just runnable from the Datasets
+// view instead of requiring a manual R run.
+//
+// The test-name patterns, attention-check filenames, and demographic
+// answer-code tables below are ported directly from that script; they're
+// safe to hardcode (not per-battery config) because AC1/AC2/ACF/Demos
+// and the 10 real tests are fixed, shared test definitions across every
+// battery in this app, not something a researcher can redefine.
+// ---------------------------------------------------------------------
+const CLEAN_TEST_PATTERNS = [
+  ['SBST', /SBST/], ['MC', /MC|PR/], ['VK', /VK/], ['Flags', /^F/],
+  ['PSVT', /PSVT/], ['PFT', /PFT/], ['DAT', /DAT/], ['SD', /SD/],
+  ['AO', /AO/], ['WS', /WS/],
+];
+const CLEAN_ATTENTION_ITEMS = [
+  'MC_Instructions1.png', 'SBST_Instructions4.png', 'DAT_Instructions1.png',
+  'SD_Instructions1.png', 'PFT_Instructions1.png', 'VK_Instructions2.png',
+  'PSVT_Instructions1.png', 'Flags_Instructions2.png', 'AO_Instructions1.png',
+];
+const CLEAN_RACE_CHOICES = {
+  ans_box_A: 'White', ans_box_B: 'Black/African American', ans_box_C: 'Asian/Asian American',
+  ans_box_D: 'American Indian', ans_box_E: 'Alaska Native', ans_box_F: 'Native Hawaiian/Pacific Islander',
+  ans_box_G: 'None of the above',
+};
+const CLEAN_PARENTS_ED_CHOICES = {
+  ans_box_A: 'Graduate/professional degree', ans_box_B: 'College degree', ans_box_C: 'Associates degree',
+  ans_box_D: 'High school diploma', ans_box_E: 'Other',
+};
+const CLEAN_VISION_CHOICES = {
+  ans_box_A: 'Normal Vision', ans_box_B: 'Glasses or contacts', ans_box_C: 'No (not corrected vision)',
+};
+
+function cleanBlank(v){ return v !== null && v !== undefined && v !== ''; }
+
+// Keep rows that are either a real item or a (nonblank) practice item,
+// then remap practice-item columns (Pselected_answer/Ppoints/etc, which
+// live under the instructions loop) onto the same names real items use,
+// so every kept row can be treated uniformly from here on.
+function cleanNormalizeTrials(rawTrials){
+  return rawTrials
+    .filter(t => cleanBlank(t.standard_stim) || (t.practice_item == 1))
+    .map(t => {
+      const row = { ...t };
+      if (row.practice_item == 1){
+        row.standard_stim = row.instructions_page;
+        row.selected_answer = row.Pselected_answer;
+        row.correct_answer = row.correct_answerP;
+        row.points = row.Ppoints;
+      }
+      return row;
+    });
+}
+
+// PsychoJS timestamps look like "2026-01-01_10h00.00" (date_HHhMM.SS) —
+// not a format the Date constructor understands, so it has to be parsed
+// by hand rather than just `new Date(str)`.
+function cleanParseDate(str){
+  if (typeof str !== 'string') return null;
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})h(\d{2})\.(\d+)/);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, s] = m;
+  return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
+}
+
+// Keep only the first attempt per (participant, trial), in case someone
+// ran the same link more than once.
+function cleanDedupe(rows){
+  const sorted = [...rows].sort((a, b) => {
+    if (a.participant !== b.participant) return a.participant < b.participant ? -1 : 1;
+    if (a.standard_stim !== b.standard_stim) return a.standard_stim < b.standard_stim ? -1 : 1;
+    const da = cleanParseDate(a.date), db = cleanParseDate(b.date);
+    if (!da || !db) return 0;
+    return da - db;
+  });
+  const seen = new Set();
+  return sorted.filter(r => {
+    const key = r.participant + '|' + r.standard_stim;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// SD lets a participant type extra repeated letters ("AAA" instead of
+// "A"); count it correct if every character is the same letter and that
+// letter is the right answer.
+function cleanFixSDScoring(rows){
+  rows.forEach(r => {
+    if (typeof r.standard_stim === 'string' && r.standard_stim.includes('SD') &&
+        typeof r.selected_answer === 'string' && r.selected_answer.length > 1 &&
+        r.selected_answer !== 'no selection'){
+      const chars = r.selected_answer.split('');
+      const allSame = new Set(chars).size === 1;
+      if (allSame && chars[chars.length - 1] === r.correct_answer) r.points = 1;
+    }
+  });
+  return rows;
+}
+
+// key_resp.rt is the "press enter" reaction time recorded for every real
+// item; it's missing (participant timed out) or bracket-wrapped, and the
+// 5s minimum display time isn't included in the raw value.
+function cleanParseRT(row){
+  let rt = row['key_resp.rt'];
+  if (Array.isArray(rt)) rt = rt[0];
+  if (typeof rt === 'string') rt = parseFloat(rt.replace(/[[\]]/g, ''));
+  if (rt === null || rt === undefined || Number.isNaN(rt)) rt = 55;
+  return rt + 5;
+}
+
+function cleanTestNameFor(standardStim){
+  if (!standardStim) return null;
+  for (const [name, pattern] of CLEAN_TEST_PATTERNS){
+    if (pattern.test(standardStim)) return name;
+  }
+  return null;
+}
+
+function cleanMean(nums){
+  return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : '';
+}
+
+// Runs the full pipeline and returns both output tables: a wide
+// per-participant score/RT/demographics summary, and the cleaned
+// trial-level rows (dedup'd, SD-fixed, limited to completed participants).
+function buildCleanExport(rawTrials){
+  // Completion has to be checked against the raw trials, not the
+  // filtered/normalized set below — the 'feedback.stopped' marker is a
+  // bookkeeping row with no standard_stim, so cleanNormalizeTrials()
+  // would otherwise drop it before we ever get to look for it.
+  const completedParticipants = new Set(
+    [...new Set(rawTrials.map(r => r.participant))]
+      .filter(pid => rawTrials.some(r => r.participant === pid && cleanBlank(r['feedback.stopped'])))
+  );
+
+  const normalized = cleanNormalizeTrials(rawTrials);
+  const deduped = cleanDedupe(normalized);
+  cleanFixSDScoring(deduped);
+
+  const scoreRows = [];
+
+  completedParticipants.forEach(pid => {
+    const rows = deduped.filter(r => r.participant === pid);
+    const realRows = rows.filter(r => r.practice_item != 1);
+    const scoreRow = { id: pid };
+
+    CLEAN_TEST_PATTERNS.forEach(([name]) => {
+      const testRows = realRows.filter(r => cleanTestNameFor(r.standard_stim) === name);
+      scoreRow[name + '_score'] = cleanMean(testRows.map(r => Number(r.points)).filter(n => !Number.isNaN(n)));
+      scoreRow[name + '_rt'] = cleanMean(testRows.map(cleanParseRT).filter(n => !Number.isNaN(n)));
+    });
+
+    const dates = rows.map(r => cleanParseDate(r.date)).filter(Boolean);
+    scoreRow.date = dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))).toISOString() : '';
+
+    const practiceAttItems = rows.filter(r => r.practice_item == 1 && CLEAN_ATTENTION_ITEMS.includes(r.standard_stim));
+    scoreRow.Practice_Check_Avg = cleanMean(practiceAttItems.map(r => Number(r.points)).filter(n => !Number.isNaN(n)));
+    const ac1 = rows.find(r => r.practice_item == 1 && r.standard_stim === 'AC_1.png');
+    const ac2 = rows.find(r => r.practice_item == 1 && r.standard_stim === 'AC_2.png');
+    scoreRow.Attention_Check1 = ac1 ? ac1.selected_answer : '';
+    scoreRow.Attention_Check2 = ac2 ? ac2.selected_answer : '';
+    const acf = rows.find(r => r.standard_stim === 'ACF_Final.png' || r.standard_stim === 'ACF_Final2.png');
+    scoreRow.Attention_Final = acf
+      ? (acf.selected_answer === 'ans_box_B' ? 1 : acf.selected_answer === 'ans_box_A' ? 0 : '')
+      : '';
+
+    const demoFor = (pattern) => rows.find(r => typeof r.standard_stim === 'string' && r.standard_stim.includes(pattern));
+    const age = demoFor('D_age');
+    scoreRow.age = age ? age.selected_answer : '';
+    const sex = demoFor('D_sex');
+    scoreRow.sex = sex ? (sex.selected_answer === 'ans_box_A' ? 'M' : sex.selected_answer === 'ans_box_B' ? 'F' : '') : '';
+    const race = demoFor('D_race');
+    scoreRow.race = race ? (CLEAN_RACE_CHOICES[race.selected_answer] || '') : '';
+    const ethnicity = demoFor('D_ethnicity');
+    scoreRow.ethnicity = ethnicity ? (ethnicity.selected_answer === 'ans_box_A' ? 'Hispanic' : ethnicity.selected_answer === 'ans_box_B' ? 'Non-Hispanic' : '') : '';
+    const gpa = demoFor('D_GPA');
+    scoreRow.GPA = gpa ? gpa.selected_answer : '';
+    const math = demoFor('D_math');
+    scoreRow.math_courses = (math && typeof math.selected_answer === 'string')
+      ? math.selected_answer.replace(/[[\]"]/g, '').split(',').filter(Boolean).length
+      : '';
+    const parentsEd = demoFor('D_parents_ed');
+    scoreRow.parents_ed = parentsEd ? (CLEAN_PARENTS_ED_CHOICES[parentsEd.selected_answer] || '') : '';
+    const language = demoFor('D_language');
+    scoreRow.language = language ? language.selected_answer : '';
+    const vision = demoFor('D_vision');
+    scoreRow.vision = vision ? (CLEAN_VISION_CHOICES[vision.selected_answer] || '') : '';
+
+    scoreRows.push(scoreRow);
   });
 
-  if (rows.length === 0){
-    alert('No trial data found in the results for this battery.');
+  scoreRows.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  const keptParticipants = new Set(scoreRows.map(r => r.id));
+  const cleanTrialRows = deduped.filter(r => keptParticipants.has(r.participant));
+
+  return { scoreRows, cleanTrialRows };
+}
+
+async function downloadCleanCSV(sessionId){
+  if (DEV_MODE){
+    alert('Clean CSV export needs a real Supabase session — not available in dev mode.');
     return;
   }
 
-  const columns = [];
-  const seenColumns = new Set();
-  rows.forEach((row) => {
-    Object.keys(row).forEach((key) => {
-      if (!seenColumns.has(key)){
-        seenColumns.add(key);
-        columns.push(key);
-      }
-    });
-  });
+  let rawTrials;
+  try {
+    rawTrials = await fetchBatteryTrials(sessionId);
+  } catch (e){
+    alert('Could not load results: ' + e.message);
+    return;
+  }
+  if (rawTrials.length === 0){
+    alert('No participant data yet for this battery.');
+    return;
+  }
 
-  const escapeCsv = (val) => {
-    if (val === null || val === undefined) return '';
-    const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
-    return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
-  };
+  const { scoreRows, cleanTrialRows } = buildCleanExport(rawTrials);
+  if (scoreRows.length === 0){
+    alert('No completed participants yet for this battery — clean export only includes participants who reached the end.');
+    return;
+  }
 
-  const lines = [columns.map(escapeCsv).join(',')];
-  rows.forEach((row) => {
-    lines.push(columns.map((col) => escapeCsv(row[col])).join(','));
-  });
-
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `battery_${sessionId}_results.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  downloadCsv(rowsToCsv(scoreRows), `battery_${sessionId}_participant_clean.csv`);
+  downloadCsv(rowsToCsv(cleanTrialRows), `battery_${sessionId}_trial_clean.csv`);
 }
 
 function copyLink(){
