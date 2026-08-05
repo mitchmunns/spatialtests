@@ -2179,10 +2179,13 @@ const CLEAN_TEST_PATTERNS = [
   ['PSVT', /PSVT/], ['PFT', /PFT/], ['DAT', /DAT/], ['SD', /SD/],
   ['AO', /AO/], ['WS', /WS/],
 ];
+// [filename, sourceTestId] — each is an attention-check item embedded in
+// that test's own instructions loop, so it's only relevant if the battery
+// actually included that test.
 const CLEAN_ATTENTION_ITEMS = [
-  'MC_Instructions1.png', 'SBST_Instructions4.png', 'DAT_Instructions1.png',
-  'SD_Instructions1.png', 'PFT_Instructions1.png', 'VK_Instructions2.png',
-  'PSVT_Instructions1.png', 'Flags_Instructions2.png', 'AO_Instructions1.png',
+  ['MC_Instructions1.png', 'MC'], ['SBST_Instructions4.png', 'SBST'], ['DAT_Instructions1.png', 'DAT'],
+  ['SD_Instructions1.png', 'SD'], ['PFT_Instructions1.png', 'PFT'], ['VK_Instructions2.png', 'VK'],
+  ['PSVT_Instructions1.png', 'PSVT'], ['Flags_Instructions2.png', 'Flags'], ['AO_Instructions1.png', 'AO'],
 ];
 const CLEAN_RACE_CHOICES = {
   ans_box_A: 'White', ans_box_B: 'Black/African American', ans_box_C: 'Asian/Asian American',
@@ -2275,14 +2278,6 @@ function cleanParseRT(row){
   return rt + 5;
 }
 
-function cleanTestNameFor(standardStim){
-  if (!standardStim) return null;
-  for (const [name, pattern] of CLEAN_TEST_PATTERNS){
-    if (pattern.test(standardStim)) return name;
-  }
-  return null;
-}
-
 function cleanMean(nums){
   return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : '';
 }
@@ -2290,7 +2285,15 @@ function cleanMean(nums){
 // Runs the full pipeline and returns both output tables: a wide
 // per-participant score/RT/demographics summary, and the cleaned
 // trial-level rows (dedup'd, SD-fixed, limited to completed participants).
-function buildCleanExport(rawTrials){
+// `testIds` is the list of tests actually configured in this battery
+// (battery.items.map(i => i.testId)) — score/rt, attention-check, and
+// demographic columns are only included for tests that were actually
+// run, instead of every test the platform knows how to run.
+function buildCleanExport(rawTrials, testIds){
+  const has = (id) => testIds.includes(id);
+  const testPatterns = CLEAN_TEST_PATTERNS.filter(([name]) => has(name));
+  const attentionItems = CLEAN_ATTENTION_ITEMS.filter(([, testId]) => has(testId)).map(([filename]) => filename);
+
   // Completion has to be checked against the raw trials, not the
   // filtered/normalized set below — the 'feedback.stopped' marker is a
   // bookkeeping row with no standard_stim, so cleanNormalizeTrials()
@@ -2311,8 +2314,8 @@ function buildCleanExport(rawTrials){
     const realRows = rows.filter(r => r.practice_item != 1);
     const scoreRow = { id: pid };
 
-    CLEAN_TEST_PATTERNS.forEach(([name]) => {
-      const testRows = realRows.filter(r => cleanTestNameFor(r.standard_stim) === name);
+    testPatterns.forEach(([name, pattern]) => {
+      const testRows = realRows.filter(r => pattern.test(r.standard_stim || ''));
       scoreRow[name + '_score'] = cleanMean(testRows.map(r => Number(r.points)).filter(n => !Number.isNaN(n)));
       scoreRow[name + '_rt'] = cleanMean(testRows.map(cleanParseRT).filter(n => !Number.isNaN(n)));
     });
@@ -2320,16 +2323,29 @@ function buildCleanExport(rawTrials){
     const dates = rows.map(r => cleanParseDate(r.date)).filter(Boolean);
     scoreRow.date = dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))).toISOString() : '';
 
-    const practiceAttItems = rows.filter(r => r.practice_item == 1 && CLEAN_ATTENTION_ITEMS.includes(r.standard_stim));
-    scoreRow.Practice_Check_Avg = cleanMean(practiceAttItems.map(r => Number(r.points)).filter(n => !Number.isNaN(n)));
-    const ac1 = rows.find(r => r.practice_item == 1 && r.standard_stim === 'AC_1.png');
-    const ac2 = rows.find(r => r.practice_item == 1 && r.standard_stim === 'AC_2.png');
-    scoreRow.Attention_Check1 = ac1 ? ac1.selected_answer : '';
-    scoreRow.Attention_Check2 = ac2 ? ac2.selected_answer : '';
-    const acf = rows.find(r => r.standard_stim === 'ACF_Final.png' || r.standard_stim === 'ACF_Final2.png');
-    scoreRow.Attention_Final = acf
-      ? (acf.selected_answer === 'ans_box_B' ? 1 : acf.selected_answer === 'ans_box_A' ? 0 : '')
-      : '';
+    if (attentionItems.length){
+      const practiceAttItems = rows.filter(r => r.practice_item == 1 && attentionItems.includes(r.standard_stim));
+      scoreRow.Practice_Check_Avg = cleanMean(practiceAttItems.map(r => Number(r.points)).filter(n => !Number.isNaN(n)));
+    }
+    if (has('AC1')){
+      const ac1 = rows.find(r => r.practice_item == 1 && r.standard_stim === 'AC_1.png');
+      scoreRow.Attention_Check1 = ac1 ? ac1.selected_answer : '';
+    }
+    if (has('AC2')){
+      const ac2 = rows.find(r => r.practice_item == 1 && r.standard_stim === 'AC_2.png');
+      scoreRow.Attention_Check2 = ac2 ? ac2.selected_answer : '';
+    }
+    if (has('ACF')){
+      const acf = rows.find(r => r.standard_stim === 'ACF_Final.png' || r.standard_stim === 'ACF_Final2.png');
+      scoreRow.Attention_Final = acf
+        ? (acf.selected_answer === 'ans_box_B' ? 1 : acf.selected_answer === 'ans_box_A' ? 0 : '')
+        : '';
+    }
+
+    if (!has('Demos')){
+      scoreRows.push(scoreRow);
+      return;
+    }
 
     const demoFor = (pattern) => rows.find(r => typeof r.standard_stim === 'string' && r.standard_stim.includes(pattern));
     const age = demoFor('D_age');
@@ -2370,6 +2386,9 @@ async function downloadCleanCSV(sessionId){
     return;
   }
 
+  const datasetRow = currentDatasetRows.find(r => r.id === sessionId);
+  const testIds = datasetRow ? datasetRow.items.map(i => i.testId) : [];
+
   let rawTrials;
   try {
     rawTrials = await fetchBatteryTrials(sessionId);
@@ -2382,7 +2401,7 @@ async function downloadCleanCSV(sessionId){
     return;
   }
 
-  const { scoreRows, cleanTrialRows } = buildCleanExport(rawTrials);
+  const { scoreRows, cleanTrialRows } = buildCleanExport(rawTrials, testIds);
   if (scoreRows.length === 0){
     alert('No completed participants yet for this battery — clean export only includes participants who reached the end.');
     return;
