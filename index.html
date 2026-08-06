@@ -879,6 +879,15 @@
     padding:26px 26px 20px;
     width:340px;
   }
+  .modal-card.wide{
+    width:min(520px, 90vw);
+  }
+  .modal-card p.modal-sub{
+    color:var(--ink-soft);
+    font-size:13px;
+    line-height:1.5;
+    margin:-8px 0 18px;
+  }
   .modal-card h3{
     font-family:'Space Grotesk', sans-serif;
     font-size:16px;
@@ -972,17 +981,12 @@
     <p class="eyebrow">02 — Review battery</p>
     <h1 class="view-title">Your battery</h1>
     <p class="view-sub">This is the set a participant will run through, in order. Reorder, edit, or remove tests, then save it, pilot it, or set it to run.</p>
-    <div class="field-block" style="max-width:420px;margin-bottom:24px;">
-      <label for="battery-name-input">Battery name</label>
-      <input id="battery-name-input" type="text" placeholder="e.g. Fall 2026 Pilot" value="" oninput="batteryName = this.value">
-    </div>
-    <div class="field-block" style="max-width:560px;">
-      <label for="break-counter-input">Between-tests progress line<span class="field-hint">shown between every test — {completed} and {total} fill in automatically</span></label>
-      <input id="break-counter-input" type="text" placeholder="You have completed {completed} out of {total} tests." value="" oninput="breakMessageCounter = this.value">
-    </div>
-    <div class="field-block" style="max-width:560px;margin-bottom:24px;">
-      <label for="break-message-input">Between-tests message<span class="field-hint">shown below the progress line, every time — same wording after the last test too</span></label>
-      <textarea id="break-message-input" rows="3" placeholder="Good job! You have finished this test. Feel free to take a break now before beginning the next test, but try not to stop in the middle of a test. Press Enter when you are ready to move on to the next test." oninput="breakMessage = this.value"></textarea>
+    <div style="display:flex; gap:12px; align-items:flex-end; max-width:560px; margin-bottom:24px;">
+      <div class="field-block" style="flex:1; margin-bottom:0;">
+        <label for="battery-name-input">Battery name</label>
+        <input id="battery-name-input" type="text" placeholder="e.g. Fall 2026 Pilot" value="" oninput="batteryName = this.value">
+      </div>
+      <button class="btn secondary" style="width:auto; white-space:nowrap; padding:10px 14px;" id="battery-settings-btn" onclick="openBatterySettings()">⚙ Settings</button>
     </div>
     <div id="attention-panel-wrap"></div>
     <div id="battery-list-wrap"></div>
@@ -1041,6 +1045,25 @@
     <div class="modal-footer">
       <button class="btn secondary" onclick="closeProfile()">Cancel</button>
       <button class="btn accent" onclick="saveProfile()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATTERY SETTINGS MODAL -->
+<div class="modal-overlay hidden" id="battery-settings-modal">
+  <div class="modal-card wide">
+    <h3>Battery settings</h3>
+    <p class="modal-sub">Optional — everything here has a sensible default and only needs a look if you want to change it.</p>
+    <div class="field-block">
+      <label for="break-counter-input">Between-tests progress line<span class="field-hint">shown between every test — {completed} and {total} fill in automatically</span></label>
+      <input id="break-counter-input" type="text" placeholder="You have completed {completed} out of {total} tests." value="" oninput="breakMessageCounter = this.value">
+    </div>
+    <div class="field-block" style="margin-bottom:0;">
+      <label for="break-message-input">Between-tests message<span class="field-hint">shown below the progress line, every time — same wording after the last test too</span></label>
+      <textarea id="break-message-input" rows="3" placeholder="Good job! You have finished this test. Feel free to take a break now before beginning the next test, but try not to stop in the middle of a test. Press Enter when you are ready to move on to the next test." oninput="breakMessage = this.value"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn accent" onclick="closeBatterySettings()">Done</button>
     </div>
   </div>
 </div>
@@ -1726,10 +1749,29 @@ function goToCatalog(){
 
 function goToBattery(){
   document.getElementById('battery-name-input').value = batteryName;
-  document.getElementById('break-counter-input').value = breakMessageCounter;
-  document.getElementById('break-message-input').value = breakMessage;
+  updateBatterySettingsBadge();
   renderBatteryList();
   showView('view-battery');
+}
+
+// Battery-wide options beyond the tests themselves (currently just the
+// between-tests break screen text) live in this modal instead of the main
+// flow — everything in it has a working default, so it's opt-in.
+function openBatterySettings(){
+  document.getElementById('break-counter-input').value = breakMessageCounter;
+  document.getElementById('break-message-input').value = breakMessage;
+  document.getElementById('battery-settings-modal').classList.remove('hidden');
+}
+
+function closeBatterySettings(){
+  document.getElementById('battery-settings-modal').classList.add('hidden');
+  updateBatterySettingsBadge();
+}
+
+function updateBatterySettingsBadge(){
+  const btn = document.getElementById('battery-settings-btn');
+  const customized = !!(breakMessage.trim() || breakMessageCounter.trim());
+  btn.textContent = customized ? '⚙ Settings •' : '⚙ Settings';
 }
 
 function paramSummary(test, params){
@@ -1901,7 +1943,15 @@ async function persistBattery(targetStatus){
   const { data, error } = await query.select().single();
 
   if (error){
-    alert('Could not save battery: ' + error.message);
+    // PGRST116 = the update/insert matched zero rows before .single() tried
+    // to coerce the result — almost always a missing/misconfigured RLS
+    // policy (e.g. the researcher-update policy on `batteries`) rather than
+    // a real data problem, so surface that instead of the cryptic PostgREST text.
+    if (error.code === 'PGRST116'){
+      alert("Could not save battery: no matching row came back after the write. This usually means a required Supabase RLS policy hasn't been added yet (e.g. the researcher-update policy on `batteries`) — check the setup SQL for this app.");
+    } else {
+      alert('Could not save battery: ' + error.message);
+    }
     return null;
   }
   currentBatteryId = data.id;
