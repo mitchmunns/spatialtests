@@ -840,6 +840,7 @@
     font-size:12px;
     padding:6px 11px;
     color:var(--ink-soft);
+    white-space:nowrap;
   }
   .user-bar button:hover{color:var(--ink); border-color:var(--ink-soft);}
   .battery-btn{
@@ -934,6 +935,7 @@
     <div class="user-bar">
       <button onclick="goToHome()">Home</button>
       <button onclick="goToDatasets()">Datasets</button>
+      <button id="nav-admin" class="hidden" onclick="goToAdmin()">All labs</button>
       <button class="battery-btn" onclick="goToBattery()">Battery <span class="battery-count" id="battery-count">0</span></button>
       <span class="user-email" id="user-email"></span>
       <button onclick="openProfile()">Profile</button>
@@ -1027,6 +1029,18 @@
     <p class="view-sub">Every battery you've saved, piloted, or run. Draft and pilot batteries can be edited or deleted; run batteries are locked — duplicate one to make a similar battery.</p>
     <div id="dataset-list-wrap"></div>
   </div>
+
+  <!-- ADMIN VIEW (visible only to admin accounts — see ADMIN_EMAILS) -->
+  <div id="view-admin" class="hidden">
+    <p class="eyebrow">Admin</p>
+    <h1 class="view-title">All datasets — every lab</h1>
+    <p class="view-sub">Every battery saved across every researcher account, for oversight and combined export. Only visible to your account.</p>
+    <div style="display:flex; gap:8px; margin-bottom:20px;">
+      <button class="btn secondary" onclick="downloadCombinedCSV('raw')">Download combined raw CSV</button>
+      <button class="btn secondary" onclick="downloadCombinedCSV('clean')">Download combined clean CSV</button>
+    </div>
+    <div id="admin-list-wrap"></div>
+  </div>
 </div>
 
 <!-- PROFILE MODAL -->
@@ -1085,6 +1099,12 @@ const DEV_MODE = false;
 
 const DEV_USER = { id: 'dev-local-user', email: 'dev@local' };
 let devProfile = { name: '', institution: '' };
+
+// Accounts that see the "All labs" admin view and its cross-lab RLS access.
+// Also needs matching Supabase policies — see admin SELECT policies in the setup SQL.
+const ADMIN_EMAILS = ['mitchmunns@ucsb.edu'];
+let isAdmin = false;
+let currentAdminRows = [];
 
 // ----------------------------
 // SUPABASE CONNECTION
@@ -1150,6 +1170,8 @@ function showApp(session){
   document.getElementById('user-email').textContent = DEV_MODE
     ? `${session.user.email} (dev mode)`
     : session.user.email;
+  isAdmin = ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
+  document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
   showView('view-home');
 }
 
@@ -1734,7 +1756,7 @@ function hideItemPreview(){
 }
 
 function showView(id){
-  ['view-home', 'view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets'].forEach(v => {
+  ['view-home', 'view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets', 'view-admin'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
 }
@@ -2071,6 +2093,154 @@ async function goToDatasets(){
 
   currentDatasetRows = rows;
   renderDatasets(rows);
+}
+
+function escapeHtml(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+// Admin-only: every battery across every researcher, not just the current
+// user's own rows. Requires the admin SELECT policies from the setup SQL —
+// without them this will just come back empty (RLS still scopes it).
+async function goToAdmin(){
+  if (!isAdmin) return;
+  showView('view-admin');
+  const wrap = document.getElementById('admin-list-wrap');
+  wrap.innerHTML = `<div class="dataset-empty">Loading…</div>`;
+
+  const { data: batteryData, error: batteryError } = await supabaseClient
+    .from('batteries')
+    .select('id, name, status, items, researcher_id, created_at')
+    .order('created_at', { ascending: false });
+
+  if (batteryError){
+    wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${escapeHtml(batteryError.message)}</div>`;
+    return;
+  }
+
+  const { data: researcherData } = await supabaseClient
+    .from('researchers')
+    .select('id, name, institution');
+  const researcherById = {};
+  (researcherData || []).forEach(r => { researcherById[r.id] = r; });
+
+  const rows = batteryData.map(r => {
+    const researcher = researcherById[r.researcher_id] || {};
+    return {
+      id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at),
+      items: r.items, participantCount: null, researcherId: r.researcher_id,
+      researcherName: researcher.name || '', researcherInstitution: researcher.institution || '',
+    };
+  });
+
+  const ids = rows.map(r => r.id);
+  if (ids.length > 0){
+    const { data: resultRows, error: countError } = await supabaseClient
+      .from('psychojs_results')
+      .select('session_id')
+      .in('session_id', ids);
+    if (!countError && resultRows){
+      const counts = {};
+      resultRows.forEach(r => { counts[r.session_id] = (counts[r.session_id] || 0) + 1; });
+      rows.forEach(r => { r.participantCount = counts[r.id] || 0; });
+    }
+  }
+
+  currentAdminRows = rows;
+  renderAdminDatasets(rows);
+}
+
+function renderAdminDatasets(rows){
+  const wrap = document.getElementById('admin-list-wrap');
+
+  if (rows.length === 0){
+    wrap.innerHTML = `<div class="dataset-empty">No datasets exist yet across any lab.</div>`;
+    return;
+  }
+
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const statusLabel = { draft: 'Draft', pilot: 'Pilot', run: 'Run' };
+
+  wrap.innerHTML = `<div class="dataset-list">${rows.map(row => {
+    const chips = row.items.map(i => {
+      const test = TESTS.find(t => t.id === i.testId);
+      return `<span class="test-chip">${escapeHtml(test ? test.shortName : i.testId)}</span>`;
+    }).join('');
+    const countDisplay = row.participantCount === null ? '—' : row.participantCount;
+    const site = escapeHtml([row.researcherName, row.researcherInstitution].filter(Boolean).join(' · ') || row.researcherId);
+    return `
+      <div class="dataset-row">
+        <div class="dataset-main">
+          <div class="dataset-name"><span class="status-badge status-${row.status}">${statusLabel[row.status] || row.status}</span>${row.name ? escapeHtml(row.name) : '<em>Untitled battery</em>'}</div>
+          <div class="chips">${chips}</div>
+          <div class="dataset-meta">${site} · created ${dateFmt.format(row.createdAt)} · session <span class="session-id">${row.id}</span></div>
+        </div>
+        <div class="dataset-metric">
+          <div class="num">${countDisplay}</div>
+          <div class="lbl">participants</div>
+        </div>
+        <div class="dataset-actions">
+          <button onclick="downloadDatasetCSV('${row.id}')">Export raw CSV</button>
+          <button onclick="downloadCleanCSV('${row.id}')">Export clean CSV</button>
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+// Pulls every battery's trials and stitches them into one cross-lab CSV,
+// tagging each row with the owning researcher/institution/battery so the
+// combined sheet can be split back apart later if needed.
+async function downloadCombinedCSV(mode){
+  if (!isAdmin) return;
+  if (currentAdminRows.length === 0){
+    alert('No datasets to export.');
+    return;
+  }
+
+  const tagged = await Promise.all(currentAdminRows.map(async row => {
+    let trials = [];
+    try { trials = await fetchBatteryTrials(row.id); } catch (e){ trials = []; }
+    return { row, trials };
+  }));
+
+  const tagRow = (row, obj) => ({
+    researcher: row.researcherName || '',
+    institution: row.researcherInstitution || '',
+    battery_name: row.name || '',
+    battery_id: row.id,
+    ...obj,
+  });
+
+  if (mode === 'raw'){
+    const combined = [];
+    tagged.forEach(({ row, trials }) => trials.forEach(t => combined.push(tagRow(row, t))));
+    if (combined.length === 0){
+      alert('No participant data yet across any battery.');
+      return;
+    }
+    downloadCsv(rowsToCsv(combined), `all_labs_raw_${Date.now()}.csv`);
+    return;
+  }
+
+  const combinedParticipant = [];
+  const combinedTrial = [];
+  tagged.forEach(({ row, trials }) => {
+    if (trials.length === 0) return;
+    const testIds = row.items.map(i => i.testId);
+    const { scoreRows, cleanTrialRows } = buildCleanExport(trials, testIds);
+    scoreRows.forEach(r => combinedParticipant.push(tagRow(row, r)));
+    cleanTrialRows.forEach(r => combinedTrial.push(tagRow(row, r)));
+  });
+
+  if (combinedParticipant.length === 0){
+    alert('No completed participants yet across any battery.');
+    return;
+  }
+  downloadCsv(rowsToCsv(combinedParticipant), `all_labs_participant_clean_${Date.now()}.csv`);
+  downloadCsv(rowsToCsv(combinedTrial), `all_labs_trial_clean_${Date.now()}.csv`);
 }
 
 function renderDatasets(rows){
@@ -2486,7 +2656,7 @@ async function downloadCleanCSV(sessionId){
     return;
   }
 
-  const datasetRow = currentDatasetRows.find(r => r.id === sessionId);
+  const datasetRow = currentDatasetRows.find(r => r.id === sessionId) || currentAdminRows.find(r => r.id === sessionId);
   const testIds = datasetRow ? datasetRow.items.map(i => i.testId) : [];
 
   let rawTrials;
