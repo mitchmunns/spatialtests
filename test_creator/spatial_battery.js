@@ -3564,16 +3564,24 @@ function feedbackRoutineBegin(snapshot) {
             let possible = test_score_dict["possible"];
             let score_text = test_name + ": " + score.toString() + " out of " + possible.toString();
             feedback_text.text = feedback_text.text + '\n' + '\n' + score_text;
-            let rank = 0;
             prev_scores = test_score_dict["prev_scores"];
-            for (var s, _pj_f = 0, _pj_d = prev_scores, _pj_e = _pj_d.length; (_pj_f < _pj_e); _pj_f += 1) {
-                s = _pj_d[_pj_f];
-                if ((score >= s)) {
-                    rank += 1;
-                }
+            if (typeof prev_scores === 'string') {
+                try { prev_scores = JSON.parse(prev_scores); } catch (e) { prev_scores = []; }
             }
-            let percentile = (rank / prev_scores.length);
-            feedback_text.text = feedback_text.text + '\n\n' + 'You scored better than ' + percentile + '% of previous participants.';
+            if (!Array.isArray(prev_scores)) prev_scores = [];
+            // No comparison data yet for this test — show the raw score only,
+            // skip the percentile line rather than displaying 0/NaN.
+            if (prev_scores.length > 0) {
+                let rank = 0;
+                for (var s, _pj_f = 0, _pj_d = prev_scores, _pj_e = _pj_d.length; (_pj_f < _pj_e); _pj_f += 1) {
+                    s = _pj_d[_pj_f];
+                    if ((score >= s)) {
+                        rank += 1;
+                    }
+                }
+                let percentile = Math.round((rank / prev_scores.length) * 100);
+                feedback_text.text = feedback_text.text + '\n\n' + 'You scored better than ' + percentile + '% of previous participants.';
+            }
             k += 1;
         }
     }

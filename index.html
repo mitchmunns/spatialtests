@@ -1432,15 +1432,19 @@ function irtInfo(theta, p){ const P = irtP(theta, p); return p.a * p.a * P * (1 
 // stimulus images themselves and lives in spatial_battery.js's TEST_DEFINITIONS.
 function standardFields(testId, defaultCount){
   const n = TEST_ITEMS[testId].length;
+  const itemDefault = Math.min(defaultCount, n);
+  const timeMinDefault = 5;
+  const timeMaxDefault = 60;
+  const totalTimeDefault = 0;
   return [
     { key: 'selectedItems', label: 'Specific items', hint: `optional — pick from ${n} available, overrides count below`, type: 'itemPicker', testId, default: [] },
-    { key: 'itemCount', label: 'Number of items', hint: `used if no specific items chosen, up to ${n}`, type: 'number', min: 1, max: n, step: 1, default: Math.min(defaultCount, n) },
-    { key: 'timeMin', label: 'Min time per item', hint: 'seconds', type: 'number', min: 0, max: 120, step: 1, default: 5 },
-    { key: 'timeMax', label: 'Max time per item', hint: 'seconds', type: 'number', min: 5, max: 300, step: 1, default: 60 },
-    { key: 'totalTimeLimit', label: 'Total time limit', hint: 'seconds, 0 = no limit', type: 'number', min: 0, max: 3600, step: 30, default: 0 },
+    { key: 'itemCount', label: 'Number of items', hint: `used if no specific items chosen, up to ${n} — recommended default = ${itemDefault}`, type: 'number', min: 1, max: n, step: 1, default: itemDefault },
+    { key: 'timeMin', label: 'Min time per item', hint: `seconds — recommended default = ${timeMinDefault}`, type: 'number', min: 0, max: 120, step: 1, default: timeMinDefault },
+    { key: 'timeMax', label: 'Max time per item', hint: `seconds — recommended default = ${timeMaxDefault}`, type: 'number', min: 5, max: 300, step: 1, default: timeMaxDefault },
+    { key: 'totalTimeLimit', label: 'Total time limit', hint: `seconds, 0 = no limit — recommended default = ${totalTimeDefault}`, type: 'number', min: 0, max: 3600, step: 30, default: totalTimeDefault },
     { key: 'randomizeItems', label: 'Randomize item order', hint: '', type: 'toggle', default: true },
-    { key: 'randomizeOrder', label: 'Randomize test position', hint: 'let this test land anywhere in the battery, instead of staying at its list position below', type: 'toggle', default: false },
-    { key: 'includeScore', label: 'Count toward score', hint: '', type: 'toggle', default: true },
+    { key: 'randomizeOrder', label: 'Randomize test position', hint: 'let this test land anywhere in the battery, instead of staying at its set position in the battery', type: 'toggle', default: false },
+    { key: 'includeScore', label: 'Show score to participants', hint: "Turning this on will reveal the number correct and percentile rank of the participant's score at the end of this test.", type: 'toggle', default: false },
   ];
 }
 
