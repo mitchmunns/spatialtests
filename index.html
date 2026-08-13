@@ -314,6 +314,45 @@
     outline:2px solid var(--accent-soft);
     border-color:var(--accent);
   }
+  .field-row textarea{
+    width:100%;
+    max-width:480px;
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    padding:10px 11px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+  }
+  .field-row textarea:focus{
+    outline:2px solid var(--accent-soft);
+    border-color:var(--accent);
+  }
+  .formatted-preview{
+    max-width:480px;
+    margin-top:8px;
+    padding:10px 11px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:var(--card);
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    line-height:1.5;
+    color:var(--ink-soft);
+  }
+  .formatted-preview::before{
+    content:"Preview";
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin-bottom:5px;
+  }
+  .formatted-preview em{color:var(--ink); font-style:italic;}
 
   .toggle{
     position:relative;
@@ -461,6 +500,53 @@
     padding:22px 0 22px;
   }
   .panel-footer .btn{width:auto;}
+  .panel-footer .reset-btn{margin-right:auto;}
+
+  .instructions-pages{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    max-width:480px;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .instructions-page-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:6px;
+    border-radius:3px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    color:var(--ink-faint);
+    text-align:center;
+    width:76px;
+  }
+  .instructions-page-cell img{
+    width:64px;
+    height:64px;
+    object-fit:contain;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:2px;
+  }
+  .instructions-page-cell.editing{background:var(--accent-soft); color:var(--ink);}
+  .instructions-page-cell.editing img{border-color:var(--accent); border-width:2px;}
+  .instructions-page-cell span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:76px;
+  }
+  .instructions-pages-note{
+    width:100%;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    margin-top:8px;
+    line-height:1.4;
+  }
 
   /* ---------- Link view ---------- */
   .link-panel{
@@ -1041,6 +1127,7 @@
       </div>
     </div>
     <div class="panel-footer">
+      <button class="btn secondary reset-btn" onclick="resetToDefaults()">Reset to defaults</button>
       <button class="btn secondary" id="cust-cancel-btn">Cancel</button>
       <button class="btn accent" id="cust-submit-btn" onclick="submitCustomize()">Add to battery</button>
     </div>
@@ -1426,6 +1513,85 @@ function irtP(theta, p){ return 1 / (1 + Math.exp(-p.a * (theta - p.b))); }
 // 2PL item information at θ.
 function irtInfo(theta, p){ const P = irtP(theta, p); return p.a * p.a * P * (1 - P); }
 
+// Default text for each test's FINAL instructions page (the one stating item
+// count / timing rules, e.g. VK_Instructions8.png / Flags_Instructions8.png)
+// — the starting point for the optional custom-instructions override below.
+// {itemCount} and {timeMin} fill in from the test's actual configured values;
+// intentionally no {timeMax}/{totalTimeLimit} tokens since the source text
+// for these tests doesn't reference those. Only tests with confirmed source
+// text are listed here — everything else still uses the default image.
+const DEFAULT_INSTRUCTIONS = {
+  VK: `Remember: There are always two and only two correct answers for each item.
+
+Work as quickly as you can without sacrificing accuracy. Your score on this test will reflect both the
+correct and incorrect responses. Therefore, it will not be to your advantage to guess unless you have
+some idea which choice is correct.
+
+This test consists of {itemCount} problems. You must spend a minimum of {timeMin} seconds per problem before you can
+move on to the next one. Once you have answered a problem, you cannot go back to an earlier problem.
+The test begins on the next page.
+
+Press Enter to begin the test.`,
+  Flags: `This test consists of {itemCount} problems. You must spend a minimum of {timeMin} seconds
+on each problem before you can move on to the next one. Once you have
+answered a problem, you cannot go back to an earlier problem. The test
+begins on the next page.
+
+Press Enter to begin the test.`,
+  PSVT: `There are {itemCount} problems on this test. You will be required to spend at
+least {timeMin} seconds on each problem. Press Enter to begin the test.`,
+  MC: `There are {itemCount} problems on this test. You will be required to spend at
+least {timeMin} seconds on each problem. Press Enter to begin the test.`,
+  SBST: `Remember, select the cross-section you would see when the cutting plane slices the object.
+Imagine that you are facing the cutting plane head-on, as if you were looking in a mirror. Make your
+choice based on the shapes of the possible answers, not their sizes.
+
+This test consists of {itemCount} problems. You will have to wait at least {timeMin} seconds before you can advance
+to the next item. Work as quickly as you can without sacrificing accuracy.
+
+Press Enter to begin the test.`,
+  PFT: `In these problems all of the folds that are made are shown in the figures at the left of the
+line, and the paper is not turned or moved in any way except to make the folds shown in the
+figures. Remember, the correct answer is the figure that shows the positions of the holes when
+the paper is completely unfolded.
+
+Your score on this test will be the number marked correctly minus a fraction of the number
+marked incorrectly. Therefore, it will not be to your advantage to guess unless you are able to
+eliminate one or more of the answer choices as wrong.
+
+There are {itemCount} problems total. You will have to spend at least {timeMin} seconds on each problem.
+Once you submit an answer to a problem, you will not be able to go back.
+
+Press Enter to begin the test.`,
+  DAT: `Remember, the pattern always shows the *outside* surface of the completed figure. Each answer
+figure is the correct shape, but *only one* figure can be made from the pattern.
+
+You will not be able to submit an answer until {timeMin} seconds have passed. There are {itemCount} total items.
+
+Press Enter to begin the test.`,
+  SD: `Your score on this test will be the number of correct letters minus a fraction of the number
+of incorrect letters. Therefore, it will not be to your advantage to guess unless you are able
+to eliminate one or more of the answer choices as wrong.
+
+There are {itemCount} items total on this test. You will not be able to submit your answers until at least
+{timeMin} seconds have passed. Press Enter when you are ready to begin.`,
+};
+
+// Every instructions-screen image for a test, in the order given in its
+// <Test>_Instructions.csv — includes embedded practice/feedback pages, not
+// just the plain reading pages. The last entry is always the page the
+// custom-instructions text field above replaces.
+const TEST_INSTRUCTIONS_PAGES = {
+  VK: ['VK_Instructions1.png','VK_Instructions2.png','VK_Instructions3.png','VK_Instructions4.png','VK_Instructions4F.png','VK_Instructions4R.png','VK_Instructions4F2.png','VK_Instructions6.png','VK_Instructions7.png','VK_Instructions8.png'],
+  Flags: ['Flags_Instructions1.png','Flags_Instructions2.png','Flags_Instructions3.png','Flags_Instructions4.png','Flags_Instructions4F.png','Flags_Instructions4R.png','Flags_Instructions4F2.png','Flags_Instructions6.png','Flags_Instructions7.png','Flags_Instructions8.png'],
+  PSVT: ['PSVT_Instructions1.png','PSVT_Instructions2.png','PSVT_Instructions3.png','PSVT_Instructions3F.png','PSVT_Instructions3R.png','PSVT_Instructions3F2.png','PSVT_Instructions5.png'],
+  MC: ['MC_Instructions1.png','MC_Instructions2.png','MC_Instructions3.png','MC_Instructions3F.png','MC_Instructions3R.png','MC_Instructions3F2.png','MC_Instructions5.png'],
+  SBST: ['SBST_Instructions1.png','SBST_Instructions2.png','SBST_Instructions3.png','SBST_Instructions4.png','SBST_Instructions5.png','SBST_InstructionsP2.png','SBST_InstructionsP2F.png','SBST_InstructionsP2R.png','SBST_InstructionsP2F2.png','SBST_Instructions6.png'],
+  PFT: ['PFT_Instructions1.png','PFT_Instructions2.png','PFT_InstructionsP2.png','PFT_InstructionsP2F.png','PFT_InstructionsP2R.png','PFT_InstructionsP2F2.png','PFT_Instructions3.png'],
+  DAT: ['DAT_Instructions1.png','DAT_Instructions2.png','DAT_Instructions3.png','DAT_Instructions3F.png','DAT_Instructions3R.png','DAT_Instructions3F2.png','DAT_Instructions5.png'],
+  SD: ['SD_Instructions1.png','SD_Instructions2.png','SD_Instructions3.png','SD_Instructions3F.png','SD_Instructions3R.png','SD_Instructions3F2.png','SD_Instructions5.png'],
+};
+
 // Shared config fields every real test gets: which items (specific picks or
 // just a count), timing, randomization, and whether it counts toward scoring.
 // `choices` (answer-box layout) is intentionally NOT here — it's fixed by the
@@ -1436,7 +1602,7 @@ function standardFields(testId, defaultCount){
   const timeMinDefault = 5;
   const timeMaxDefault = 60;
   const totalTimeDefault = 0;
-  return [
+  const fields = [
     { key: 'selectedItems', label: 'Specific items', hint: `optional — pick from ${n} available, overrides count below`, type: 'itemPicker', testId, default: [] },
     { key: 'itemCount', label: 'Number of items', hint: `used if no specific items chosen, up to ${n} — recommended default = ${itemDefault}`, type: 'number', min: 1, max: n, step: 1, default: itemDefault },
     { key: 'timeMin', label: 'Min time per item', hint: `seconds — recommended default = ${timeMinDefault}`, type: 'number', min: 0, max: 120, step: 1, default: timeMinDefault },
@@ -1446,6 +1612,13 @@ function standardFields(testId, defaultCount){
     { key: 'randomizeOrder', label: 'Randomize test position', hint: 'let this test land anywhere in the battery, instead of staying at its set position in the battery', type: 'toggle', default: false },
     { key: 'includeScore', label: 'Show score to participants', hint: "Turning this on will reveal the number correct and percentile rank of the participant's score at the end of this test.", type: 'toggle', default: false },
   ];
+  if (DEFAULT_INSTRUCTIONS[testId]){
+    fields.push(
+      { key: 'customInstructions', label: 'Custom instructions', hint: 'Override the final instructions page with editable text below. Off uses the default instructions image, unchanged.', type: 'toggle', default: false },
+      { key: 'customInstructionsText', label: 'Instructions text', hint: '{itemCount} and {timeMin} fill in automatically from this test\'s settings. Wrap words in *asterisks* for italics.', type: 'textarea', formatted: true, pagesKey: testId, showIf: v => v.customInstructions, default: DEFAULT_INSTRUCTIONS[testId] },
+    );
+  }
+  return fields;
 }
 
 const TESTS = [
@@ -1811,9 +1984,21 @@ function submitCustomize(){
   }
 }
 
+// *word* -> italics, for instructions text fields. Escapes first so the
+// markup convention can't be used to inject real HTML through this field.
+function renderFormattedText(text){
+  return escapeHtml(text || '')
+    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+function updateFormattedPreview(key){
+  document.getElementById(`preview-${key}`).innerHTML = renderFormattedText(currentValues[key]);
+}
+
 function renderFields(){
   const container = document.getElementById('cust-fields');
-  container.innerHTML = currentTest.fields.map(f => {
+  container.innerHTML = currentTest.fields.filter(f => !f.showIf || f.showIf(currentValues)).map(f => {
     let control = '';
     if (f.type === 'number'){
       control = `<input type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${currentValues[f.key]}" onchange="updateValue('${f.key}', this.value, 'number')">`;
@@ -1823,9 +2008,13 @@ function renderFields(){
       </select>`;
     } else if (f.type === 'toggle'){
       control = `<label class="toggle">
-        <input type="checkbox" ${currentValues[f.key] ? 'checked' : ''} onchange="updateValue('${f.key}', this.checked, 'bool')">
+        <input type="checkbox" ${currentValues[f.key] ? 'checked' : ''} onchange="updateValue('${f.key}', this.checked, 'bool'); renderFields()">
         <span class="slider"></span>
       </label>`;
+    } else if (f.type === 'textarea'){
+      control = `<textarea rows="8" oninput="updateValue('${f.key}', this.value, 'string')${f.formatted ? `; updateFormattedPreview('${f.key}')` : ''}">${escapeHtml(currentValues[f.key])}</textarea>`
+        + (f.formatted ? `<div class="formatted-preview" id="preview-${f.key}">${renderFormattedText(currentValues[f.key])}</div>` : '')
+        + (f.pagesKey ? renderInstructionsPagesStrip(f.pagesKey) : '');
     } else if (f.type === 'itemPicker'){
       const items = TEST_ITEMS[f.testId] || [];
       const selected = currentValues[f.key] || [];
@@ -1847,6 +2036,32 @@ function renderFields(){
   }).join('');
 
   renderIrtSidebar();
+}
+
+// Shows every instructions-screen image for this test in order, highlighting
+// the one the custom text field above replaces — the rest stay exactly as
+// the default instructions images, untouched.
+function renderInstructionsPagesStrip(testId){
+  const pages = TEST_INSTRUCTIONS_PAGES[testId];
+  if (!pages) return '';
+  const lastIndex = pages.length - 1;
+  return `<div class="instructions-pages">
+      ${pages.map((file, i) => `
+        <div class="instructions-page-cell ${i === lastIndex ? 'editing' : ''}">
+          <img src="test_creator/${testId}_Stimuli/${file}" loading="lazy" alt="${file}">
+          <span>${file}</span>
+        </div>
+      `).join('')}
+      <p class="instructions-pages-note">Highlighted page is the one being edited above — the rest stay as the default instructions images.</p>
+    </div>`;
+}
+
+// Discards every change made in this form and puts the test back to its
+// as-configured-from-scratch state.
+function resetToDefaults(){
+  if (!confirm('Reset all settings for this test back to their defaults? This discards any changes made here.')) return;
+  currentTest.fields.forEach(f => currentValues[f.key] = f.default);
+  renderFields();
 }
 
 // Shows the currently-selected items' IRT parameters and a live plot of
@@ -1916,6 +2131,20 @@ function updateValue(key, value, type){
   if (type === 'number') value = Number(value);
   if (type === 'bool') value = Boolean(value);
   currentValues[key] = value;
+
+  // Changing item count or min time off their default can silently make the
+  // default instructions image wrong (it states a fixed number) — auto-turn
+  // on custom instructions, which auto-fills the real value via tokens
+  // instead. Only flips it on, never back off, so it doesn't fight a
+  // researcher who deliberately turned it off after changing these.
+  if ((key === 'itemCount' || key === 'timeMin') && !currentValues.customInstructions){
+    const field = currentTest.fields.find(f => f.key === key);
+    const hasCustomInstructions = currentTest.fields.some(f => f.key === 'customInstructions');
+    if (hasCustomInstructions && field && value !== field.default){
+      currentValues.customInstructions = true;
+      renderFields();
+    }
+  }
 }
 
 function toggleItemSelection(key, item, checked){
