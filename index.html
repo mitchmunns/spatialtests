@@ -2850,6 +2850,27 @@ function extractFirstColumnValues(csvText){
   return csvText.trim().split('\n').slice(1).map(line => line.split(',')[0].trim()).filter(Boolean);
 }
 
+// The live .psyexp has a code component that POSTs results straight to
+// THIS platform's own Supabase project (with its URL/key hardcoded) instead
+// of saving via Pavlovia's normal mechanism — added so the web runner can
+// redirect results into our database. That must never ship in a
+// researcher's own download: it would silently fail to save to their own
+// Pavlovia project and send their participants' data to ours instead,
+// using credentials that shouldn't be public. This strips those specific
+// param values (identified by containing our Supabase reference or the
+// save-results override), restoring Pavlovia's default save behavior.
+function sanitizePsyexpForDownload(psyexpText){
+  const doc = new DOMParser().parseFromString(psyexpText, 'text/xml');
+  if (doc.querySelector('parsererror')) return psyexpText; // don't risk corrupting it if parsing failed
+  doc.querySelectorAll('CodeComponent Param').forEach(param => {
+    const val = param.getAttribute('val') || '';
+    if (val.includes('supabase') || val.includes('_saveResults')){
+      param.setAttribute('val', '');
+    }
+  });
+  return new XMLSerializer().serializeToString(doc);
+}
+
 // Assets every battery needs regardless of which tests are selected —
 // referenced directly by the intro_screen/score_break routines, or the
 // default/placeholder value baked into shared components in the .psyexp.
@@ -2913,7 +2934,7 @@ async function downloadPsychopyFiles(){
 
     const psyexpRes = await fetch('test_creator/spatial_battery.psyexp');
     if (!psyexpRes.ok) throw new Error('Could not load spatial_battery.psyexp');
-    zip.file('spatial_battery.psyexp', await psyexpRes.text());
+    zip.file('spatial_battery.psyexp', sanitizePsyexpForDownload(await psyexpRes.text()));
 
     const selectorImages = new Set(PSYCHOPY_SHARED_ASSETS);
     rows.forEach(r => { if (r.selector_box_image) selectorImages.add(r.selector_box_image); });
