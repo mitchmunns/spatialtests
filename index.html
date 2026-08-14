@@ -2868,6 +2868,18 @@ function sanitizePsyexpForDownload(psyexpText){
       param.setAttribute('val', '');
     }
   });
+
+  // Clear the end-of-experiment redirect URLs — "Completed URL" is set to
+  // our own UCSB SONA study's credit-granting link (with our experiment_id
+  // and credit_token baked in). Left in, a researcher's participants would
+  // get redirected to OUR SONA credit page instead of theirs at the end.
+  doc.querySelectorAll('Settings Param').forEach(param => {
+    const name = param.getAttribute('name');
+    if (name === 'Completed URL' || name === 'Incomplete URL'){
+      param.setAttribute('val', '');
+    }
+  });
+
   return new XMLSerializer().serializeToString(doc);
 }
 
