@@ -2052,7 +2052,10 @@ function renderInstructionsPagesStrip(testId){
   return `<div class="instructions-pages">
       ${pages.map((file, i) => `
         <div class="instructions-page-cell ${i === lastIndex ? 'editing' : ''}">
-          <img src="test_creator/${testId}_Stimuli/${file}" loading="lazy" alt="${file}">
+          <img src="test_creator/${testId}_Stimuli/${file}" loading="lazy" alt="${file}"
+               onmouseenter="showItemPreview(event, 'test_creator/${testId}_Stimuli/${file}', '${testId}', '${file}')"
+               onmousemove="positionItemPreview(event)"
+               onmouseleave="hideItemPreview()">
           <span>${file}</span>
         </div>
       `).join('')}
