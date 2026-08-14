@@ -84,8 +84,30 @@ function buildTestListRows(items) {
       include_score: params.includeScore ? 1 : 0,
       selectedItems: params.selectedItems,
       itemCount: params.itemCount,
+      custom_instructions: params.customInstructions ? 1 : 0,
+      custom_instructions_text: params.customInstructionsText || '',
     };
   }).filter(row => row !== null);
+}
+
+// The real number of items a participant will run for this test — specific
+// picks override the count field, same rule the item_loop trimming logic
+// below uses, so the token always matches what's actually administered.
+function effectiveItemCount(){
+  const selected = test_loop.thisTrial['selectedItems'];
+  if (Array.isArray(selected) && selected.length > 0) return selected.length;
+  return test_loop.thisTrial['itemCount'];
+}
+
+// Fills {itemCount}/{timeMin} tokens with this test's actual configured
+// values. Strips the *word* italics markup from the builder preview rather
+// than rendering it — PsychoJS TextStim doesn't support mixed formatting
+// within one stim, so this shows plain text for now.
+function renderCustomInstructionsText(rawText){
+  return String(rawText || '')
+    .replace(/\{itemCount\}/g, effectiveItemCount())
+    .replace(/\{timeMin\}/g, test_loop.thisTrial['time_min'])
+    .replace(/\*([^*\n]+)\*/g, '$1');
 }
 
 const ALL_RESOURCES = [
@@ -559,6 +581,9 @@ var screen_size;
 var new_screen_height;
 var scale;
 var item_stim;
+var custom_instructions_stim;
+var isLastInstructionsPage;
+var useCustomInstructions;
 var selector_box;
 var score_dict;
 var coords;
@@ -638,7 +663,26 @@ async function experimentInit() {
     });
   
   item_stim.setAutoDraw(true);
-  
+
+  // Renders a test's custom-instructions text (researcher override for the
+  // final instructions page) instead of the default instructions image.
+  // Hidden until instructionsRoutineBegin turns it on for that one page.
+  custom_instructions_stim = new visual.TextStim({
+                                    win: psychoJS.window,
+                                    name: 'custom_instructions_stim',
+                                    text: '',
+                                    font: 'Arial',
+                                    units: 'pix',
+                                    pos: [0, 0],
+                                    height: 32 * scale,
+                                    wrapWidth: 1400 * scale,
+                                    ori: 0.0,
+                                    color: new util.Color('black'),
+                                    opacity: 1,
+                                    depth: -1.0
+    });
+  custom_instructions_stim.setAutoDraw(false);
+
   selector_box = new visual.ImageStim({
                                   win: psychoJS.window, 
                                   name: "selector_box",
@@ -1752,9 +1796,25 @@ function instructionsRoutineBegin(snapshot) {
     
     
     inst_page_string = instructions_loop.thisTrial["instructions_page"];
-    item_stim.setImage((stim_folder + "/") + inst_page_string);
+    // Custom instructions only ever replace the FINAL page of a test's
+    // instructions loop (the plain "here are the rules, press enter" page) —
+    // every earlier page is a practice item / feedback / retry step tied to
+    // fixed click-target coordinates on its specific image, so those always
+    // stay as the default image regardless of this setting.
+    isLastInstructionsPage = (instructions_loop.thisN === (instructions_loop.trialList.length - 1));
+    useCustomInstructions = isLastInstructionsPage && test_loop.thisTrial['custom_instructions'] == 1 && test_loop.thisTrial['custom_instructions_text'];
+    if (useCustomInstructions) {
+        item_stim.setPos([-4000 * scale, 0]);
+        custom_instructions_stim.text = renderCustomInstructionsText(test_loop.thisTrial['custom_instructions_text']);
+        custom_instructions_stim.setPos([0, 0]);
+        custom_instructions_stim.setAutoDraw(true);
+    } else {
+        item_stim.setImage((stim_folder + "/") + inst_page_string);
+        item_stim.setPos([0, 0]);
+        custom_instructions_stim.setAutoDraw(false);
+    }
     item_stim.size = [1920 * scale, 1080 * scale];
-    
+
     //move selector box and text entry box off screen until needed
     selector_box.setPos([-2000 * scale, 0]);
     selector_box.setAutoDraw(false);
@@ -2727,7 +2787,10 @@ function itemRoutineBegin(snapshot) {
     item_stim.setImage(image_path);
     item_stim.setSize([1920 * scale, 1080 * scale]);
     item_stim.setPos([0,0]);
-    
+    // In case the instructions loop just showed custom instructions text,
+    // make sure it doesn't stay drawn on top of the real trial.
+    custom_instructions_stim.setAutoDraw(false);
+
     ans_boxes = {};
     letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
     currently_selected = null;

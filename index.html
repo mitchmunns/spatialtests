@@ -1984,10 +1984,14 @@ function submitCustomize(){
   }
 }
 
-// *word* -> italics, for instructions text fields. Escapes first so the
-// markup convention can't be used to inject real HTML through this field.
+// Fills {itemCount}/{timeMin} tokens with this test's actual current
+// values, then applies *word* -> italics. Escapes first so neither the
+// token nor the markup convention can be used to inject real HTML.
 function renderFormattedText(text){
-  return escapeHtml(text || '')
+  const filled = (text || '')
+    .replace(/\{itemCount\}/g, currentValues.itemCount)
+    .replace(/\{timeMin\}/g, currentValues.timeMin);
+  return escapeHtml(filled)
     .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
     .replace(/\n/g, '<br>');
 }
@@ -2136,12 +2140,16 @@ function updateValue(key, value, type){
   // default instructions image wrong (it states a fixed number) — auto-turn
   // on custom instructions, which auto-fills the real value via tokens
   // instead. Only flips it on, never back off, so it doesn't fight a
-  // researcher who deliberately turned it off after changing these.
-  if ((key === 'itemCount' || key === 'timeMin') && !currentValues.customInstructions){
-    const field = currentTest.fields.find(f => f.key === key);
+  // researcher who deliberately turned it off after changing these. Either
+  // way, re-render so the instructions preview (if visible) reflects the
+  // new value instead of going stale.
+  if (key === 'itemCount' || key === 'timeMin'){
     const hasCustomInstructions = currentTest.fields.some(f => f.key === 'customInstructions');
-    if (hasCustomInstructions && field && value !== field.default){
-      currentValues.customInstructions = true;
+    if (hasCustomInstructions){
+      const field = currentTest.fields.find(f => f.key === key);
+      if (!currentValues.customInstructions && field && value !== field.default){
+        currentValues.customInstructions = true;
+      }
       renderFields();
     }
   }
