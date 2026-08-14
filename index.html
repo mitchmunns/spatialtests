@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spatial Test Repository</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
 
@@ -1150,6 +1151,7 @@
     <div class="battery-footer">
       <button class="btn secondary" onclick="goToCatalog()">+ Add another test</button>
       <div class="battery-footer-right">
+        <button class="btn secondary" id="battery-psychopy-btn" onclick="downloadPsychopyFiles()">Download PsychoPy files</button>
         <button class="btn secondary" id="battery-save-btn" onclick="saveBatteryDraft()">Save</button>
         <button class="btn secondary" id="battery-pilot-btn" onclick="generatePilotLink()">Generate pilot link</button>
         <button class="btn accent" id="battery-run-btn" onclick="generateRunLink()">Generate final link</button>
@@ -1590,6 +1592,26 @@ const TEST_INSTRUCTIONS_PAGES = {
   PFT: ['PFT_Instructions1.png','PFT_Instructions2.png','PFT_InstructionsP2.png','PFT_InstructionsP2F.png','PFT_InstructionsP2R.png','PFT_InstructionsP2F2.png','PFT_Instructions3.png'],
   DAT: ['DAT_Instructions1.png','DAT_Instructions2.png','DAT_Instructions3.png','DAT_Instructions3F.png','DAT_Instructions3R.png','DAT_Instructions3F2.png','DAT_Instructions5.png'],
   SD: ['SD_Instructions1.png','SD_Instructions2.png','SD_Instructions3.png','SD_Instructions3F.png','SD_Instructions3R.png','SD_Instructions3F2.png','SD_Instructions5.png'],
+};
+
+// Mirrors TEST_DEFINITIONS in test_creator/spatial_battery.js — needed to
+// generate a PsychoPy conditions row for "Download PsychoPy files" below.
+// Keep in sync if a test's file/type/selector config ever changes there.
+const PSYCHOPY_TEST_DEFS = {
+  AC1:   { stim_folder: 'AC1_Stimuli',   stim_file: 'AC1_Stimuli.csv',   type_of_test: 'fill in the blank',   instructions_file: 'AC1_Instructions.csv',   selector_box_image: '',               choices: 0 },
+  AC2:   { stim_folder: 'AC1_Stimuli',   stim_file: 'AC1_Stimuli.csv',   type_of_test: 'fill in the blank',   instructions_file: 'AC2_Instructions.csv',   selector_box_image: '',               choices: 0 },
+  ACF:   { stim_folder: 'ACF_Stimuli',   stim_file: 'ACF_Stimuli.csv',   type_of_test: 'multiple choice',     instructions_file: 'ACF_Instructions.csv',   selector_box_image: 'selector.png',   choices: 2 },
+  AO:    { stim_folder: 'AO_Stimuli',    stim_file: 'AO_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'AO_Instructions.csv',    selector_box_image: 'selector.png',   choices: 4 },
+  DAT:   { stim_folder: 'DAT_Stimuli',   stim_file: 'DAT_Stimuli.csv',   type_of_test: 'multiple choice',     instructions_file: 'DAT_Instructions.csv',   selector_box_image: 'selector.png',   choices: 4 },
+  Demos: { stim_folder: 'Demos_Stimuli', stim_file: 'Demos_Stimuli.csv', type_of_test: 'multiple choice',     instructions_file: 'Demos_Instructions.csv', selector_box_image: 'selector.png',   choices: 0 },
+  Flags: { stim_folder: 'Flags_Stimuli', stim_file: 'Flags_Stimuli.csv', type_of_test: 'same different',      instructions_file: 'Flags_Instructions.csv', selector_box_image: 'o_selector.png', choices: 6 },
+  MC:    { stim_folder: 'MC_Stimuli',    stim_file: 'MC_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'MC_Instructions.csv',    selector_box_image: 'selector.png',   choices: 5 },
+  PFT:   { stim_folder: 'PFT_Stimuli',   stim_file: 'PFT_Stimuli.csv',   type_of_test: 'multiple choice',     instructions_file: 'PFT_Instructions.csv',   selector_box_image: 'selector.png',   choices: 5 },
+  PSVT:  { stim_folder: 'PSVT_Stimuli',  stim_file: 'PSVT_Stimuli.csv',  type_of_test: 'multiple choice',     instructions_file: 'PSVT_Instructions.csv',  selector_box_image: 'selector.png',   choices: 5 },
+  SBST:  { stim_folder: 'SBST_Stimuli',  stim_file: 'SBST_Stimuli.csv',  type_of_test: 'multiple choice',     instructions_file: 'SBST_Instructions.csv',  selector_box_image: 'selector.png',   choices: 4 },
+  SD:    { stim_folder: 'SD_Stimuli',    stim_file: 'SD_Stimuli.csv',    type_of_test: 'fill in the blank',   instructions_file: 'SD_Instructions.csv',    selector_box_image: '',               choices: 0 },
+  VK:    { stim_folder: 'VK_Stimuli',    stim_file: 'VK_Stimuli.csv',    type_of_test: 'multiple selections', instructions_file: 'VK_Instructions.csv',    selector_box_image: 'x_selector.png', choices: 4 },
+  WS:    { stim_folder: 'WS_Stimuli',    stim_file: 'WS_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'WS_Instructions.csv',    selector_box_image: 'selector.png',   choices: 5 },
 };
 
 // Shared config fields every real test gets: which items (specific picks or
@@ -2818,6 +2840,126 @@ function downloadCsv(csvText, filename){
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// Pulls the filename out of each row's first column (standard_stim /
+// instructions_page) — safe because that column is always a plain
+// filename, never containing a comma, regardless of what quoted/bracketed
+// content follows later in the row.
+function extractFirstColumnValues(csvText){
+  return csvText.trim().split('\n').slice(1).map(line => line.split(',')[0].trim()).filter(Boolean);
+}
+
+// Assets every battery needs regardless of which tests are selected —
+// referenced directly by the intro_screen/score_break routines, or the
+// default/placeholder value baked into shared components in the .psyexp.
+const PSYCHOPY_SHARED_ASSETS = ['selector.png', 'break_image.png', 'intro.png'];
+
+// Packages a Pavlovia-ready PsychoPy Builder project (spatial_battery.psyexp
+// + a conditions CSV covering only the selected tests + their stimuli and
+// instructions resources) for researchers who want to edit/integrate the
+// battery offline themselves, rather than use this platform's own runner.
+// Deliberately v1-scoped: only the settings the original PsychoPy project
+// already understands (timing, order, randomize, score) carry over — the
+// web-only extras built this session (specific-item picks, item-count
+// limits, custom instructions text) don't, since researchers taking this
+// route are expected to edit the stimuli/instructions CSVs themselves.
+async function downloadPsychopyFiles(){
+  if (battery.length === 0){
+    alert('Add at least one test to the battery first.');
+    return;
+  }
+
+  const btn = document.getElementById('battery-psychopy-btn');
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Packaging…';
+
+  try {
+    const columns = ['name_of_test','stim_folder','stim_file','type_of_test','instructions_file','choices','time_min','time_max','total_time_limit','selector_box_image','randomize','test_order','prev_scores','include_score'];
+    const rows = [];
+    const missingDefs = [];
+    battery.forEach((item, index) => {
+      const def = PSYCHOPY_TEST_DEFS[item.testId];
+      if (!def){ missingDefs.push(item.testId); return; }
+      const p = item.params || {};
+      rows.push({
+        name_of_test: item.testId,
+        stim_folder: def.stim_folder,
+        stim_file: def.stim_file,
+        type_of_test: def.type_of_test,
+        instructions_file: def.instructions_file,
+        choices: def.choices,
+        time_min: p.timeMin,
+        time_max: p.timeMax,
+        total_time_limit: p.totalTimeLimit || 0,
+        selector_box_image: def.selector_box_image,
+        randomize: p.randomizeItems ? 1 : 0,
+        test_order: p.randomizeOrder ? 'R' : index,
+        prev_scores: '[]',
+        include_score: p.includeScore ? 1 : 0,
+      });
+    });
+    if (missingDefs.length > 0){
+      alert(`No PsychoPy definition for: ${missingDefs.join(', ')} — these were left out of the download.`);
+    }
+    if (rows.length === 0){
+      alert('None of the tests in this battery have a PsychoPy definition yet.');
+      return;
+    }
+
+    const zip = new JSZip();
+    zip.file('test_list.csv', rowsToCsv(rows, columns));
+
+    const psyexpRes = await fetch('test_creator/spatial_battery.psyexp');
+    if (!psyexpRes.ok) throw new Error('Could not load spatial_battery.psyexp');
+    zip.file('spatial_battery.psyexp', await psyexpRes.text());
+
+    const selectorImages = new Set(PSYCHOPY_SHARED_ASSETS);
+    rows.forEach(r => { if (r.selector_box_image) selectorImages.add(r.selector_box_image); });
+    for (const filename of selectorImages){
+      const res = await fetch(`test_creator/${filename}`);
+      if (res.ok) zip.file(filename, await res.blob());
+      else console.warn('Missing shared asset:', filename);
+    }
+
+    const uniqueTestIds = [...new Set(rows.map(r => r.name_of_test))];
+    for (const testId of uniqueTestIds){
+      const def = PSYCHOPY_TEST_DEFS[testId];
+
+      const stimRes = await fetch(`test_creator/${def.stim_file}`);
+      if (!stimRes.ok) throw new Error(`Could not load ${def.stim_file}`);
+      const stimText = await stimRes.text();
+      zip.file(def.stim_file, stimText);
+
+      const instRes = await fetch(`test_creator/${def.instructions_file}`);
+      if (!instRes.ok) throw new Error(`Could not load ${def.instructions_file}`);
+      const instText = await instRes.text();
+      zip.file(def.instructions_file, instText);
+
+      const imageFiles = new Set([...extractFirstColumnValues(stimText), ...extractFirstColumnValues(instText)]);
+      for (const filename of imageFiles){
+        const imgRes = await fetch(`test_creator/${def.stim_folder}/${filename}`);
+        if (imgRes.ok) zip.file(`${def.stim_folder}/${filename}`, await imgRes.blob());
+        else console.warn('Missing stimulus/instructions image:', `${def.stim_folder}/${filename}`);
+      }
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(batteryName.trim() || 'battery').replace(/[^a-z0-9_-]+/gi, '_')}_psychopy.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e){
+    alert('Could not build the PsychoPy download: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
 }
 
 async function fetchBatteryTrials(sessionId){
