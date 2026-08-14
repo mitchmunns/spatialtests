@@ -869,6 +869,151 @@
   }
   .dataset-empty .btn{width:auto; margin-top:16px; padding:10px 18px;}
 
+  /* ---------- Projects view ---------- */
+  .project-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .project-columns{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .project-info, .project-data{
+    padding:18px 22px;
+  }
+  .project-info{border-right:1px solid var(--line);}
+  .project-col-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-faint);
+    margin-bottom:12px;
+  }
+  .project-tests-summary{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:12px;
+  }
+  .project-tests-summary strong{color:var(--ink); font-weight:600;}
+  .project-tests-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .project-test-tile{
+    width:76px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding:8px 4px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:var(--bg, #FAFCFE);
+  }
+  .project-test-tile .cube-stage{height:44px; margin-bottom:2px; perspective:230px;}
+  .project-test-tile .icon-rotor{transform:scale(0.5);}
+  .project-test-tile-name{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    font-weight:600;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:100%;
+  }
+  .project-test-tile-count{
+    font-size:10px;
+    color:var(--ink-faint);
+  }
+  .project-timing{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    margin-bottom:14px;
+  }
+  .project-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    margin-bottom:14px;
+  }
+  .project-meta .session-id{color:var(--ink-soft);}
+  .project-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .project-actions button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:11.5px;
+    padding:6px 10px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .project-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
+  .project-actions button.remove:hover{color:#A32D2D; border-color:#A32D2D;}
+  .project-stats-line{
+    font-size:13.5px;
+    color:var(--ink);
+    margin-bottom:10px;
+  }
+  .project-stats-line .stats-loading{color:var(--ink-faint); font-style:italic;}
+  .project-progress{
+    height:10px;
+    border-radius:5px;
+    background:var(--line);
+    overflow:hidden;
+    display:flex;
+    margin-bottom:18px;
+  }
+  .project-progress-complete{background:#2E7D46; height:100%;}
+  .project-progress-incomplete{background:#B4682A; height:100%;}
+  .project-quality:empty{display:none;}
+  .quality-mean-line{
+    font-size:13.5px;
+    color:var(--ink);
+    margin-bottom:10px;
+  }
+  .quality-grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+    margin-bottom:16px;
+    max-width:220px;
+  }
+  .quality-square{
+    width:16px;
+    height:16px;
+    border-radius:2px;
+  }
+  .quality-square.pass{background:#3CA35A;}
+  .quality-square.fail{background:#C63A2E;}
+  .quality-square.incomplete{background:var(--line-strong);}
+
+  .project-data-actions{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .project-data-actions button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:12.5px;
+    padding:8px 12px;
+    color:var(--ink-soft);
+    text-align:left;
+  }
+  .project-data-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
+
   .pending-note{
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
@@ -1081,7 +1226,7 @@
     <div class="brand">Spatial<span>Test</span>Repository</div>
     <div class="user-bar">
       <button onclick="goToHome()">Home</button>
-      <button onclick="goToDatasets()">Datasets</button>
+      <button onclick="goToDatasets()">Projects</button>
       <button id="nav-admin" class="hidden" onclick="goToAdmin()">All labs</button>
       <button class="battery-btn" onclick="goToBattery()">Battery <span class="battery-count" id="battery-count">0</span></button>
       <span class="user-email" id="user-email"></span>
@@ -1179,11 +1324,11 @@
     </div>
   </div>
 
-  <!-- DATASETS VIEW -->
+  <!-- PROJECTS VIEW -->
   <div id="view-datasets" class="hidden">
     <p class="eyebrow">Data</p>
-    <h1 class="view-title">Your datasets</h1>
-    <p class="view-sub">Every battery you've saved, piloted, or run. Draft and pilot batteries can be edited or deleted; run batteries are locked — duplicate one to make a similar battery.</p>
+    <h1 class="view-title">Your projects</h1>
+    <p class="view-sub">Every battery you've saved, piloted, or run, with its tests, timing, and participant data in one place. Draft and pilot batteries can be edited or deleted; run batteries are locked — duplicate one to make a similar battery.</p>
     <div id="dataset-list-wrap"></div>
   </div>
 
@@ -2699,12 +2844,49 @@ async function downloadCombinedCSV(mode){
   downloadCsv(rowsToCsv(combinedTrial), `all_labs_trial_clean_${Date.now()}.csv`);
 }
 
+// Max per-item time across the battery, plus a rough total-duration
+// estimate (effective item count × midpoint of min/max time per test,
+// capped at that test's total_time_limit if one is set). An estimate, not
+// a guarantee — different participants move at different speeds.
+function estimateBatteryTiming(items){
+  let maxPerItem = 0;
+  let totalSeconds = 0;
+  items.forEach(item => {
+    const p = item.params || {};
+    const timeMin = Number(p.timeMin) || 0;
+    const timeMax = Number(p.timeMax) || 0;
+    if (timeMax > maxPerItem) maxPerItem = timeMax;
+    const effectiveCount = (Array.isArray(p.selectedItems) && p.selectedItems.length > 0)
+      ? p.selectedItems.length
+      : (Number(p.itemCount) || 0);
+    let testSeconds = effectiveCount * ((timeMin + timeMax) / 2);
+    if (p.totalTimeLimit > 0) testSeconds = Math.min(testSeconds, p.totalTimeLimit);
+    totalSeconds += testSeconds;
+  });
+  return { maxPerItem, estimatedMinutes: Math.max(1, Math.round(totalSeconds / 60)) };
+}
+
+function renderProjectTestTile(item){
+  const test = TESTS.find(t => t.id === item.testId);
+  const p = item.params || {};
+  const count = (Array.isArray(p.selectedItems) && p.selectedItems.length > 0) ? p.selectedItems.length : (p.itemCount || 0);
+  return `
+    <div class="project-test-tile">
+      <div class="cube-stage">
+        <div class="icon-rotor">${ICONS[item.testId] ? ICONS[item.testId]() : ''}</div>
+      </div>
+      <div class="project-test-tile-name">${escapeHtml(test ? test.shortName : item.testId)}</div>
+      <div class="project-test-tile-count">${count} item${count === 1 ? '' : 's'}</div>
+    </div>
+  `;
+}
+
 function renderDatasets(rows){
   const wrap = document.getElementById('dataset-list-wrap');
 
   if (rows.length === 0){
     wrap.innerHTML = `<div class="dataset-empty">
-      No datasets yet — save or generate a battery to create your first one.
+      No projects yet — save or generate a battery to create your first one.
       <br><button class="btn accent" onclick="goToCatalog()">Go to catalog</button>
     </div>`;
     return;
@@ -2714,37 +2896,171 @@ function renderDatasets(rows){
   const statusLabel = { draft: 'Draft', pilot: 'Pilot', run: 'Run' };
 
   wrap.innerHTML = `<div class="dataset-list">${rows.map(row => {
-    const chips = row.items.map(i => {
-      const test = TESTS.find(t => t.id === i.testId);
-      return `<span class="test-chip">${test ? test.shortName : i.testId}</span>`;
-    }).join('');
-    const countDisplay = row.participantCount === null ? '—' : row.participantCount;
+    const testNames = row.items.map(i => (TESTS.find(t => t.id === i.testId) || {}).shortName || i.testId).join(', ');
+    const tiles = row.items.map(renderProjectTestTile).join('');
+    const { maxPerItem, estimatedMinutes } = estimateBatteryTiming(row.items);
     const locked = row.status === 'run';
     const editAction = locked
       ? `<button onclick="duplicateBattery('${row.id}')">Duplicate</button>`
       : `<button onclick="editSavedBattery('${row.id}')">Edit</button>`;
     const deleteAction = locked ? '' : `<button class="remove" onclick="deleteBattery('${row.id}')">Delete</button>`;
+    const countDisplay = row.participantCount === null ? '—' : row.participantCount;
+
     return `
-      <div class="dataset-row">
-        <div class="dataset-main">
-          <div class="dataset-name"><span class="status-badge status-${row.status}">${statusLabel[row.status] || row.status}</span>${row.name ? row.name : '<em>Untitled battery</em>'}</div>
-          <div class="chips">${chips}</div>
-          <div class="dataset-meta">created ${dateFmt.format(row.createdAt)} · session <span class="session-id">${row.id}</span></div>
-        </div>
-        <div class="dataset-metric">
-          <div class="num">${countDisplay}</div>
-          <div class="lbl">participants</div>
-        </div>
-        <div class="dataset-actions">
-          ${editAction}
-          <button onclick="copyDatasetLink('${row.id}')">Copy link</button>
-          <button onclick="downloadDatasetCSV('${row.id}')">Export raw CSV</button>
-          <button onclick="downloadCleanCSV('${row.id}')">Export clean CSV</button>
-          ${deleteAction}
+      <div class="project-card">
+        <div class="project-columns">
+          <div class="project-info">
+            <div class="project-col-label">Info</div>
+            <div class="dataset-name"><span class="status-badge status-${row.status}">${statusLabel[row.status] || row.status}</span>${row.name ? escapeHtml(row.name) : '<em>Untitled battery</em>'}</div>
+            <div class="project-tests-summary"><strong>${row.items.length}</strong> test${row.items.length === 1 ? '' : 's'}: ${escapeHtml(testNames)}</div>
+            <div class="project-tests-row">${tiles}</div>
+            <div class="project-timing">${maxPerItem}s max per item · ~${estimatedMinutes} min estimated</div>
+            <div class="project-meta">created ${dateFmt.format(row.createdAt)} · session <span class="session-id">${row.id}</span></div>
+            <div class="project-actions">
+              ${editAction}
+              <button onclick="copyDatasetLink('${row.id}')">Copy link</button>
+              ${deleteAction}
+            </div>
+          </div>
+          <div class="project-data">
+            <div class="project-col-label">Data</div>
+            <div class="project-stats-line" id="project-stats-${row.id}">Participants: ${countDisplay}${row.participantCount ? ', incomplete: <span class="stats-loading">loading…</span>' : ''}</div>
+            <div class="project-progress" id="project-progress-${row.id}" style="display:none;"></div>
+            <div class="project-quality" id="project-quality-${row.id}"></div>
+            <div class="project-data-actions">
+              <button onclick="downloadDatasetCSV('${row.id}')">Download raw data</button>
+              <button onclick="downloadCleanCSV('${row.id}')">Download clean data</button>
+            </div>
+          </div>
         </div>
       </div>
     `;
   }).join('')}</div>`;
+
+  loadProjectStats(rows);
+}
+
+// Fills in the completed/incomplete participant breakdown per project,
+// after the cards are already on screen — this needs each battery's full
+// trial data (to check for the "reached the end" marker), which is much
+// heavier than the plain participant count already shown, so it loads in
+// the background per-card instead of blocking the whole page.
+// Classifies every participant in a battery as pass/fail/incomplete and
+// computes a composite % score and total time taken, for the data-quality
+// visualizer. Pass/fail follows the lab's actual final exclusion block in
+// read_data_script.R (df_clean) — everything above that block in the real
+// script (histograms, Mahalanobis distance) was exploratory work used to
+// arrive at this rule, not the rule itself. Fails if ANY of:
+//  1. Attention_Final !== 1 (didn't confirm good-effort on the ACF check)
+//  2. mean per-item RT < 15s AND composite score <= 25% (sped through AND
+//     scored low — fails only on the combination, not either alone)
+//  3. Practice_Check_Avg <= 0.2 (near-chance on embedded attention items)
+//  4. every present typed check is wrong (AC1's correct answer is '413',
+//     AC2's is '899' — fails only if all the ones actually in the battery
+//     are wrong, matching "AC1 correct OR AC2 correct" when both present)
+// Any criterion whose underlying test isn't in the battery, or whose value
+// wasn't computed, doesn't count against the participant.
+function computeProjectQuality(rawTrials, testIds){
+  const allParticipants = [...new Set(rawTrials.map(r => r.participant))];
+  const { scoreRows } = buildCleanExport(rawTrials, testIds);
+  const hasACF = testIds.includes('ACF');
+  const hasAC1 = testIds.includes('AC1');
+  const hasAC2 = testIds.includes('AC2');
+
+  const participants = allParticipants.map(pid => {
+    const row = scoreRows.find(r => r.id === pid);
+    if (!row) return { id: pid, status: 'incomplete', compositePct: null, totalMinutes: null, reasons: [] };
+
+    const scoreKeys = Object.keys(row).filter(k => k.endsWith('_score') && typeof row[k] === 'number' && !Number.isNaN(row[k]));
+    const rtKeys = Object.keys(row).filter(k => k.endsWith('_rt') && typeof row[k] === 'number' && !Number.isNaN(row[k]));
+    const compositeScore = scoreKeys.length ? scoreKeys.reduce((a, k) => a + row[k], 0) / scoreKeys.length : null; // 0-1
+    const meanRt = rtKeys.length ? rtKeys.reduce((a, k) => a + row[k], 0) / rtKeys.length : null; // seconds/item
+
+    const stopMarker = rawTrials.find(t => t.participant === pid && cleanBlank(t['feedback.stopped']));
+    const totalMinutes = stopMarker ? Number(stopMarker['feedback.stopped']) / 60 : null;
+
+    const reasons = [];
+    if (hasACF && row.Attention_Final !== 1) reasons.push('failed final attention check');
+    if (meanRt !== null && compositeScore !== null && meanRt < 15 && compositeScore <= 0.25) reasons.push('sped through with a low score');
+    if (row.Practice_Check_Avg !== undefined && row.Practice_Check_Avg !== '' && row.Practice_Check_Avg <= 0.2) reasons.push('low practice attention-check accuracy');
+    const presentChecks = [];
+    if (hasAC1) presentChecks.push(row.Attention_Check1 === '413');
+    if (hasAC2) presentChecks.push(row.Attention_Check2 === '899');
+    if (presentChecks.length > 0 && !presentChecks.some(Boolean)) reasons.push('missed all typed attention-check questions');
+
+    return {
+      id: pid,
+      status: reasons.length ? 'fail' : 'pass',
+      compositePct: compositeScore !== null ? compositeScore * 100 : null,
+      totalMinutes,
+      reasons,
+    };
+  });
+
+  const completedPcts = participants.filter(p => p.compositePct !== null).map(p => p.compositePct);
+  const mean = completedPcts.length ? completedPcts.reduce((a, b) => a + b, 0) / completedPcts.length : null;
+  const sd = completedPcts.length > 1
+    ? Math.sqrt(completedPcts.reduce((a, b) => a + (b - mean) ** 2, 0) / (completedPcts.length - 1))
+    : null;
+
+  const completedMinutes = participants.filter(p => p.totalMinutes !== null).map(p => p.totalMinutes);
+  const meanMinutes = completedMinutes.length ? completedMinutes.reduce((a, b) => a + b, 0) / completedMinutes.length : null;
+  const sdMinutes = completedMinutes.length > 1
+    ? Math.sqrt(completedMinutes.reduce((a, b) => a + (b - meanMinutes) ** 2, 0) / (completedMinutes.length - 1))
+    : null;
+
+  return {
+    participants, mean, sd, meanMinutes, sdMinutes,
+    total: allParticipants.length,
+    completed: participants.filter(p => p.status !== 'incomplete').length,
+  };
+}
+
+async function loadProjectStats(rows){
+  for (const row of rows){
+    if (!row.participantCount){
+      const line = document.getElementById(`project-stats-${row.id}`);
+      if (line) line.textContent = `Participants: ${row.participantCount === null ? '—' : 0}`;
+      continue;
+    }
+    try {
+      const trials = await fetchBatteryTrials(row.id);
+      const testIds = row.items.map(i => i.testId);
+      const quality = computeProjectQuality(trials, testIds);
+      const incomplete = quality.total - quality.completed;
+
+      const line = document.getElementById(`project-stats-${row.id}`);
+      if (line) line.innerHTML = `Participants: ${quality.total}, incomplete: ${incomplete}`;
+
+      const bar = document.getElementById(`project-progress-${row.id}`);
+      if (bar && quality.total > 0){
+        const completePct = (quality.completed / quality.total) * 100;
+        bar.innerHTML = `<div class="project-progress-complete" style="width:${completePct}%"></div><div class="project-progress-incomplete" style="width:${100 - completePct}%"></div>`;
+        bar.style.display = 'flex';
+      }
+
+      const qualityWrap = document.getElementById(`project-quality-${row.id}`);
+      if (qualityWrap){
+        const meanLine = quality.mean !== null
+          ? `<div class="quality-mean-line">Mean (SD) score = ${quality.mean.toFixed(0)}% (${quality.sd !== null ? quality.sd.toFixed(0) : '—'}%)</div>`
+          : '';
+        const timeLine = quality.meanMinutes !== null
+          ? `<div class="quality-mean-line">Mean (SD) time = ${quality.meanMinutes.toFixed(1)} min (${quality.sdMinutes !== null ? quality.sdMinutes.toFixed(1) : '—'} min)</div>`
+          : '';
+        const squares = quality.participants.map(p => {
+          const detail = p.status === 'incomplete' ? 'incomplete'
+            : p.reasons.length ? `fail — ${p.reasons.join('; ')}`
+            : 'pass';
+          const pct = p.compositePct !== null ? ` (${p.compositePct.toFixed(0)}%)` : '';
+          return `<div class="quality-square ${p.status}" title="${escapeHtml(p.id)}: ${escapeHtml(detail)}${pct}"></div>`;
+        }).join('');
+        qualityWrap.innerHTML = `${meanLine}${timeLine}<div class="quality-grid">${squares}</div>`;
+      }
+    } catch (e){
+      const line = document.getElementById(`project-stats-${row.id}`);
+      if (line) line.textContent = `Participants: ${row.participantCount} (couldn't load completion detail)`;
+    }
+  }
 }
 
 function editSavedBattery(id){
