@@ -1471,6 +1471,7 @@
     <div class="battery-footer">
       <button class="btn secondary" onclick="goToCatalog()">+ Add another test</button>
       <div class="battery-footer-right">
+        <span id="battery-psychopy-msg" class="field-hint" style="max-width:220px;"></span>
         <button class="btn secondary" id="battery-psychopy-btn" onclick="downloadPsychopyFiles()">Download PsychoPy files</button>
         <button class="btn secondary" id="battery-save-btn" onclick="saveBatteryDraft()">Save</button>
         <button class="btn secondary" id="battery-pilot-btn" onclick="generatePilotLink()">Generate pilot link</button>
@@ -1651,6 +1652,7 @@ function showApp(session){
   isAdmin = ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
   document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
   showView('view-home');
+  fetchAndMergeCustomTests();
 }
 
 function showAuth(){
@@ -1934,6 +1936,57 @@ const PSYCHOPY_TEST_DEFS = {
   WS:    { stim_folder: 'WS_Stimuli',    stim_file: 'WS_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'WS_Instructions.csv',    selector_box_image: 'selector.png',   choices: 5 },
 };
 
+// Bare custom_tests.id -> the full fetched row (used by the PsychoPy-export
+// guard and anywhere else the raw row is needed, not just the catalog card).
+let CUSTOM_TESTS_BY_ID = {};
+
+// Generic per-type instructions text for a researcher-authored custom test —
+// there's no default instructions IMAGE to fall back to (unlike built-in
+// tests), so custom tests always run with customInstructions locked on,
+// starting from this text (see standardFields() below).
+const DEFAULT_CUSTOM_INSTRUCTIONS = {
+  'multiple choice': `There are {itemCount} problems on this test. You will be required to spend at least {timeMin} seconds on each problem. Press Enter to begin the test.`,
+  'multiple selections': `Remember: there are always two and only two correct answers for each item. Work as quickly as you can without sacrificing accuracy. This test consists of {itemCount} problems; you must spend a minimum of {timeMin} seconds on each. Press Enter to begin the test.`,
+  'same different': `This test consists of {itemCount} problems. You must spend a minimum of {timeMin} seconds on each problem before you can move on. Press Enter to begin the test.`,
+  'fill in the blank': `There are {itemCount} problems on this test. You will not be able to submit your answer until at least {timeMin} seconds have passed. Press Enter to begin the test.`,
+};
+
+// Fetches the logged-in researcher's own saved custom tests and merges each
+// into the same TESTS/TEST_ITEMS/DEFAULT_INSTRUCTIONS lookups the built-in
+// catalog uses, keyed 'custom:<id>' so the composer and the runtime can both
+// tell a custom test apart from a built-in short code like 'VK'. Deliberately
+// does NOT add an entry to PSYCHOPY_TEST_DEFS — its absence is what makes
+// downloadPsychopyFiles() correctly refuse to export a custom test.
+async function fetchAndMergeCustomTests(){
+  if (DEV_MODE) return; // no live Supabase custom_tests table to query in dev mode
+  const user = await requireUser();
+  if (!user) return;
+
+  const { data, error } = await supabaseClient.from('custom_tests').select('*').eq('researcher_id', user.id);
+  if (error){ console.error('Failed to fetch custom tests:', error); return; }
+
+  (data || []).forEach(row => {
+    const testId = 'custom:' + row.id;
+    CUSTOM_TESTS_BY_ID[row.id] = row;
+    TEST_ITEMS[testId] = row.items.map(it => it.standard_stim);
+    DEFAULT_INSTRUCTIONS[testId] = DEFAULT_CUSTOM_INSTRUCTIONS[row.type_of_test] || '';
+
+    const def = {
+      id: testId,
+      name: row.name,
+      shortName: row.name,
+      description: row.description || 'Custom researcher-authored test',
+      iconSpeed: '',
+      stats: { items: row.items.length, timeLabel: '' },
+      fields: standardFields(testId, Math.min(10, row.items.length)),
+      isCustom: true,
+    };
+    const idx = TESTS.findIndex(t => t.id === testId);
+    if (idx > -1) TESTS[idx] = def; else TESTS.push(def);
+  });
+  renderCatalog();
+}
+
 // Shared config fields every real test gets: which items (specific picks or
 // just a count), timing, randomization, and whether it counts toward scoring.
 // `choices` (answer-box layout) is intentionally NOT here — it's fixed by the
@@ -1955,8 +2008,14 @@ function standardFields(testId, defaultCount){
     { key: 'includeScore', label: 'Show score to participants', hint: "Turning this on will reveal the number correct and percentile rank of the participant's score at the end of this test.", type: 'toggle', default: false },
   ];
   if (DEFAULT_INSTRUCTIONS[testId]){
+    // Custom tests have no fallback instructions image to show if this is
+    // off, so it's forced on and locked — there is no valid "off" state.
+    const isCustom = testId.startsWith('custom:');
     fields.push(
-      { key: 'customInstructions', label: 'Custom instructions', hint: 'Override the final instructions page with editable text below. Off uses the default instructions image, unchanged.', type: 'toggle', default: false },
+      { key: 'customInstructions', label: 'Custom instructions', hint: isCustom
+          ? 'Always on for custom tests — there is no default instructions image to fall back to.'
+          : 'Override the final instructions page with editable text below. Off uses the default instructions image, unchanged.',
+        type: 'toggle', default: isCustom ? true : false, locked: isCustom },
       { key: 'customInstructionsText', label: 'Instructions text', hint: '{itemCount} and {timeMin} fill in automatically from this test\'s settings. Wrap words in *asterisks* for italics.', type: 'textarea', formatted: true, pagesKey: testId, showIf: v => v.customInstructions, default: DEFAULT_INSTRUCTIONS[testId] },
     );
   }
@@ -2354,7 +2413,7 @@ function renderFields(){
       </select>`;
     } else if (f.type === 'toggle'){
       control = `<label class="toggle">
-        <input type="checkbox" ${currentValues[f.key] ? 'checked' : ''} onchange="updateValue('${f.key}', this.checked, 'bool'); renderFields()">
+        <input type="checkbox" ${currentValues[f.key] ? 'checked' : ''} ${f.locked ? 'disabled' : ''} onchange="updateValue('${f.key}', this.checked, 'bool'); renderFields()">
         <span class="slider"></span>
       </label>`;
     } else if (f.type === 'textarea'){
@@ -2364,16 +2423,20 @@ function renderFields(){
     } else if (f.type === 'itemPicker'){
       const items = TEST_ITEMS[f.testId] || [];
       const selected = currentValues[f.key] || [];
-      control = `<div class="item-picker">${items.map(item => `
+      const isCustom = f.testId.startsWith('custom:');
+      control = `<div class="item-picker">${items.map((item, idx) => {
+        const thumbSrc = isCustom ? item : `test_creator/${f.testId}_Stimuli/${item}`;
+        const label = isCustom ? `Item ${idx + 1}` : item;
+        return `
         <label class="item-picker-cell ${selected.includes(item) ? 'selected' : ''}">
           <input type="checkbox" ${selected.includes(item) ? 'checked' : ''} onchange="toggleItemSelection('${f.key}', '${item}', this.checked)">
-          <img src="test_creator/${f.testId}_Stimuli/${item}" loading="lazy" alt="${item}"
-               onmouseenter="showItemPreview(event, 'test_creator/${f.testId}_Stimuli/${item}', '${f.testId}', '${item}')"
+          <img src="${thumbSrc}" loading="lazy" alt="${escapeHtml(label)}"
+               onmouseenter="showItemPreview(event, '${thumbSrc}', '${f.testId}', '${item}')"
                onmousemove="positionItemPreview(event)"
                onmouseleave="hideItemPreview()">
-          <span>${item}</span>
+          <span>${escapeHtml(label)}</span>
         </label>
-      `).join('')}</div>`;
+      `;}).join('')}</div>`;
     }
     return `<div class="field-row">
       <div class="field-label">${f.label}${f.hint ? `<span class="field-hint">${f.hint}</span>` : ''}</div>
@@ -2642,14 +2705,24 @@ function renderBatteryList(){
   renderAttentionChecks();
   const wrap = document.getElementById('battery-list-wrap');
   const actionBtns = ['battery-save-btn', 'battery-pilot-btn', 'battery-run-btn'].map(id => document.getElementById(id));
+  const psychopyBtn = document.getElementById('battery-psychopy-btn');
+  const psychopyMsg = document.getElementById('battery-psychopy-msg');
+  const hasCustomTest = battery.some(item => item.testId.startsWith('custom:'));
+  psychopyMsg.textContent = hasCustomTest
+    ? 'Unavailable — this battery contains a custom test, which only runs on this platform.'
+    : '';
 
   if (battery.length === 0){
     wrap.innerHTML = `<div class="battery-empty">Your battery is empty. Add a test from the catalog to get started.</div>`;
     actionBtns.forEach(btn => { btn.disabled = true; btn.style.opacity = '0.5'; });
+    psychopyBtn.disabled = true;
+    psychopyBtn.style.opacity = '0.5';
     return;
   }
 
   actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = '1'; });
+  psychopyBtn.disabled = hasCustomTest;
+  psychopyBtn.style.opacity = hasCustomTest ? '0.5' : '1';
 
   wrap.innerHTML = `<div class="battery-list">${battery.map((item, i) => {
     const test = TESTS.find(t => t.id === item.testId);
@@ -3457,6 +3530,10 @@ async function downloadPsychopyFiles(){
     alert('Add at least one test to the battery first.');
     return;
   }
+  if (battery.some(item => item.testId.startsWith('custom:'))){
+    alert('This battery contains a custom test. Custom tests require a live database lookup at runtime and cannot be exported as static PsychoPy files — remove them from the battery to use this export, or run the battery on this platform instead.');
+    return;
+  }
 
   const btn = document.getElementById('battery-psychopy-btn');
   const originalLabel = btn.textContent;
@@ -3860,15 +3937,14 @@ function copyLink(){
 // ----------------------------
 // Draw answer-box positions on a template image, bulk-tag which answer is
 // correct across the uploaded item bank, then save to Supabase Storage +
-// the custom_tests table. Generates data in the same shape (standard_stim /
-// answer_positionX / answer_positionY / selector_size / correct_answer)
-// the runtime's existing test_loop already reads for every built-in test.
-//
-// Not yet wired into the battery builder — saving a custom test here
-// doesn't make it selectable in the catalog yet. That needs the runtime to
-// learn to fetch a test it doesn't already know about at build time
-// (see buildTestListRows / ALL_RESOURCES in spatial_battery.js), which is
-// a separate, later piece of work.
+// the custom_tests table. Saved items carry the same field names/answer
+// tokens (standard_stim / answer_positionX / answer_positionY /
+// selector_size / correct_answer, or textbox_position / textbox_size for
+// fill-in-the-blank) the runtime's item_loop reads for every built-in test —
+// see tcBuildRuntimeItemRow(). fetchAndMergeCustomTests() (below, near
+// PSYCHOPY_TEST_DEFS) is what makes a saved test selectable in the catalog;
+// spatial_battery.js's customTestDefs/buildTestListRows is what makes it
+// actually runnable.
 const TC_NATIVE_DEFAULT = { w: 1920, h: 1080 };
 let tcNativeW = TC_NATIVE_DEFAULT.w, tcNativeH = TC_NATIVE_DEFAULT.h;
 let tcBoxes = [];
@@ -4290,6 +4366,56 @@ function tcBuildCsvRow(item, index){
   return `${filename},"[${xs.join(', ')}]","[${ys.join(', ')}]","[${size.nativeW}, ${size.nativeH}]","${correct}"`;
 }
 
+// Builds the runtime-consumable row for one item — same box geometry as
+// tcBuildCsvRow (the CSV preview), but returns real JS values with the
+// exact field names/token conventions item_loop reads at runtime. The
+// per-mode correct_answer token format is NOT the same as tcItemCorrectSummary's
+// display string: mc/sd click targets are named "ans_box_<letter>", but ms
+// click targets are separate Rect objects named "Rclick_box<index>" (see
+// itemRoutineBegin/click_boxes in spatial_battery.js) — using ans_box_
+// tokens for ms would make every custom multiple-selections item unscoreable.
+function tcBuildRuntimeItemRow(item, index, publicUrl){
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'fib'){
+    const b = tcEffectiveBoxForItemIndex(tcBoxes[0], index);
+    const cleaned = String(item.answerText || '')
+      .replace(/\n/g, '').replace(/\r/g, '')
+      .replace(/[^a-z0-9.]/gi, '').toUpperCase();
+    return {
+      standard_stim: publicUrl,
+      textbox_position: [b.nativeX, b.nativeY],
+      textbox_size: [b.nativeW, b.nativeH],
+      correct_answer: cleaned,
+    };
+  }
+  const xs = tcBoxes.map(b => tcEffectiveBoxForItemIndex(b, index).nativeX);
+  const ys = tcBoxes.map(b => tcEffectiveBoxForItemIndex(b, index).nativeY);
+  const size = tcEffectiveBoxForItemIndex(tcBoxes[0], index);
+  let correct;
+  if (mode === 'sd'){
+    correct = [...new Set(tcBoxes.map(b => b.pairId))].map(pid => {
+      const boxId = item.correctBoxIds.find(id => { const b = tcBoxes.find(x => x.id === id); return b && b.pairId === pid; });
+      const b = tcBoxes.find(x => x.id === boxId);
+      return b ? `ans_box_${b.letter}` : '';
+    }).join(', ');
+  } else if (mode === 'ms'){
+    correct = item.correctBoxIds
+      .map(id => `Rclick_box${tcBoxes.findIndex(b => b.id === id)}`)
+      .join(', ');
+  } else {
+    correct = item.correctBoxIds
+      .map(id => { const b = tcBoxes.find(x => x.id === id); return b ? `ans_box_${b.letter}` : ''; })
+      .join(', ');
+  }
+  return {
+    standard_stim: publicUrl,
+    answer_positionX: xs,
+    answer_positionY: ys,
+    selector_size: [size.nativeW, size.nativeH],
+    correct_answer: correct,
+  };
+}
+
 function tcShowReview(){
   tcPhase = 'review';
   tcEl('tc-taggingToolbar').style.display = 'none';
@@ -4394,8 +4520,8 @@ async function tcSaveTest(){
       itemsForDb.push({
         filename: `item_${i + 1}.png`,
         imageUrl: urlData.publicUrl,
-        correctAnswer: tcItemCorrectSummary(tcItems[i]),
-        answerText: mode === 'fib' ? (tcItems[i].answerText || '') : undefined,
+        ...tcBuildRuntimeItemRow(tcItems[i], i, urlData.publicUrl),
+        correctAnswerDisplay: tcItemCorrectSummary(tcItems[i]),
         overrides: tcItems[i].overrides,
       });
     }
@@ -4412,14 +4538,18 @@ async function tcSaveTest(){
       name,
       description: tcEl('tc-testDescInput').value.trim() || null,
       type_of_test: { mc: 'multiple choice', ms: 'multiple selections', sd: 'same different', fib: 'fill in the blank' }[mode],
-      choices: mode === 'fib' ? 0 : tcBoxes.length,
+      // For same-different, "choices" means pair count (matching the built-in
+      // Flags test's convention, which the runtime's scoring generalizes
+      // from) — tcBoxes holds 2 entries per pair for sd, so it must be halved.
+      choices: mode === 'fib' ? 0 : (mode === 'sd' ? tcBoxes.length / 2 : tcBoxes.length),
       boxes: tcBoxes,
       items: itemsForDb,
     });
     if (insertError) throw new Error(insertError.message);
 
     saveMsg.classList.remove('error');
-    saveMsg.textContent = 'Saved. (Not yet selectable in the battery builder — that needs the runtime-loading piece built separately.)';
+    saveMsg.textContent = 'Saved! You can now add it to a battery from the catalog.';
+    await fetchAndMergeCustomTests();
   } catch (e){
     saveMsg.textContent = 'Could not save: ' + e.message;
     saveMsg.classList.add('error');
