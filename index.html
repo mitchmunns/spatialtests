@@ -1207,6 +1207,78 @@
     gap:8px;
     margin-top:6px;
   }
+
+  /* ---------- Custom test creator ---------- */
+  #tc-testType{width:auto; max-width:none;}
+  .tc-qbox{
+    position:absolute;
+    border:2px solid var(--accent);
+    background:rgba(180,104,42,0.16);
+    border-radius:4px;
+    cursor:move;
+  }
+  .tc-qbox.tc-correct{border-color:#2E7D46; background:rgba(46,125,70,0.16);}
+  .tc-qbox.tc-adjusted{border-color:#A9820A;}
+  .tc-qbox-label{
+    position:absolute; top:0; left:0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; font-weight:600;
+    padding:2px 5px;
+    background:var(--accent); color:#fff;
+    border-radius:0 0 4px 0;
+    white-space:nowrap;
+  }
+  .tc-qbox.tc-correct .tc-qbox-label{background:#2E7D46;}
+  .tc-handle{
+    position:absolute;
+    width:8px; height:8px;
+    background:#fff;
+    border:1.5px solid var(--accent);
+    border-radius:2px;
+  }
+  .tc-reset-btn{
+    position:absolute; top:-9px; right:-9px;
+    width:18px; height:18px; padding:0;
+    border-radius:50%;
+    background:#fff;
+    border:1.5px solid #A9820A;
+    display:flex; align-items:center; justify-content:center;
+    color:#A9820A;
+    font-size:10px; line-height:1;
+  }
+  .tc-box-row{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 8px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-size:12px;
+  }
+  .tc-box-row button{
+    border:none; background:none; padding:2px; height:auto; color:var(--ink-faint);
+  }
+  .tc-item-tile{
+    height:auto; padding:4px;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+  }
+  .tc-item-tile.tc-current{border-color:var(--accent);}
+  .tc-item-thumb{width:100%; aspect-ratio:16/9; background-size:cover; background-position:center; border-radius:3px;}
+  .tc-review-row{
+    display:flex; align-items:center; gap:10px;
+    padding:6px 8px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-size:12px;
+  }
+  .tc-review-thumb{width:36px; height:24px; flex-shrink:0; background-size:cover; background-position:center; border-radius:3px;}
+  .tc-stat-card{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:14px 16px;}
+  .tc-stat-card p{margin:0;}
+  .tc-stat-label{font-size:12px; color:var(--ink-soft); margin-bottom:4px !important;}
+  .tc-stat-value{font-size:19px; font-weight:600; font-family:'Space Grotesk', sans-serif;}
 </style>
 </head>
 <body>
@@ -1267,8 +1339,13 @@
   <!-- CATALOG VIEW -->
   <div id="view-catalog" class="hidden">
     <p class="eyebrow">01 — Select tests</p>
-    <h1 class="view-title">Test catalog</h1>
-    <p class="view-sub">Add one or more tests to a battery. Configure each one, then generate a single link that runs the whole set for a participant — even a battery of one.</p>
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+      <div>
+        <h1 class="view-title">Test catalog</h1>
+        <p class="view-sub">Add one or more tests to a battery. Configure each one, then generate a single link that runs the whole set for a participant — even a battery of one.</p>
+      </div>
+      <button class="btn secondary" style="width:auto; white-space:nowrap; padding:10px 14px; margin-bottom:22px;" onclick="goToTestCreator()">+ Create custom test</button>
+    </div>
     <div class="catalog-grid" id="catalog-grid"></div>
   </div>
 
@@ -1291,6 +1368,89 @@
       <button class="btn secondary reset-btn" onclick="resetToDefaults()">Reset to defaults</button>
       <button class="btn secondary" id="cust-cancel-btn">Cancel</button>
       <button class="btn accent" id="cust-submit-btn" onclick="submitCustomize()">Add to battery</button>
+    </div>
+  </div>
+
+  <!-- CUSTOM TEST CREATOR VIEW -->
+  <div id="view-test-creator" class="hidden">
+    <button class="back-link" onclick="goToCatalog()">&larr; back to catalog</button>
+    <p class="eyebrow">Custom test</p>
+    <h1 class="view-title">Create a custom test</h1>
+    <p class="view-sub">Upload a stimulus image, mark the answer boxes, then upload the rest of the item bank and tag the correct answer for each one. This test won't appear in the catalog yet — see note below.</p>
+
+    <div id="tc-layoutToolbar" style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+      <select id="tc-testType">
+        <option value="mc">Multiple choice — 1 correct box</option>
+        <option value="ms">Multiple selections — 2 correct boxes</option>
+        <option value="sd">Same/different — paired boxes</option>
+        <option value="fib">Fill in the blank — typed answer</option>
+      </select>
+      <button class="btn secondary" style="width:auto;" id="tc-uploadTemplateBtn" type="button">Upload image</button>
+      <span id="tc-templateFileName" style="font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint);">No image uploaded</span>
+      <button class="btn accent" style="width:auto; margin-left:auto;" id="tc-continueBtn" disabled>Upload items &amp; tag</button>
+    </div>
+    <p id="tc-layoutHint" class="field-hint" style="margin:0 0 14px;"></p>
+
+    <div id="tc-taggingToolbar" style="display:none; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+      <button class="btn secondary" style="width:auto;" id="tc-backBtn">&larr; back to layout</button>
+      <span id="tc-itemLabel" style="font-size:13.5px; font-weight:500;"></span>
+      <button class="btn accent" style="width:auto; margin-left:auto;" id="tc-nextBtn" disabled>Next item</button>
+    </div>
+    <p id="tc-taggingHint" class="field-hint" style="display:none; margin:0 0 14px;">Each new item starts with the previous item's answer already selected — click to change it if this one's different. Drag a box body to move it or a corner to resize it if the stimulus is off; changes apply to this item only.</p>
+
+    <input type="file" id="tc-templateImageInput" accept="image/*" style="display:none" />
+    <input type="file" id="tc-itemImagesInput" accept="image/*" multiple style="display:none" />
+
+    <div id="tc-mainRow" style="display:flex; gap:20px; flex-wrap:wrap;">
+      <div style="flex:2; min-width:340px;">
+        <div id="tc-imageArea" style="position:relative; width:100%; aspect-ratio:16/9; background:var(--card); border:1px solid var(--line); border-radius:4px; overflow:hidden; cursor:crosshair; user-select:none;">
+          <div id="tc-placeholderBg" style="position:absolute; inset:0; background:repeating-linear-gradient(45deg, transparent 0 22px, var(--accent-soft) 22px 24px); display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:13px; color:var(--ink-faint);">Upload a template image to get started</span>
+          </div>
+          <img id="tc-stimImg" style="position:absolute; inset:0; width:100%; height:100%; object-fit:fill; display:none; pointer-events:none;" alt="" />
+          <div id="tc-boxLayer" style="position:absolute; inset:0;"></div>
+          <div id="tc-dragBox" style="position:absolute; border:2px dashed var(--accent); background:var(--accent-soft); opacity:0.85; display:none; pointer-events:none;"></div>
+        </div>
+        <p id="tc-coordReadout" style="font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint); margin:8px 0 0;">x: —, y: —, w: —, h: — (px, at image resolution)</p>
+        <div id="tc-answerInputWrap" class="field-block" style="display:none; margin-top:10px; max-width:280px;">
+          <label>Correct answer for this item</label>
+          <input id="tc-answerInput" type="text" placeholder="Type the exact expected answer" />
+        </div>
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <div id="tc-layoutSidebar">
+          <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Boxes</p>
+          <div id="tc-boxList" style="display:flex; flex-direction:column; gap:6px;"></div>
+          <p id="tc-emptyHint" style="font-size:12px; color:var(--ink-faint); margin-top:4px;"></p>
+        </div>
+        <div id="tc-taggingSidebar" style="display:none;">
+          <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Items</p>
+          <div id="tc-itemStrip" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tc-reviewScreen" style="display:none;">
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div class="field-block" style="flex:1; min-width:200px;">
+          <label>Test name</label>
+          <input id="tc-testNameInput" type="text" placeholder="e.g. Custom Rotation Task" />
+        </div>
+        <div class="field-block" style="flex:2; min-width:240px;">
+          <label>Description (shown in the catalog later)</label>
+          <input id="tc-testDescInput" type="text" placeholder="One line describing the task" />
+        </div>
+      </div>
+      <div id="tc-reviewStats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; margin-bottom:18px;"></div>
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Items</p>
+      <div id="tc-reviewList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:16px; max-height:240px; overflow-y:auto;"></div>
+      <button class="btn secondary" style="width:auto; margin-bottom:10px;" id="tc-toggleCsvBtn" type="button">View generated data row</button>
+      <pre id="tc-csvPreview" style="display:none; background:var(--card); border:1px solid var(--line); border-radius:4px; padding:10px 12px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); overflow-x:auto; white-space:pre; margin:0 0 12px;"></pre>
+      <div id="tc-saveMsg" class="auth-msg" style="margin-bottom:8px;"></div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn secondary" style="width:auto;" id="tc-backToTaggingBtn" type="button">&larr; back to items</button>
+        <button class="btn accent" style="width:auto;" id="tc-saveTestBtn" type="button">Save test</button>
+      </div>
     </div>
   </div>
 
@@ -2372,7 +2532,7 @@ function hideItemPreview(){
 }
 
 function showView(id){
-  ['view-home', 'view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets', 'view-admin'].forEach(v => {
+  ['view-home', 'view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
 }
@@ -2383,6 +2543,11 @@ function goToHome(){
 
 function goToCatalog(){
   showView('view-catalog');
+}
+
+function goToTestCreator(){
+  resetTestCreator();
+  showView('view-test-creator');
 }
 
 function goToBattery(){
@@ -3689,6 +3854,586 @@ function copyLink(){
     setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
   });
 }
+
+// ----------------------------
+// CUSTOM TEST CREATOR
+// ----------------------------
+// Draw answer-box positions on a template image, bulk-tag which answer is
+// correct across the uploaded item bank, then save to Supabase Storage +
+// the custom_tests table. Generates data in the same shape (standard_stim /
+// answer_positionX / answer_positionY / selector_size / correct_answer)
+// the runtime's existing test_loop already reads for every built-in test.
+//
+// Not yet wired into the battery builder — saving a custom test here
+// doesn't make it selectable in the catalog yet. That needs the runtime to
+// learn to fetch a test it doesn't already know about at build time
+// (see buildTestListRows / ALL_RESOURCES in spatial_battery.js), which is
+// a separate, later piece of work.
+const TC_NATIVE_DEFAULT = { w: 1920, h: 1080 };
+let tcNativeW = TC_NATIVE_DEFAULT.w, tcNativeH = TC_NATIVE_DEFAULT.h;
+let tcBoxes = [];
+let tcDraw = null;
+let tcInteraction = null;
+let tcNextLetter = 0;
+const TC_LETTERS = 'ABCDEFGH';
+const TC_MIN_PX = 16;
+const TC_CLICK_SLOP = 3;
+
+let tcPhase = 'layout';
+let tcItems = [];
+let tcItemFiles = [];
+let tcItemImageUrls = [];
+let tcCurrentItem = 0;
+let tcTemplateFile = null;
+let tcTemplateImageUrl = null;
+
+const TC_HINTS = {
+  mc: 'Drag empty space to draw a box, drag a box to move, drag a corner to resize',
+  ms: 'Drag empty space to draw a box, drag a box to move, drag a corner to resize',
+  sd: 'Draw boxes one at a time, same as any type — every two, in order, form a same/different pair',
+  fib: 'Drag once to place the answer field — only one is needed'
+};
+const TC_EMPTY_HINTS = {
+  mc: 'Draw at least 2 boxes, then continue.',
+  ms: 'Draw at least 2 boxes, then continue.',
+  sd: 'Draw at least 1 pair, then continue.',
+  fib: 'Place the answer field, then continue.'
+};
+
+function tcEl(id){ return document.getElementById(id); }
+
+function resetTestCreator(){
+  tcNativeW = TC_NATIVE_DEFAULT.w; tcNativeH = TC_NATIVE_DEFAULT.h;
+  tcBoxes = []; tcDraw = null; tcInteraction = null; tcNextLetter = 0;
+  tcPhase = 'layout'; tcItems = []; tcItemFiles = []; tcItemImageUrls = [];
+  tcCurrentItem = 0; tcTemplateFile = null; tcTemplateImageUrl = null;
+
+  tcEl('tc-testType').value = 'mc';
+  tcEl('tc-templateFileName').textContent = 'No image uploaded';
+  tcEl('tc-placeholderBg').style.display = 'flex';
+  tcEl('tc-stimImg').style.display = 'none';
+  tcEl('tc-imageArea').style.aspectRatio = '16/9';
+  tcEl('tc-layoutToolbar').style.display = 'flex';
+  tcEl('tc-taggingToolbar').style.display = 'none';
+  tcEl('tc-taggingHint').style.display = 'none';
+  tcEl('tc-answerInputWrap').style.display = 'none';
+  tcEl('tc-layoutSidebar').style.display = 'block';
+  tcEl('tc-taggingSidebar').style.display = 'none';
+  tcEl('tc-mainRow').style.display = 'flex';
+  tcEl('tc-reviewScreen').style.display = 'none';
+  tcEl('tc-imageArea').style.cursor = 'crosshair';
+  tcEl('tc-coordReadout').style.display = 'block';
+  tcEl('tc-testNameInput').value = '';
+  tcEl('tc-testDescInput').value = '';
+  const saveMsg = tcEl('tc-saveMsg');
+  saveMsg.textContent = '';
+  saveMsg.classList.remove('error');
+  tcRenderLayout();
+}
+
+function tcToNativeLen(px, dim){
+  const rect = tcEl('tc-imageArea').getBoundingClientRect();
+  const size = dim === 'x' ? rect.width : rect.height;
+  const native = dim === 'x' ? tcNativeW : tcNativeH;
+  return Math.round((px / size) * native);
+}
+function tcPxFromPct(p, rect){
+  return { left: p.leftPct/100*rect.width, top: p.topPct/100*rect.height, w: p.wPct/100*rect.width, h: p.hPct/100*rect.height };
+}
+function tcPctFromPx(left, top, w, h, rect){
+  return {
+    leftPct: left/rect.width*100, topPct: top/rect.height*100, wPct: w/rect.width*100, hPct: h/rect.height*100,
+    nativeX: tcToNativeLen(left,'x'), nativeY: tcToNativeLen(top,'y'), nativeW: tcToNativeLen(w,'x'), nativeH: tcToNativeLen(h,'y')
+  };
+}
+function tcGetEffectiveBox(box){
+  if (tcPhase === 'tagging'){
+    const ov = tcItems[tcCurrentItem] && tcItems[tcCurrentItem].overrides[box.id];
+    if (ov) return ov;
+  }
+  return box;
+}
+function tcApplyBoxPosition(box, left, top, w, h, rect){
+  const pct = tcPctFromPx(left, top, w, h, rect);
+  if (tcPhase === 'layout') Object.assign(box, pct);
+  else tcItems[tcCurrentItem].overrides[box.id] = pct;
+}
+function tcShowCoords(left, top, w, h){
+  tcEl('tc-coordReadout').textContent = `x: ${tcToNativeLen(left,'x')}, y: ${tcToNativeLen(top,'y')}, w: ${tcToNativeLen(w,'x')}, h: ${tcToNativeLen(h,'y')} (px, at image resolution)`;
+}
+
+tcEl('tc-uploadTemplateBtn').addEventListener('click', () => tcEl('tc-templateImageInput').click());
+tcEl('tc-templateImageInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    tcNativeW = img.naturalWidth;
+    tcNativeH = img.naturalHeight;
+    tcEl('tc-imageArea').style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+    tcTemplateFile = file;
+    tcTemplateImageUrl = url;
+    tcEl('tc-templateFileName').textContent = file.name;
+    tcEl('tc-placeholderBg').style.display = 'none';
+    tcEl('tc-stimImg').src = url;
+    tcEl('tc-stimImg').style.display = 'block';
+    tcUpdateContinueEnabled();
+  };
+  img.src = url;
+});
+
+tcEl('tc-itemImagesInput').addEventListener('change', (e) => {
+  const files = [...e.target.files];
+  if (files.length === 0) return;
+  tcItemFiles = files;
+  tcItemImageUrls = files.map(f => URL.createObjectURL(f));
+  tcPhase = 'tagging';
+  tcItems = tcItemImageUrls.map(() => ({ correctBoxIds: [], overrides: {}, answerText: '' }));
+  tcCurrentItem = 0;
+  tcEl('tc-layoutToolbar').style.display = 'none';
+  tcEl('tc-layoutHint').style.display = 'none';
+  tcEl('tc-taggingToolbar').style.display = 'flex';
+  tcEl('tc-taggingHint').style.display = 'block';
+  tcEl('tc-layoutSidebar').style.display = 'none';
+  tcEl('tc-taggingSidebar').style.display = 'block';
+  tcEl('tc-imageArea').style.cursor = 'default';
+  tcEl('tc-coordReadout').style.display = 'none';
+  tcGoToItem(0);
+});
+
+function tcUpdateContinueEnabled(){
+  const mode = tcEl('tc-testType').value;
+  const minBoxes = mode === 'fib' ? 1 : 2;
+  tcEl('tc-continueBtn').disabled = tcBoxes.length < minBoxes || !tcTemplateImageUrl;
+}
+
+tcEl('tc-imageArea').addEventListener('mousedown', (e) => {
+  if (e.target.closest('.tc-reset-btn')) return;
+  const handle = e.target.closest('.tc-handle');
+  const boxEl = e.target.closest('.tc-qbox');
+  const rect = tcEl('tc-imageArea').getBoundingClientRect();
+  const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
+
+  if (handle){
+    const box = tcBoxes.find(b => b.id === handle.closest('.tc-qbox').dataset.id);
+    tcInteraction = { mode: 'resize', box, corner: handle.dataset.corner, startX: mouseX, startY: mouseY, orig: tcPxFromPct(tcGetEffectiveBox(box), rect), moved: false };
+  } else if (boxEl){
+    const box = tcBoxes.find(b => b.id === boxEl.dataset.id);
+    tcInteraction = { mode: 'move', box, startX: mouseX, startY: mouseY, orig: tcPxFromPct(tcGetEffectiveBox(box), rect), moved: false };
+  } else if (tcPhase === 'layout' && !(tcEl('tc-testType').value === 'fib' && tcBoxes.length >= 1)){
+    tcDraw = { startX: mouseX, startY: mouseY };
+    tcEl('tc-dragBox').style.display = 'block';
+  }
+});
+
+tcEl('tc-imageArea').addEventListener('mousemove', (e) => {
+  const rect = tcEl('tc-imageArea').getBoundingClientRect();
+  const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
+
+  if (tcDraw){
+    const left = Math.min(tcDraw.startX, mouseX), top = Math.min(tcDraw.startY, mouseY);
+    const w = Math.abs(mouseX - tcDraw.startX), h = Math.abs(mouseY - tcDraw.startY);
+    const dragBox = tcEl('tc-dragBox');
+    dragBox.style.left = left+'px'; dragBox.style.top = top+'px';
+    dragBox.style.width = w+'px'; dragBox.style.height = h+'px';
+    tcShowCoords(left, top, w, h);
+    return;
+  }
+  if (!tcInteraction) return;
+  const dx = mouseX - tcInteraction.startX, dy = mouseY - tcInteraction.startY;
+  if (Math.abs(dx) > TC_CLICK_SLOP || Math.abs(dy) > TC_CLICK_SLOP) tcInteraction.moved = true;
+  if (!tcInteraction.moved) return;
+  const o = tcInteraction.orig;
+  let left = o.left, top = o.top, w = o.w, h = o.h;
+
+  if (tcInteraction.mode === 'move'){
+    left = Math.max(0, Math.min(rect.width - o.w, o.left + dx));
+    top = Math.max(0, Math.min(rect.height - o.h, o.top + dy));
+  } else {
+    const c = tcInteraction.corner;
+    if (c.includes('e')) w = Math.max(TC_MIN_PX, o.w + dx);
+    if (c.includes('s')) h = Math.max(TC_MIN_PX, o.h + dy);
+    if (c.includes('w')){ w = Math.max(TC_MIN_PX, o.w - dx); left = o.left + o.w - w; }
+    if (c.includes('n')){ h = Math.max(TC_MIN_PX, o.h - dy); top = o.top + o.h - h; }
+  }
+  tcApplyBoxPosition(tcInteraction.box, left, top, w, h, rect);
+  tcShowCoords(left, top, w, h);
+  tcRenderBoxLayer();
+});
+
+window.addEventListener('mouseup', () => {
+  if (tcDraw){
+    const dragBox = tcEl('tc-dragBox');
+    const left = parseFloat(dragBox.style.left) || 0, top = parseFloat(dragBox.style.top) || 0;
+    const w = parseFloat(dragBox.style.width) || 0, h = parseFloat(dragBox.style.height) || 0;
+    tcDraw = null;
+    dragBox.style.display = 'none';
+    if (w >= TC_MIN_PX && h >= TC_MIN_PX) tcAddBox(left, top, w, h);
+    else tcEl('tc-coordReadout').textContent = 'x: —, y: —, w: —, h: — (px, at image resolution)';
+  }
+  if (tcInteraction){
+    if (tcInteraction.mode === 'move' && !tcInteraction.moved && tcPhase === 'tagging' && tcEl('tc-testType').value !== 'fib') tcToggleItemCorrect(tcInteraction.box.id);
+    tcInteraction = null;
+    if (tcPhase === 'layout') tcRenderLayout(); else tcRenderTagging();
+  }
+});
+
+function tcAddBox(left, top, w, h){
+  const rect = tcEl('tc-imageArea').getBoundingClientRect();
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'fib'){
+    const box = { id: 'field', letter: 'Answer field' };
+    Object.assign(box, tcPctFromPx(left, top, w, h, rect));
+    tcBoxes = [box];
+  } else if (mode === 'sd'){
+    const sdCount = tcBoxes.length;
+    const pairNum = Math.floor(sdCount / 2) + 1;
+    const isFirstOfPair = sdCount % 2 === 0;
+    const box = { id: 'b'+(Date.now()+Math.random()), letter: pairNum+(isFirstOfPair?'S':'O'), pairId: 'p'+pairNum, side: isFirstOfPair?'S':'O' };
+    Object.assign(box, tcPctFromPx(left, top, w, h, rect));
+    tcBoxes.push(box);
+  } else {
+    const box = { id: 'b' + (Date.now() + Math.random()), letter: TC_LETTERS[tcNextLetter % TC_LETTERS.length] };
+    tcNextLetter++;
+    Object.assign(box, tcPctFromPx(left, top, w, h, rect));
+    tcBoxes.push(box);
+  }
+  tcRenderLayout();
+}
+function tcRemoveBox(id){
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'sd'){ const b = tcBoxes.find(x => x.id === id); tcBoxes = tcBoxes.filter(x => x.pairId !== b.pairId); }
+  else tcBoxes = tcBoxes.filter(b => b.id !== id);
+  tcRenderLayout();
+}
+function tcResetBoxOverride(boxId){
+  delete tcItems[tcCurrentItem].overrides[boxId];
+  tcRenderTagging();
+}
+
+function tcIsItemComplete(item){
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'mc') return item.correctBoxIds.length >= 1;
+  if (mode === 'ms') return item.correctBoxIds.length >= 2;
+  if (mode === 'sd'){
+    const pairIds = [...new Set(tcBoxes.map(b => b.pairId))];
+    return pairIds.length > 0 && pairIds.every(pid => item.correctBoxIds.some(id => { const b = tcBoxes.find(x => x.id === id); return b && b.pairId === pid; }));
+  }
+  if (mode === 'fib') return !!(item.answerText && item.answerText.trim());
+  return false;
+}
+
+function tcToggleItemCorrect(boxId){
+  const mode = tcEl('tc-testType').value;
+  const item = tcItems[tcCurrentItem];
+  const box = tcBoxes.find(b => b.id === boxId);
+  if (mode === 'mc'){ item.correctBoxIds = [boxId]; }
+  else if (mode === 'ms'){
+    const idx = item.correctBoxIds.indexOf(boxId);
+    if (idx > -1) item.correctBoxIds.splice(idx, 1);
+    else { if (item.correctBoxIds.length >= 2) item.correctBoxIds.shift(); item.correctBoxIds.push(boxId); }
+  } else if (mode === 'sd'){
+    item.correctBoxIds = item.correctBoxIds.filter(id => { const b = tcBoxes.find(x => x.id === id); return !b || b.pairId !== box.pairId; });
+    item.correctBoxIds.push(boxId);
+  }
+  tcRenderTagging();
+}
+
+function tcBoxHtml(b, eff, highlight, adjusted){
+  const handleHtml = ['nw','ne','sw','se'].map(c => {
+    const pos = { nw:'top:-4px;left:-4px;cursor:nwse-resize;', ne:'top:-4px;right:-4px;cursor:nesw-resize;', sw:'bottom:-4px;left:-4px;cursor:nesw-resize;', se:'bottom:-4px;right:-4px;cursor:nwse-resize;' }[c];
+    return `<div class="tc-handle" data-corner="${c}" style="${pos}"></div>`;
+  }).join('');
+  const resetHtml = adjusted ? `<button class="tc-reset-btn" aria-label="Reset box ${escapeHtml(b.letter)} to template position" onclick="tcResetBoxOverride('${b.id}')">&#8635;</button>` : '';
+  return `
+    <div class="tc-qbox ${highlight ? 'tc-correct' : ''} ${adjusted ? 'tc-adjusted' : ''}" data-id="${b.id}" style="left:${eff.leftPct}%; top:${eff.topPct}%; width:${eff.wPct}%; height:${eff.hPct}%;">
+      <span class="tc-qbox-label">${escapeHtml(b.letter)}</span>
+      ${handleHtml}
+      ${resetHtml}
+    </div>
+  `;
+}
+function tcRenderBoxLayer(){
+  const mode = tcEl('tc-testType').value;
+  const item = tcPhase === 'tagging' ? tcItems[tcCurrentItem] : null;
+  const correctIds = item ? item.correctBoxIds : [];
+  tcEl('tc-boxLayer').innerHTML = tcBoxes.map(b => {
+    const eff = tcGetEffectiveBox(b);
+    const adjusted = !!(item && item.overrides[b.id]);
+    const highlight = mode !== 'fib' && correctIds.includes(b.id);
+    return tcBoxHtml(b, eff, highlight, adjusted);
+  }).join('');
+}
+
+function tcRenderLayout(){
+  const mode = tcEl('tc-testType').value;
+  tcEl('tc-layoutHint').textContent = TC_HINTS[mode];
+  tcEl('tc-emptyHint').textContent = TC_EMPTY_HINTS[mode];
+  tcRenderBoxLayer();
+  tcEl('tc-boxList').innerHTML = tcBoxes.map(b => `
+    <div class="tc-box-row">
+      <span style="font-weight:500;">${escapeHtml(b.letter)}</span>
+      <span style="color:var(--ink-faint); font-family:'IBM Plex Mono', monospace; font-size:11px; flex:1;">${b.nativeX},${b.nativeY} &middot; ${b.nativeW}&times;${b.nativeH}</span>
+      <button aria-label="Remove box ${escapeHtml(b.letter)}" onclick="tcRemoveBox('${b.id}')">&times;</button>
+    </div>
+  `).join('');
+  tcEl('tc-emptyHint').style.display = tcBoxes.length ? 'none' : 'block';
+  tcUpdateContinueEnabled();
+}
+
+function tcGoToItem(i){
+  tcCurrentItem = i;
+  const item = tcItems[i];
+  const mode = tcEl('tc-testType').value;
+  const isEmpty = mode === 'fib' ? !item.answerText : item.correctBoxIds.length === 0;
+  if (isEmpty && i > 0){
+    const prev = tcItems[i - 1];
+    if (mode === 'fib') item.answerText = prev.answerText || '';
+    else item.correctBoxIds = [...prev.correctBoxIds];
+  }
+  tcEl('tc-stimImg').src = tcItemImageUrls[i];
+  tcRenderTagging();
+}
+
+function tcItemTileHtml(it, i){
+  return `
+    <button class="tc-item-tile ${i === tcCurrentItem ? 'tc-current' : ''}" onclick="tcGoToItem(${i})">
+      <div class="tc-item-thumb" style="background-image:url('${tcItemImageUrls[i]}');"></div>
+      <span style="font-size:11px; display:flex; align-items:center; gap:4px;">${i + 1} ${tcIsItemComplete(it) ? '&#10003;' : ''}</span>
+    </button>
+  `;
+}
+
+function tcRenderTagging(){
+  const mode = tcEl('tc-testType').value;
+  tcRenderBoxLayer();
+  const item = tcItems[tcCurrentItem];
+  const labels = { mc: 'mark the correct box', ms: 'mark the correct boxes', sd: 'mark same or different for each pair', fib: 'type the correct answer' };
+  tcEl('tc-itemLabel').textContent = `Item ${tcCurrentItem + 1} of ${tcItems.length} — ${labels[mode]}`;
+  tcEl('tc-answerInputWrap').style.display = mode === 'fib' ? 'block' : 'none';
+  if (mode === 'fib') tcEl('tc-answerInput').value = item.answerText || '';
+  const nextBtn = tcEl('tc-nextBtn');
+  nextBtn.disabled = !tcIsItemComplete(item);
+  nextBtn.textContent = tcCurrentItem === tcItems.length - 1 ? 'Finish' : 'Next item';
+  tcEl('tc-itemStrip').innerHTML = tcItems.map(tcItemTileHtml).join('');
+}
+
+tcEl('tc-answerInput').addEventListener('input', () => {
+  tcItems[tcCurrentItem].answerText = tcEl('tc-answerInput').value;
+  tcEl('tc-nextBtn').disabled = !tcIsItemComplete(tcItems[tcCurrentItem]);
+  tcEl('tc-itemStrip').innerHTML = tcItems.map(tcItemTileHtml).join('');
+});
+
+tcEl('tc-continueBtn').addEventListener('click', () => {
+  if (tcEl('tc-continueBtn').disabled) return;
+  tcEl('tc-itemImagesInput').click();
+});
+
+tcEl('tc-backBtn').addEventListener('click', () => {
+  tcPhase = 'layout';
+  tcEl('tc-layoutToolbar').style.display = 'flex';
+  tcEl('tc-layoutHint').style.display = 'block';
+  tcEl('tc-taggingToolbar').style.display = 'none';
+  tcEl('tc-taggingHint').style.display = 'none';
+  tcEl('tc-answerInputWrap').style.display = 'none';
+  tcEl('tc-layoutSidebar').style.display = 'block';
+  tcEl('tc-taggingSidebar').style.display = 'none';
+  tcEl('tc-imageArea').style.cursor = 'crosshair';
+  tcEl('tc-coordReadout').style.display = 'block';
+  if (tcTemplateImageUrl) tcEl('tc-stimImg').src = tcTemplateImageUrl;
+  tcRenderLayout();
+});
+
+tcEl('tc-nextBtn').addEventListener('click', () => {
+  if (tcEl('tc-nextBtn').disabled) return;
+  if (tcCurrentItem < tcItems.length - 1) tcGoToItem(tcCurrentItem + 1);
+  else tcShowReview();
+});
+
+function tcItemCorrectSummary(item){
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'fib') return item.answerText || '(no answer)';
+  if (mode === 'sd'){
+    const pairIds = [...new Set(tcBoxes.map(b => b.pairId))];
+    return pairIds.map(pid => {
+      const boxId = item.correctBoxIds.find(id => { const b = tcBoxes.find(x => x.id === id); return b && b.pairId === pid; });
+      const b = tcBoxes.find(x => x.id === boxId);
+      return b ? b.letter : '—';
+    }).join(', ');
+  }
+  return item.correctBoxIds.map(id => { const b = tcBoxes.find(x => x.id === id); return b ? b.letter : '?'; }).join(', ') || '—';
+}
+
+function tcEffectiveBoxForItemIndex(box, idx){
+  const ov = tcItems[idx] && tcItems[idx].overrides[box.id];
+  return ov || box;
+}
+
+function tcBuildCsvRow(item, index){
+  const mode = tcEl('tc-testType').value;
+  const filename = `item_${index + 1}.png`;
+  if (mode === 'fib'){
+    const b = tcEffectiveBoxForItemIndex(tcBoxes[0], index);
+    return `${filename},"[${b.nativeX},${b.nativeY}]","[${b.nativeW},${b.nativeH}]",${JSON.stringify(item.answerText || '')}`;
+  }
+  const xs = tcBoxes.map(b => tcEffectiveBoxForItemIndex(b, index).nativeX);
+  const ys = tcBoxes.map(b => tcEffectiveBoxForItemIndex(b, index).nativeY);
+  const size = tcEffectiveBoxForItemIndex(tcBoxes[0], index);
+  const correct = mode === 'sd'
+    ? [...new Set(tcBoxes.map(b => b.pairId))].map(pid => {
+        const boxId = item.correctBoxIds.find(id => { const b = tcBoxes.find(x => x.id === id); return b && b.pairId === pid; });
+        const b = tcBoxes.find(x => x.id === boxId);
+        return b ? `ans_box_${b.letter}` : '';
+      }).join(', ')
+    : item.correctBoxIds.map(id => { const b = tcBoxes.find(x => x.id === id); return b ? `ans_box_${b.letter}` : ''; }).join(', ');
+  return `${filename},"[${xs.join(', ')}]","[${ys.join(', ')}]","[${size.nativeW}, ${size.nativeH}]","${correct}"`;
+}
+
+function tcShowReview(){
+  tcPhase = 'review';
+  tcEl('tc-taggingToolbar').style.display = 'none';
+  tcEl('tc-taggingHint').style.display = 'none';
+  tcEl('tc-mainRow').style.display = 'none';
+  tcEl('tc-reviewScreen').style.display = 'block';
+  const saveMsg = tcEl('tc-saveMsg');
+  saveMsg.textContent = '';
+  saveMsg.classList.remove('error');
+
+  const modeLabels = { mc: 'Multiple choice', ms: 'Multiple selections', sd: 'Same/different', fib: 'Fill in the blank' };
+  tcEl('tc-reviewStats').innerHTML = [
+    ['Items', tcItems.length],
+    ['Answer type', modeLabels[tcEl('tc-testType').value]],
+    ['Boxes', tcBoxes.length],
+    ['Adjusted items', tcItems.filter(it => Object.keys(it.overrides).length > 0).length]
+  ].map(([label, val]) => `
+    <div class="tc-stat-card">
+      <p class="tc-stat-label">${label}</p>
+      <p class="tc-stat-value">${val}</p>
+    </div>
+  `).join('');
+
+  tcEl('tc-reviewList').innerHTML = tcItems.map((it, i) => `
+    <div class="tc-review-row">
+      <div class="tc-review-thumb" style="background-image:url('${tcItemImageUrls[i]}');"></div>
+      <span style="color:var(--ink-faint); width:20px;">${i + 1}</span>
+      <span style="flex:1;">Correct: <strong style="font-weight:600;">${escapeHtml(tcItemCorrectSummary(it))}</strong></span>
+      ${Object.keys(it.overrides).length > 0 ? '<span title="Position adjusted for this item" style="color:#A9820A; font-size:11px;">&#9998;</span>' : ''}
+    </div>
+  `).join('');
+
+  const csvHeader = tcEl('tc-testType').value === 'fib'
+    ? 'standard_stim,textbox_position,textbox_size,correct_answer'
+    : 'standard_stim,answer_positionX,answer_positionY,selector_size,correct_answer';
+  tcEl('tc-csvPreview').textContent = csvHeader + '\n' + tcBuildCsvRow(tcItems[0], 0);
+  tcEl('tc-csvPreview').style.display = 'none';
+  tcEl('tc-toggleCsvBtn').textContent = 'View generated data row';
+}
+
+tcEl('tc-toggleCsvBtn').addEventListener('click', () => {
+  const el = tcEl('tc-csvPreview');
+  const showing = el.style.display === 'block';
+  el.style.display = showing ? 'none' : 'block';
+  tcEl('tc-toggleCsvBtn').textContent = showing ? 'View generated data row' : 'Hide generated data row';
+});
+
+tcEl('tc-backToTaggingBtn').addEventListener('click', () => {
+  tcPhase = 'tagging';
+  tcEl('tc-reviewScreen').style.display = 'none';
+  tcEl('tc-mainRow').style.display = 'flex';
+  tcEl('tc-taggingToolbar').style.display = 'flex';
+  tcEl('tc-taggingHint').style.display = 'block';
+  tcGoToItem(tcItems.length - 1);
+});
+
+function tcUuid(){
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// Uploads every image to Supabase Storage under this researcher's own
+// folder, then writes one custom_tests row holding the box layout and
+// per-item correct answers — the same data buildCsvRow() already renders
+// as a preview, just as JSON instead of a literal CSV line.
+async function tcSaveTest(){
+  const saveMsg = tcEl('tc-saveMsg');
+  saveMsg.classList.remove('error');
+  const name = tcEl('tc-testNameInput').value.trim();
+  if (!name){
+    saveMsg.textContent = 'Give this test a name first.';
+    saveMsg.classList.add('error');
+    return;
+  }
+  if (DEV_MODE){
+    saveMsg.textContent = 'Saving needs a real Supabase session — not available in dev mode.';
+    saveMsg.classList.add('error');
+    return;
+  }
+  const user = await requireUser();
+  if (!user) return;
+
+  const saveBtn = tcEl('tc-saveTestBtn');
+  saveBtn.disabled = true;
+  saveMsg.textContent = 'Uploading images…';
+
+  try {
+    const testId = tcUuid();
+    const mode = tcEl('tc-testType').value;
+
+    const itemsForDb = [];
+    for (let i = 0; i < tcItemFiles.length; i++){
+      const path = `${user.id}/${testId}/items/${i + 1}.png`;
+      const { error: uploadError } = await supabaseClient.storage
+        .from('custom-test-images')
+        .upload(path, tcItemFiles[i]);
+      if (uploadError) throw new Error(`Uploading item ${i + 1}: ${uploadError.message}`);
+      const { data: urlData } = supabaseClient.storage.from('custom-test-images').getPublicUrl(path);
+      itemsForDb.push({
+        filename: `item_${i + 1}.png`,
+        imageUrl: urlData.publicUrl,
+        correctAnswer: tcItemCorrectSummary(tcItems[i]),
+        answerText: mode === 'fib' ? (tcItems[i].answerText || '') : undefined,
+        overrides: tcItems[i].overrides,
+      });
+    }
+
+    if (tcTemplateFile){
+      const templatePath = `${user.id}/${testId}/template.png`;
+      await supabaseClient.storage.from('custom-test-images').upload(templatePath, tcTemplateFile);
+    }
+
+    saveMsg.textContent = 'Saving test…';
+    const { error: insertError } = await supabaseClient.from('custom_tests').insert({
+      id: testId,
+      researcher_id: user.id,
+      name,
+      description: tcEl('tc-testDescInput').value.trim() || null,
+      type_of_test: { mc: 'multiple choice', ms: 'multiple selections', sd: 'same different', fib: 'fill in the blank' }[mode],
+      choices: mode === 'fib' ? 0 : tcBoxes.length,
+      boxes: tcBoxes,
+      items: itemsForDb,
+    });
+    if (insertError) throw new Error(insertError.message);
+
+    saveMsg.classList.remove('error');
+    saveMsg.textContent = 'Saved. (Not yet selectable in the battery builder — that needs the runtime-loading piece built separately.)';
+  } catch (e){
+    saveMsg.textContent = 'Could not save: ' + e.message;
+    saveMsg.classList.add('error');
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+tcEl('tc-saveTestBtn').addEventListener('click', tcSaveTest);
+
+tcEl('tc-testType').addEventListener('change', () => {
+  tcBoxes = [];
+  tcNextLetter = 0;
+  tcRenderLayout();
+});
 
 renderCatalog();
 </script>
