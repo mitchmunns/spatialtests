@@ -1,0 +1,2 @@
+﻿name_of_test,stim_folder,stim_file,type_of_test,instructions_file,choices,time_min,time_max,selector_box_image,randomize,redirect_url,prev_scores
+Demographics,Demos_Stimuli,Demos_Stimuli.csv,multiple selections,Demos_Instructions.csv,4,0,60,x_selector.png,0,,"[1, 2, 3, 4, 5]"

@@ -1,0 +1,2 @@
+﻿name_of_test,stim_folder,stim_file,type_of_test,instructions_file,choices,time_min,time_max,total_time_limit,selector_box_image,randomize,test_order,prev_scores,include_score
+SBST,SBST_Stimuli,SBST_Stimuli.csv,multiple choice,SBST_Instructions.csv,4,5,60,0,selector.png,1,R,"[1, 2, 3, 4, 5]",0

@@ -1,0 +1,4442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spatial Test Repository</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#EEF2F6;
+    --grid:rgba(20,40,63,0.055);
+    --ink:#14283F;
+    --ink-soft:#4B6480;
+    --ink-faint:#8098B3;
+    --line:#C7D6E3;
+    --line-strong:#9FB6C9;
+    --card:#FFFFFF;
+    --accent:#B4682A;
+    --accent-dark:#8C4E18;
+    --accent-soft:#F3E3D3;
+    --wire:#1B3A5C;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background-color:var(--bg);
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+  }
+
+  .shell{
+    max-width:880px;
+    margin:0 auto;
+    padding:48px 24px 96px;
+  }
+
+  header.top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom:1px solid var(--line-strong);
+    padding-bottom:20px;
+    margin-bottom:40px;
+  }
+  header.top .brand{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size:22px;
+    letter-spacing:-0.01em;
+  }
+  header.top .brand span{color:var(--accent);}
+  header.top .tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+  }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.1em;
+    color:var(--accent-dark);
+    margin:0 0 8px;
+  }
+  h1.view-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  p.view-sub{
+    color:var(--ink-soft);
+    font-size:15px;
+    margin:0 0 36px;
+    max-width:56ch;
+    line-height:1.55;
+  }
+
+  /* ---------- Home / overview ---------- */
+  .home-steps{
+    display:grid;
+    gap:18px;
+    margin:8px 0 36px;
+    max-width:56ch;
+  }
+  .home-step{
+    display:flex;
+    gap:14px;
+    align-items:flex-start;
+  }
+  .home-step-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--accent-dark);
+    padding-top:2px;
+    flex-shrink:0;
+  }
+  .home-step strong{
+    display:block;
+    font-size:14.5px;
+    margin-bottom:2px;
+  }
+  .home-step p{
+    color:var(--ink-soft);
+    font-size:13.5px;
+    margin:0;
+    line-height:1.5;
+  }
+  .landing-intro{
+    margin-bottom:28px;
+  }
+
+  /* ---------- Catalog ---------- */
+  .catalog-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
+    gap:20px;
+  }
+  .test-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:24px 22px 22px;
+    display:flex;
+    flex-direction:column;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .test-card:hover{
+    border-color:var(--line-strong);
+    transform:translateY(-2px);
+  }
+
+  .cube-stage{
+    width:100%;
+    height:96px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    perspective:420px;
+    margin-bottom:18px;
+  }
+  /* Per-test 3D icon rig: a spinning "rotor" positioned at the stage center,
+     populated with absolutely-positioned box/plane pieces built in JS
+     (see box3d()/plane()/rule() and ICONS below) so each test gets a shape
+     styled after its own stimuli, not a generic cube. */
+  .icon-rotor{
+    position:relative;
+    transform-style:preserve-3d;
+    animation:spin 13s linear infinite;
+  }
+  .icon-rotor.speed-2{animation-duration:17s;}
+  .icon-rotor.speed-3{animation-duration:10s;}
+  .bf, .flat, .tri{
+    position:absolute;
+    border:1.4px solid var(--wire);
+    background:rgba(27,58,92,0.05);
+  }
+  .bf.accent, .flat.accent, .tri.accent{
+    background:var(--accent-soft);
+    border-color:var(--accent-dark);
+  }
+  .dot{
+    position:absolute;
+    border-radius:50%;
+    border:1.2px solid var(--wire);
+    background:var(--card);
+  }
+  .rule{
+    position:absolute;
+    background:var(--wire);
+    opacity:0.55;
+  }
+  .lbl{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--wire);
+    font-weight:500;
+  }
+
+  @keyframes spin{
+    from{transform:rotateX(-18deg) rotateY(0deg);}
+    to{transform:rotateX(-18deg) rotateY(360deg);}
+  }
+
+  .test-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:17px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .test-card .subname{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+    margin:0 0 12px;
+  }
+  .test-card p.desc{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin:0 0 18px;
+    flex-grow:1;
+  }
+  .stat-row{
+    display:flex;
+    gap:16px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line);
+    padding-top:12px;
+    margin-bottom:16px;
+  }
+  .stat-row strong{color:var(--ink); font-weight:600;}
+
+  button{
+    font-family:'Inter', sans-serif;
+    cursor:pointer;
+  }
+  .btn{
+    border:1px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    font-size:13.5px;
+    font-weight:500;
+    padding:10px 16px;
+    border-radius:3px;
+    width:100%;
+    transition:background .15s ease, opacity .15s ease;
+  }
+  .btn:hover{background:#0D1D30;}
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid var(--line-strong);
+  }
+  .btn.secondary:hover{background:rgba(20,40,63,0.04);}
+  .btn.accent{
+    background:var(--accent);
+    border-color:var(--accent);
+  }
+  .btn.accent:hover{background:var(--accent-dark);}
+
+  /* ---------- Customize ---------- */
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:none;
+    border:none;
+    padding:0;
+    margin-bottom:22px;
+  }
+  .back-link:hover{color:var(--ink);}
+
+  .config-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:28px 28px 8px;
+  }
+  .field-row{
+    display:grid;
+    grid-template-columns:220px 1fr;
+    gap:20px;
+    align-items:center;
+    padding:16px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .field-row:last-of-type{border-bottom:none;}
+  .field-label{
+    font-size:13.5px;
+    font-weight:500;
+  }
+  .field-hint{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    margin-top:3px;
+    font-weight:400;
+  }
+  input[type=number], select{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13.5px;
+    padding:9px 10px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+    width:100%;
+    max-width:220px;
+  }
+  input[type=number]:focus, select:focus{
+    outline:2px solid var(--accent-soft);
+    border-color:var(--accent);
+  }
+  .field-row textarea{
+    width:100%;
+    max-width:480px;
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    padding:10px 11px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+  }
+  .field-row textarea:focus{
+    outline:2px solid var(--accent-soft);
+    border-color:var(--accent);
+  }
+  .formatted-preview{
+    max-width:480px;
+    margin-top:8px;
+    padding:10px 11px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:var(--card);
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    line-height:1.5;
+    color:var(--ink-soft);
+  }
+  .formatted-preview::before{
+    content:"Preview";
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin-bottom:5px;
+  }
+  .formatted-preview em{color:var(--ink); font-style:italic;}
+
+  .toggle{
+    position:relative;
+    display:inline-block;
+    width:40px;
+    height:22px;
+  }
+  .toggle input{opacity:0; width:0; height:0;}
+  .toggle .slider{
+    position:absolute; inset:0;
+    background:var(--line-strong);
+    border-radius:22px;
+    transition:.15s;
+    cursor:pointer;
+  }
+  .toggle .slider:before{
+    content:"";
+    position:absolute;
+    width:16px; height:16px;
+    left:3px; top:3px;
+    background:#fff;
+    border-radius:50%;
+    transition:.15s;
+  }
+  .toggle input:checked + .slider{background:var(--accent);}
+  .toggle input:checked + .slider:before{transform:translateX(18px);}
+
+  .item-picker{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(72px, 1fr));
+    gap:8px;
+    max-height:220px;
+    overflow-y:auto;
+    padding:4px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    background:#fff;
+  }
+  .item-picker-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:6px 4px;
+    border-radius:3px;
+    cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    color:var(--ink-faint);
+    text-align:center;
+  }
+  .item-picker-cell:hover{background:var(--card);}
+  .item-picker-cell.selected{background:var(--accent-soft); color:var(--ink);}
+  .item-picker-cell input{margin:0;}
+  .item-picker-cell img{width:56px; height:56px; object-fit:contain; background:var(--card); border-radius:2px;}
+  .item-picker-cell span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:64px;
+  }
+
+  .item-preview{
+    display:none;
+    position:fixed;
+    z-index:1000;
+    pointer-events:none;
+    padding:8px;
+    background:var(--card);
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    box-shadow:0 12px 32px rgba(20,40,63,0.22);
+  }
+  .item-preview img{
+    display:block;
+    max-width:min(360px, 60vw);
+    max-height:min(360px, 60vh);
+    object-fit:contain;
+  }
+  .item-preview-params{
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    margin-top:6px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+  }
+
+  .customize-layout{
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+  }
+  .customize-layout .config-panel{flex:1; min-width:0;}
+  .irt-sidebar{
+    width:300px;
+    flex-shrink:0;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px;
+  }
+  .irt-sidebar h3{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+  }
+  .irt-sidebar h3:not(:first-child){margin-top:20px;}
+  .irt-empty{
+    font-size:12px;
+    color:var(--ink-faint);
+    line-height:1.5;
+    margin:0;
+  }
+  .irt-item-row{
+    display:grid;
+    grid-template-columns:1fr auto auto;
+    gap:10px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink);
+    padding:5px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .irt-item-row:last-child{border-bottom:none;}
+  .irt-plot{width:100%; height:auto; overflow:visible;}
+  .irt-axis{stroke:var(--line-strong); stroke-width:1;}
+  .irt-gridline{stroke:var(--line); stroke-width:1; stroke-dasharray:2,2;}
+  .irt-curve{fill:none; stroke:var(--accent); stroke-width:2;}
+  .irt-tick{font-family:'IBM Plex Mono', monospace; font-size:8px; fill:var(--ink-faint);}
+  .irt-plot-caption{
+    font-size:10px;
+    color:var(--ink-faint);
+    margin-top:6px;
+    line-height:1.4;
+  }
+
+  .panel-footer{
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    padding:22px 0 22px;
+  }
+  .panel-footer .btn{width:auto;}
+  .panel-footer .reset-btn{margin-right:auto;}
+
+  .instructions-pages{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    max-width:480px;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .instructions-page-cell{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:6px;
+    border-radius:3px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9px;
+    color:var(--ink-faint);
+    text-align:center;
+    width:76px;
+  }
+  .instructions-page-cell img{
+    width:64px;
+    height:64px;
+    object-fit:contain;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:2px;
+  }
+  .instructions-page-cell.editing{background:var(--accent-soft); color:var(--ink);}
+  .instructions-page-cell.editing img{border-color:var(--accent); border-width:2px;}
+  .instructions-page-cell span{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:76px;
+  }
+  .instructions-pages-note{
+    width:100%;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    margin-top:8px;
+    line-height:1.4;
+  }
+
+  /* ---------- Link view ---------- */
+  .link-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:32px;
+    text-align:center;
+  }
+  .status-dot{
+    display:inline-block;
+    width:8px; height:8px;
+    border-radius:50%;
+    background:#3B8A5E;
+    margin-right:7px;
+  }
+  .status-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:22px;
+  }
+  .link-box{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--bg);
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    padding:14px 16px;
+    max-width:520px;
+    margin:0 auto 22px;
+  }
+  .link-box code{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--wire);
+    flex:1;
+    text-align:left;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .copy-btn{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:3px;
+    font-size:11.5px;
+    font-family:'IBM Plex Mono', monospace;
+    padding:8px 12px;
+    flex-shrink:0;
+  }
+  .copy-btn:hover{background:#0D1D30;}
+  .copy-btn.copied{background:#3B8A5E;}
+
+  .link-actions{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+  }
+  .link-actions .btn{width:auto; padding:10px 18px;}
+
+  .summary-table{
+    margin:26px auto 0;
+    max-width:420px;
+    text-align:left;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    border-top:1px solid var(--line);
+    padding-top:16px;
+  }
+  .summary-table div{
+    display:flex;
+    justify-content:space-between;
+    padding:5px 0;
+    color:var(--ink-soft);
+  }
+  .summary-table div span:last-child{color:var(--ink); font-weight:500;}
+
+  .hidden{display:none !important;}
+
+  /* ---------- Battery ---------- */
+  .battery-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .battery-item{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:16px 18px;
+    display:grid;
+    grid-template-columns:28px 1fr auto;
+    gap:16px;
+    align-items:center;
+  }
+  .battery-order{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+  }
+  .order-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-faint);
+    margin-bottom:2px;
+  }
+  .reorder-btn{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:2px;
+    width:20px; height:16px;
+    font-size:9px;
+    line-height:1;
+    color:var(--ink-soft);
+    padding:0;
+  }
+  .reorder-btn:hover{border-color:var(--line-strong); color:var(--ink);}
+  .reorder-btn:disabled{opacity:0.3; cursor:default;}
+  .battery-item h4{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .battery-item .param-summary{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+  }
+  .battery-item-actions{
+    display:flex;
+    gap:8px;
+  }
+  .battery-item-actions button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:12px;
+    padding:7px 12px;
+    color:var(--ink-soft);
+  }
+  .battery-item-actions button:hover{color:var(--ink); border-color:var(--ink-soft);}
+  .battery-item-actions button.remove:hover{color:#A32D2D; border-color:#A32D2D;}
+
+  .battery-empty{
+    background:var(--card);
+    border:1px dashed var(--line-strong);
+    border-radius:4px;
+    padding:40px 24px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:14px;
+    margin-bottom:24px;
+  }
+
+  .battery-footer{
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .battery-footer .btn{width:auto;}
+  .battery-footer-right{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  .attention-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px 20px 6px;
+    margin-bottom:24px;
+  }
+  .attention-panel h4{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .attention-panel .attention-sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0 0 12px;
+  }
+  .attention-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:12px 0;
+    border-top:1px solid var(--line);
+  }
+  .attention-row:first-of-type{border-top:none;}
+  .attention-row .attention-label{flex:1;}
+  .attention-row .attention-label strong{
+    display:block;
+    font-size:13.5px;
+  }
+  .attention-row .attention-label span{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+  }
+
+  /* ---------- Datasets ---------- */
+  .dataset-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .dataset-row{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:18px 20px;
+    display:grid;
+    grid-template-columns:1fr auto auto;
+    gap:20px;
+    align-items:center;
+  }
+  .dataset-name{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .dataset-name em{
+    font-family:'Inter', sans-serif;
+    font-style:normal;
+    font-weight:400;
+    color:var(--ink-faint);
+  }
+  .dataset-main .chips{
+    margin-bottom:8px;
+  }
+  .test-chip{
+    display:inline-block;
+    background:var(--accent-soft);
+    color:var(--accent-dark);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    font-weight:600;
+    padding:3px 8px;
+    border-radius:3px;
+    margin-right:6px;
+  }
+  .dataset-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+  }
+  .dataset-meta .session-id{color:var(--ink-soft);}
+  .dataset-metric{
+    text-align:center;
+    min-width:88px;
+  }
+  .dataset-metric .num{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:22px;
+    font-weight:600;
+    line-height:1;
+  }
+  .dataset-metric .lbl{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    margin-top:4px;
+  }
+  .dataset-actions{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .dataset-actions button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:12px;
+    padding:7px 12px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .dataset-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
+  .dataset-actions button:disabled{opacity:0.4; cursor:default;}
+  .dataset-actions button.remove:hover{color:#A32D2D; border-color:#A32D2D;}
+
+  .status-badge{
+    display:inline-block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    padding:2px 7px;
+    border-radius:3px;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+  .status-badge.status-draft{background:var(--line); color:var(--ink-soft);}
+  .status-badge.status-pilot{background:var(--accent-soft); color:var(--accent-dark);}
+  .status-badge.status-run{background:var(--ink); color:#fff;}
+
+  .dataset-empty{
+    background:var(--card);
+    border:1px dashed var(--line-strong);
+    border-radius:4px;
+    padding:40px 24px;
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .dataset-empty .btn{width:auto; margin-top:16px; padding:10px 18px;}
+
+  /* ---------- Projects view ---------- */
+  .project-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .project-columns{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .project-info, .project-data{
+    padding:18px 22px;
+  }
+  .project-info{border-right:1px solid var(--line);}
+  .project-col-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-faint);
+    margin-bottom:12px;
+  }
+  .project-tests-summary{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:12px;
+  }
+  .project-tests-summary strong{color:var(--ink); font-weight:600;}
+  .project-tests-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .project-test-tile{
+    width:76px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding:8px 4px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    background:var(--bg, #FAFCFE);
+  }
+  .project-test-tile .cube-stage{height:44px; margin-bottom:2px; perspective:230px;}
+  .project-test-tile .icon-rotor{transform:scale(0.5);}
+  .project-test-tile-name{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:9.5px;
+    font-weight:600;
+    color:var(--ink);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:100%;
+  }
+  .project-test-tile-count{
+    font-size:10px;
+    color:var(--ink-faint);
+  }
+  .project-timing{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    margin-bottom:14px;
+  }
+  .project-meta{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    margin-bottom:14px;
+  }
+  .project-meta .session-id{color:var(--ink-soft);}
+  .project-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .project-actions button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:11.5px;
+    padding:6px 10px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .project-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
+  .project-actions button.remove:hover{color:#A32D2D; border-color:#A32D2D;}
+  .project-stats-line{
+    font-size:13.5px;
+    color:var(--ink);
+    margin-bottom:10px;
+  }
+  .project-stats-line .stats-loading{color:var(--ink-faint); font-style:italic;}
+  .project-progress{
+    height:10px;
+    border-radius:5px;
+    background:var(--line);
+    overflow:hidden;
+    display:flex;
+    margin-bottom:18px;
+  }
+  .project-progress-complete{background:#2E7D46; height:100%;}
+  .project-progress-incomplete{background:#B4682A; height:100%;}
+  .project-quality:empty{display:none;}
+  .quality-summary-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .quality-mean-line{
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .quality-mean-line + .quality-mean-line{margin-top:2px;}
+  .quality-histogram{
+    width:76px;
+    height:36px;
+    flex-shrink:0;
+  }
+  .quality-hist-bar{fill:var(--accent);}
+  .quality-hist-axis{stroke:var(--line-strong); stroke-width:1;}
+  .quality-hist-chance{stroke:var(--ink-soft); stroke-width:1; stroke-dasharray:2,2;}
+  .quality-hist-label{font-family:'IBM Plex Mono', monospace; font-size:7px; fill:var(--ink-faint);}
+  .quality-grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+    margin-bottom:16px;
+    max-width:220px;
+  }
+  .quality-square{
+    width:16px;
+    height:16px;
+    border-radius:2px;
+  }
+  .quality-square.pass{background:#3CA35A;}
+  .quality-square.fail{background:#C63A2E;}
+  .quality-square.incomplete{background:var(--line-strong);}
+
+  .project-data-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .project-data-actions button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:11.5px;
+    padding:6px 10px;
+    color:var(--ink-soft);
+  }
+  .project-data-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
+
+  .pending-note{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:10px 14px;
+    margin-bottom:24px;
+  }
+
+  /* ---------- Auth ---------- */
+  .auth-shell{
+    max-width:400px;
+    margin:96px auto 0;
+    padding:0 24px;
+  }
+  .auth-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:32px 28px;
+  }
+  .auth-tabs{
+    display:flex;
+    gap:2px;
+    margin-bottom:22px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .auth-tab{
+    flex:1;
+    padding:9px 0;
+    text-align:center;
+    font-size:13px;
+    font-weight:500;
+    background:#fff;
+    border:none;
+    color:var(--ink-soft);
+  }
+  .auth-tab.active{background:var(--ink); color:#fff;}
+  .field-block{margin-bottom:14px;}
+  .field-block label{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink-faint);
+    margin-bottom:6px;
+  }
+  .field-block input{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    padding:10px 11px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .field-block input:focus{
+    outline:2px solid var(--accent-soft);
+    border-color:var(--accent);
+  }
+  .field-block textarea{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    padding:10px 11px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+    color:var(--ink);
+    resize:vertical;
+  }
+  .field-block textarea:focus{
+    outline:2px solid var(--accent-soft);
+    border-color:var(--accent);
+  }
+  .field-block .field-hint{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    text-transform:none;
+    letter-spacing:normal;
+    margin-top:4px;
+  }
+  .auth-msg{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-top:14px;
+    line-height:1.5;
+    min-height:16px;
+  }
+  .auth-msg.error{color:#A32D2D;}
+
+  /* ---------- Header user bar ---------- */
+  .user-bar{
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .user-email{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+  }
+  .user-bar button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:12px;
+    padding:6px 11px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .user-bar button:hover{color:var(--ink); border-color:var(--ink-soft);}
+  .battery-btn{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .battery-count{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:16px;
+    height:16px;
+    padding:0 4px;
+    border-radius:8px;
+    background:var(--accent);
+    color:#fff;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    font-weight:600;
+  }
+
+  /* ---------- Profile modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(20,40,63,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+  }
+  .modal-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:26px 26px 20px;
+    width:340px;
+  }
+  .modal-card.wide{
+    width:min(520px, 90vw);
+  }
+  .modal-card p.modal-sub{
+    color:var(--ink-soft);
+    font-size:13px;
+    line-height:1.5;
+    margin:-8px 0 18px;
+  }
+  .modal-card h3{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:16px;
+    margin:0 0 18px;
+  }
+  .modal-footer{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:6px;
+  }
+
+  /* ---------- Custom test creator ---------- */
+  #tc-testType{width:auto; max-width:none;}
+  .tc-qbox{
+    position:absolute;
+    border:2px solid var(--accent);
+    background:rgba(180,104,42,0.16);
+    border-radius:4px;
+    cursor:move;
+  }
+  .tc-qbox.tc-correct{border-color:#2E7D46; background:rgba(46,125,70,0.16);}
+  .tc-qbox.tc-adjusted{border-color:#A9820A;}
+  .tc-qbox-label{
+    position:absolute; top:0; left:0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px; font-weight:600;
+    padding:2px 5px;
+    background:var(--accent); color:#fff;
+    border-radius:0 0 4px 0;
+    white-space:nowrap;
+  }
+  .tc-qbox.tc-correct .tc-qbox-label{background:#2E7D46;}
+  .tc-handle{
+    position:absolute;
+    width:8px; height:8px;
+    background:#fff;
+    border:1.5px solid var(--accent);
+    border-radius:2px;
+  }
+  .tc-reset-btn{
+    position:absolute; top:-9px; right:-9px;
+    width:18px; height:18px; padding:0;
+    border-radius:50%;
+    background:#fff;
+    border:1.5px solid #A9820A;
+    display:flex; align-items:center; justify-content:center;
+    color:#A9820A;
+    font-size:10px; line-height:1;
+  }
+  .tc-box-row{
+    display:flex; align-items:center; gap:8px;
+    padding:6px 8px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-size:12px;
+  }
+  .tc-box-row button{
+    border:none; background:none; padding:2px; height:auto; color:var(--ink-faint);
+  }
+  .tc-item-tile{
+    height:auto; padding:4px;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:#fff;
+  }
+  .tc-item-tile.tc-current{border-color:var(--accent);}
+  .tc-item-thumb{width:100%; aspect-ratio:16/9; background-size:cover; background-position:center; border-radius:3px;}
+  .tc-review-row{
+    display:flex; align-items:center; gap:10px;
+    padding:6px 8px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:3px;
+    font-size:12px;
+  }
+  .tc-review-thumb{width:36px; height:24px; flex-shrink:0; background-size:cover; background-position:center; border-radius:3px;}
+  .tc-stat-card{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:14px 16px;}
+  .tc-stat-card p{margin:0;}
+  .tc-stat-label{font-size:12px; color:var(--ink-soft); margin-bottom:4px !important;}
+  .tc-stat-value{font-size:19px; font-weight:600; font-family:'Space Grotesk', sans-serif;}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="view-auth" class="auth-shell">
+  <div class="landing-intro">
+    <p class="eyebrow">Spatial Test Repository</p>
+    <h1 class="view-title">Build and run spatial cognition batteries</h1>
+    <p class="view-sub">Pick from a catalog of real spatial-cognition tests, configure exactly which items and settings each one uses, and generate a single link that runs the whole battery for a participant. Log in to get started.</p>
+  </div>
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="setAuthMode('login')">Log in</button>
+      <button class="auth-tab" id="tab-signup" onclick="setAuthMode('signup')">Create account</button>
+    </div>
+    <div class="field-block">
+      <label>Email</label>
+      <input id="auth-email" type="email" placeholder="name@university.edu">
+    </div>
+    <div class="field-block">
+      <label>Password</label>
+      <input id="auth-password" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn accent" id="auth-submit" onclick="submitAuth()">Log in</button>
+    <div class="auth-msg" id="auth-msg"></div>
+  </div>
+</div>
+
+<div class="shell hidden" id="app-shell">
+  <header class="top">
+    <div class="brand">Spatial<span>Test</span>Repository</div>
+    <div class="user-bar">
+      <button onclick="goToHome()">Home</button>
+      <button onclick="goToDatasets()">Projects</button>
+      <button id="nav-admin" class="hidden" onclick="goToAdmin()">All labs</button>
+      <button class="battery-btn" onclick="goToBattery()">Battery <span class="battery-count" id="battery-count">0</span></button>
+      <span class="user-email" id="user-email"></span>
+      <button onclick="openProfile()">Profile</button>
+      <button onclick="signOut()">Log out</button>
+    </div>
+  </header>
+
+  <!-- HOME / OVERVIEW VIEW -->
+  <div id="view-home">
+    <p class="eyebrow">Overview</p>
+    <h1 class="view-title">What you can do here</h1>
+    <p class="view-sub">Assemble a battery from the test catalog, configure each test's items and settings, then send participants a single link that runs everything in order.</p>
+    <div class="home-steps">
+      <div class="home-step"><span class="home-step-num">01</span><div><strong>Select tests</strong><p>Browse the catalog and add one or more tests to a battery.</p></div></div>
+      <div class="home-step"><span class="home-step-num">02</span><div><strong>Configure</strong><p>Choose specific items, timing, randomization, and scoring per test.</p></div></div>
+      <div class="home-step"><span class="home-step-num">03</span><div><strong>Generate a link</strong><p>One link runs the whole battery for a participant, in order.</p></div></div>
+      <div class="home-step"><span class="home-step-num">04</span><div><strong>Export data</strong><p>Track participant counts and download results as CSV from Datasets.</p></div></div>
+    </div>
+    <button class="btn accent" onclick="goToCatalog()">Browse test catalog →</button>
+  </div>
+
+  <!-- CATALOG VIEW -->
+  <div id="view-catalog" class="hidden">
+    <p class="eyebrow">01 — Select tests</p>
+    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+      <div>
+        <h1 class="view-title">Test catalog</h1>
+        <p class="view-sub">Add one or more tests to a battery. Configure each one, then generate a single link that runs the whole set for a participant — even a battery of one.</p>
+      </div>
+      <button class="btn secondary" style="width:auto; white-space:nowrap; padding:10px 14px; margin-bottom:22px;" onclick="goToTestCreator()">+ Create custom test</button>
+    </div>
+    <div class="catalog-grid" id="catalog-grid"></div>
+  </div>
+
+  <!-- CUSTOMIZE VIEW -->
+  <div id="view-customize" class="hidden">
+    <button class="back-link" id="cust-back-btn">&larr; back</button>
+    <p class="eyebrow" id="cust-eyebrow">02 — Configure</p>
+    <h1 class="view-title" id="cust-title"></h1>
+    <p class="view-sub" id="cust-sub"></p>
+    <div class="customize-layout">
+      <div class="config-panel" id="cust-fields"></div>
+      <div class="irt-sidebar hidden" id="irt-sidebar">
+        <h3>Selected items</h3>
+        <div id="irt-item-list"></div>
+        <h3>Item information function</h3>
+        <div id="irt-plot-wrap"></div>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <button class="btn secondary reset-btn" onclick="resetToDefaults()">Reset to defaults</button>
+      <button class="btn secondary" id="cust-cancel-btn">Cancel</button>
+      <button class="btn accent" id="cust-submit-btn" onclick="submitCustomize()">Add to battery</button>
+    </div>
+  </div>
+
+  <!-- CUSTOM TEST CREATOR VIEW -->
+  <div id="view-test-creator" class="hidden">
+    <button class="back-link" onclick="goToCatalog()">&larr; back to catalog</button>
+    <p class="eyebrow">Custom test</p>
+    <h1 class="view-title">Create a custom test</h1>
+    <p class="view-sub">Upload a stimulus image, mark the answer boxes, then upload the rest of the item bank and tag the correct answer for each one. This test won't appear in the catalog yet — see note below.</p>
+
+    <div id="tc-layoutToolbar" style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+      <select id="tc-testType">
+        <option value="mc">Multiple choice — 1 correct box</option>
+        <option value="ms">Multiple selections — 2 correct boxes</option>
+        <option value="sd">Same/different — paired boxes</option>
+        <option value="fib">Fill in the blank — typed answer</option>
+      </select>
+      <button class="btn secondary" style="width:auto;" id="tc-uploadTemplateBtn" type="button">Upload image</button>
+      <span id="tc-templateFileName" style="font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint);">No image uploaded</span>
+      <button class="btn accent" style="width:auto; margin-left:auto;" id="tc-continueBtn" disabled>Upload items &amp; tag</button>
+    </div>
+    <p id="tc-layoutHint" class="field-hint" style="margin:0 0 14px;"></p>
+
+    <div id="tc-taggingToolbar" style="display:none; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
+      <button class="btn secondary" style="width:auto;" id="tc-backBtn">&larr; back to layout</button>
+      <span id="tc-itemLabel" style="font-size:13.5px; font-weight:500;"></span>
+      <button class="btn accent" style="width:auto; margin-left:auto;" id="tc-nextBtn" disabled>Next item</button>
+    </div>
+    <p id="tc-taggingHint" class="field-hint" style="display:none; margin:0 0 14px;">Each new item starts with the previous item's answer already selected — click to change it if this one's different. Drag a box body to move it or a corner to resize it if the stimulus is off; changes apply to this item only.</p>
+
+    <input type="file" id="tc-templateImageInput" accept="image/*" style="display:none" />
+    <input type="file" id="tc-itemImagesInput" accept="image/*" multiple style="display:none" />
+
+    <div id="tc-mainRow" style="display:flex; gap:20px; flex-wrap:wrap;">
+      <div style="flex:2; min-width:340px;">
+        <div id="tc-imageArea" style="position:relative; width:100%; aspect-ratio:16/9; background:var(--card); border:1px solid var(--line); border-radius:4px; overflow:hidden; cursor:crosshair; user-select:none;">
+          <div id="tc-placeholderBg" style="position:absolute; inset:0; background:repeating-linear-gradient(45deg, transparent 0 22px, var(--accent-soft) 22px 24px); display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:13px; color:var(--ink-faint);">Upload a template image to get started</span>
+          </div>
+          <img id="tc-stimImg" style="position:absolute; inset:0; width:100%; height:100%; object-fit:fill; display:none; pointer-events:none;" alt="" />
+          <div id="tc-boxLayer" style="position:absolute; inset:0;"></div>
+          <div id="tc-dragBox" style="position:absolute; border:2px dashed var(--accent); background:var(--accent-soft); opacity:0.85; display:none; pointer-events:none;"></div>
+        </div>
+        <p id="tc-coordReadout" style="font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint); margin:8px 0 0;">x: —, y: —, w: —, h: — (px, at image resolution)</p>
+        <div id="tc-answerInputWrap" class="field-block" style="display:none; margin-top:10px; max-width:280px;">
+          <label>Correct answer for this item</label>
+          <input id="tc-answerInput" type="text" placeholder="Type the exact expected answer" />
+        </div>
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <div id="tc-layoutSidebar">
+          <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Boxes</p>
+          <div id="tc-boxList" style="display:flex; flex-direction:column; gap:6px;"></div>
+          <p id="tc-emptyHint" style="font-size:12px; color:var(--ink-faint); margin-top:4px;"></p>
+        </div>
+        <div id="tc-taggingSidebar" style="display:none;">
+          <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Items</p>
+          <div id="tc-itemStrip" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tc-reviewScreen" style="display:none;">
+      <div style="display:flex; gap:16px; flex-wrap:wrap;">
+        <div class="field-block" style="flex:1; min-width:200px;">
+          <label>Test name</label>
+          <input id="tc-testNameInput" type="text" placeholder="e.g. Custom Rotation Task" />
+        </div>
+        <div class="field-block" style="flex:2; min-width:240px;">
+          <label>Description (shown in the catalog later)</label>
+          <input id="tc-testDescInput" type="text" placeholder="One line describing the task" />
+        </div>
+      </div>
+      <div id="tc-reviewStats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:12px; margin-bottom:18px;"></div>
+      <p style="font-size:13px; font-weight:500; margin:0 0 8px;">Items</p>
+      <div id="tc-reviewList" style="display:flex; flex-direction:column; gap:4px; margin-bottom:16px; max-height:240px; overflow-y:auto;"></div>
+      <button class="btn secondary" style="width:auto; margin-bottom:10px;" id="tc-toggleCsvBtn" type="button">View generated data row</button>
+      <pre id="tc-csvPreview" style="display:none; background:var(--card); border:1px solid var(--line); border-radius:4px; padding:10px 12px; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-soft); overflow-x:auto; white-space:pre; margin:0 0 12px;"></pre>
+      <div id="tc-saveMsg" class="auth-msg" style="margin-bottom:8px;"></div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn secondary" style="width:auto;" id="tc-backToTaggingBtn" type="button">&larr; back to items</button>
+        <button class="btn accent" style="width:auto;" id="tc-saveTestBtn" type="button">Save test</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BATTERY VIEW -->
+  <div id="view-battery" class="hidden">
+    <p class="eyebrow">02 — Review battery</p>
+    <h1 class="view-title">Your battery</h1>
+    <p class="view-sub">This is the set a participant will run through, in order. Reorder, edit, or remove tests, then save it, pilot it, or set it to run.</p>
+    <div style="display:flex; gap:12px; align-items:flex-end; max-width:560px; margin-bottom:24px;">
+      <div class="field-block" style="flex:1; margin-bottom:0;">
+        <label for="battery-name-input">Battery name</label>
+        <input id="battery-name-input" type="text" placeholder="e.g. Fall 2026 Pilot" value="" oninput="batteryName = this.value">
+      </div>
+      <button class="btn secondary" style="width:auto; white-space:nowrap; padding:10px 14px;" id="battery-settings-btn" onclick="openBatterySettings()">⚙ Settings</button>
+    </div>
+    <div id="attention-panel-wrap"></div>
+    <div id="battery-list-wrap"></div>
+    <div class="battery-footer">
+      <button class="btn secondary" onclick="goToCatalog()">+ Add another test</button>
+      <div class="battery-footer-right">
+        <button class="btn secondary" id="battery-psychopy-btn" onclick="downloadPsychopyFiles()">Download PsychoPy files</button>
+        <button class="btn secondary" id="battery-save-btn" onclick="saveBatteryDraft()">Save</button>
+        <button class="btn secondary" id="battery-pilot-btn" onclick="generatePilotLink()">Generate pilot link</button>
+        <button class="btn accent" id="battery-run-btn" onclick="generateRunLink()">Generate final link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LINK VIEW -->
+  <div id="view-link" class="hidden">
+    <p class="eyebrow">03 — Ready</p>
+    <h1 class="view-title">Battery ready</h1>
+    <p class="view-sub">Send this link to your participant. It opens the Unity WebGL build and runs each test below in order.</p>
+    <div class="link-panel">
+      <div class="status-line" id="link-status-line"><span class="status-dot"></span>session created</div>
+      <div class="link-box">
+        <code id="link-text"></code>
+        <button class="copy-btn" id="copy-btn" onclick="copyLink()">copy</button>
+      </div>
+      <div class="link-actions">
+        <button class="btn secondary" onclick="startNewBattery()">Start a new battery</button>
+        <button class="btn accent" id="link-edit-btn" onclick="goToBattery()">Edit this battery</button>
+        <button class="btn accent hidden" id="link-duplicate-btn" onclick="duplicateCurrentBattery()">Duplicate to make changes</button>
+      </div>
+      <div class="summary-table" id="link-summary"></div>
+    </div>
+  </div>
+
+  <!-- PROJECTS VIEW -->
+  <div id="view-datasets" class="hidden">
+    <p class="eyebrow">Data</p>
+    <h1 class="view-title">Your projects</h1>
+    <p class="view-sub">Every battery you've saved, piloted, or run, with its tests, timing, and participant data in one place. Draft and pilot batteries can be edited or deleted; run batteries are locked — duplicate one to make a similar battery.</p>
+    <div id="dataset-list-wrap"></div>
+  </div>
+
+  <!-- ADMIN VIEW (visible only to admin accounts — see ADMIN_EMAILS) -->
+  <div id="view-admin" class="hidden">
+    <p class="eyebrow">Admin</p>
+    <h1 class="view-title">All datasets — every lab</h1>
+    <p class="view-sub">Every battery saved across every researcher account, for oversight and combined export. Only visible to your account.</p>
+    <div style="display:flex; gap:8px; margin-bottom:20px;">
+      <button class="btn secondary" onclick="downloadCombinedCSV('raw')">Download combined raw CSV</button>
+      <button class="btn secondary" onclick="downloadCombinedCSV('clean')">Download combined clean CSV</button>
+    </div>
+    <div id="admin-list-wrap"></div>
+  </div>
+</div>
+
+<!-- PROFILE MODAL -->
+<div class="modal-overlay hidden" id="profile-modal">
+  <div class="modal-card">
+    <h3>Researcher profile</h3>
+    <div class="field-block">
+      <label>Full name</label>
+      <input id="profile-name" type="text">
+    </div>
+    <div class="field-block">
+      <label>Institution</label>
+      <input id="profile-institution" type="text">
+    </div>
+    <div class="auth-msg" id="profile-msg"></div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeProfile()">Cancel</button>
+      <button class="btn accent" onclick="saveProfile()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- BATTERY SETTINGS MODAL -->
+<div class="modal-overlay hidden" id="battery-settings-modal">
+  <div class="modal-card wide">
+    <h3>Battery settings</h3>
+    <p class="modal-sub">Optional — everything here has a sensible default and only needs a look if you want to change it.</p>
+    <div class="field-block">
+      <label for="break-counter-input">Between-tests progress line<span class="field-hint">shown between every test — {completed} and {total} fill in automatically</span></label>
+      <input id="break-counter-input" type="text" placeholder="You have completed {completed} out of {total} tests." value="" oninput="breakMessageCounter = this.value">
+    </div>
+    <div class="field-block" style="margin-bottom:0;">
+      <label for="break-message-input">Between-tests message<span class="field-hint">shown below the progress line, every time — same wording after the last test too</span></label>
+      <textarea id="break-message-input" rows="3" placeholder="Good job! You have finished this test. Feel free to take a break now before beginning the next test, but try not to stop in the middle of a test. Press Enter when you are ready to move on to the next test." oninput="breakMessage = this.value"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn accent" onclick="closeBatterySettings()">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Floating preview for item-picker thumbnails, positioned near the cursor on hover -->
+<div class="item-preview" id="item-preview">
+  <img id="item-preview-img" src="" alt="">
+  <div class="item-preview-params" id="item-preview-params"></div>
+</div>
+
+<script>
+// ----------------------------
+// DEV MODE
+// ----------------------------
+// When true: skips the login screen and stubs out Supabase calls that need
+// a real session, so you can test the click-through flow straight from a
+// file:// path without deploying anywhere. Set to false before testing the
+// real auth flow (which requires serving over http/https — see prior notes).
+const DEV_MODE = false;
+
+const DEV_USER = { id: 'dev-local-user', email: 'dev@local' };
+let devProfile = { name: '', institution: '' };
+
+// Accounts that see the "All labs" admin view and its cross-lab RLS access.
+// Also needs matching Supabase policies — see admin SELECT policies in the setup SQL.
+const ADMIN_EMAILS = ['mitchmunns@ucsb.edu'];
+let isAdmin = false;
+let currentAdminRows = [];
+
+// ----------------------------
+// SUPABASE CONNECTION
+// ----------------------------
+const RUNNER_URL = "https://mitchmunns.github.io/spatialtests/v2/test_creator/index.html";
+
+const SUPABASE_URL = "https://lfboldtuuwfayloofdnm.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EfNrQHSaudaeiW-DYB5S0A_W863mPxN";
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ----------------------------
+// AUTH
+// ----------------------------
+let authMode = 'login';
+
+function setAuthMode(mode){
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+  document.getElementById('auth-submit').textContent = mode === 'login' ? 'Log in' : 'Create account';
+  document.getElementById('auth-msg').textContent = '';
+  document.getElementById('auth-msg').classList.remove('error');
+}
+
+async function submitAuth(){
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const msg = document.getElementById('auth-msg');
+  msg.classList.remove('error');
+  msg.textContent = authMode === 'login' ? 'Logging in…' : 'Creating account…';
+
+  if (authMode === 'signup'){
+    const { data, error } = await supabaseClient.auth.signUp({ email, password });
+    if (error){
+      msg.textContent = error.message;
+      msg.classList.add('error');
+    } else {
+      msg.textContent = 'Account created. Check your email if confirmation is enabled, then log in.';
+      setAuthMode('login');
+    }
+  } else {
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if (error){
+      msg.textContent = error.message;
+      msg.classList.add('error');
+    }
+    // success is handled by onAuthStateChange below
+  }
+}
+
+async function signOut(){
+  if (DEV_MODE){
+    alert('Log out is disabled in dev mode (DEV_MODE = true at the top of the script). Set it to false to test the real login flow.');
+    return;
+  }
+  await supabaseClient.auth.signOut();
+}
+
+function showApp(session){
+  document.getElementById('view-auth').classList.add('hidden');
+  document.getElementById('app-shell').classList.remove('hidden');
+  document.getElementById('user-email').textContent = DEV_MODE
+    ? `${session.user.email} (dev mode)`
+    : session.user.email;
+  isAdmin = ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
+  document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
+  showView('view-home');
+}
+
+function showAuth(){
+  document.getElementById('app-shell').classList.add('hidden');
+  document.getElementById('view-auth').classList.remove('hidden');
+  document.getElementById('auth-email').value = '';
+  document.getElementById('auth-password').value = '';
+  document.getElementById('auth-msg').textContent = '';
+}
+
+supabaseClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session){
+    showApp(session);
+  } else if (event === 'SIGNED_OUT'){
+    showAuth();
+  }
+});
+
+// Check for an existing session on load (e.g. page refresh)
+if (DEV_MODE){
+  showApp({ user: DEV_USER });
+} else {
+  supabaseClient.auth.getSession().then(({ data }) => {
+    if (data.session){
+      showApp(data.session);
+    } else {
+      showAuth();
+    }
+  });
+}
+
+// ----------------------------
+// PROFILE
+// ----------------------------
+// Returns the current user, or null (and bounces back to the login screen)
+// if the session is missing — e.g. because the browser blocked storage access.
+async function requireUser(){
+  if (DEV_MODE) return DEV_USER;
+  const { data, error } = await supabaseClient.auth.getUser();
+  if (error || !data.user){
+    showAuth();
+    document.getElementById('auth-msg').textContent = 'Your session was lost — please log in again.';
+    document.getElementById('auth-msg').classList.add('error');
+    return null;
+  }
+  return data.user;
+}
+
+async function openProfile(){
+  const modal = document.getElementById('profile-modal');
+  const msg = document.getElementById('profile-msg');
+  msg.textContent = '';
+  msg.classList.remove('error');
+
+  const user = await requireUser();
+  if (!user) return;
+
+  if (DEV_MODE){
+    document.getElementById('profile-name').value = devProfile.name;
+    document.getElementById('profile-institution').value = devProfile.institution;
+    modal.classList.remove('hidden');
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from('researchers')
+    .select('name, institution')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (data){
+    document.getElementById('profile-name').value = data.name || '';
+    document.getElementById('profile-institution').value = data.institution || '';
+  }
+  if (error){
+    msg.textContent = 'Could not load existing profile — you can still fill it in.';
+  }
+  modal.classList.remove('hidden');
+}
+
+function closeProfile(){
+  document.getElementById('profile-modal').classList.add('hidden');
+}
+
+async function saveProfile(){
+  const msg = document.getElementById('profile-msg');
+  const user = await requireUser();
+  if (!user) return;
+  const name = document.getElementById('profile-name').value;
+  const institution = document.getElementById('profile-institution').value;
+
+  if (DEV_MODE){
+    devProfile = { name, institution };
+    msg.textContent = 'Saved. (dev mode — not written to Supabase)';
+    msg.classList.remove('error');
+    setTimeout(closeProfile, 700);
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from('researchers')
+    .upsert({ id: user.id, name, institution });
+
+  if (error){
+    msg.textContent = error.message;
+    msg.classList.add('error');
+  } else {
+    msg.textContent = 'Saved.';
+    msg.classList.remove('error');
+    setTimeout(closeProfile, 700);
+  }
+}
+
+// Real stimulus filenames per test, sourced directly from each
+// test_creator/<Test>_Stimuli.csv's `standard_stim` column. Used to render
+// the item picker (thumbnails live at test_creator/<testId>_Stimuli/<file>).
+const TEST_ITEMS = {
+  AC1: ['AC_1.png'],
+  AC2: ['AC_1.png'], // AC2 has no stimuli file of its own — reuses AC1's item (different instructions/expected answer). Confirm with Mitch.
+  ACF: ['ACF_Final2.png'],
+  AO: ['AO_1.png','AO_2.png','AO_3.png','AO_4.png','AO_5.png','AO_6.png','AO_7.png','AO_8.png','AO_9.png','AO_10.png','AO_11.png','AO_12.png','AO_13.png','AO_14.png','AO_15.png','AO_16.png','AO_17.png','AO_18.png','AO_19.png','AO_20.png','AO_21.png','AO_22.png','AO_23.png','AO_24.png','AO_25.png'],
+  DAT: ['DAT_6.png','DAT_10.png','DAT_13.png','DAT_16.png','DAT_23.png','DAT_37.png','DAT_39.png','DAT_42.png','DAT_43.png','DAT_44.png','DAT_46.png','DAT_49.png'],
+  Demos: ['D_age.png','D_sex.png','D_race.png','D_ethnicity.png','D_GPA.png','D_math.png','D_physics.png','D_parents_ed.png','D_language.png','D_vision.png'],
+  Flags: ['F_1.png','F_2.png','F_6.png','F_13.png','F_15.png','F_16.png','F_17.png','F_18.png','F_19.png','F_20.png'],
+  MC: ['MC1.png','MC2.png','MC4.png','MC5.png','MC6.png','MC7.png','MC8.png','MC18.png','PR_1.png','PR_2.png','PR_3.png','PR_8.png','PR_10.png','PR_14.png','PR_15.png'],
+  PFT: ['PFT_2.png','PFT_3.png','PFT_5.png','PFT_7.png','PFT_9.png','PFT_12.png','PFT_13.png','PFT_16.png','PFT_17.png','PFT_19.png'],
+  PSVT: ['PSVT_1.png','PSVT_2.png','PSVT_3.png','PSVT_4.png','PSVT_5.png','PSVT_6.png','PSVT_7.png','PSVT_12.png','PSVT_13.png','PSVT_14.png','PSVT_18.png','PSVT_21.png','PSVT_24.png','PSVT_26.png','PSVT_28.png'],
+  SBST: ['SBST_1.png','SBST_4.png','SBST_5.png','SBST_6.png','SBST_7.png','SBST_10.png','SBST_12.png','SBST_13.png','SBST_17.png','SBST_19.png','SBST_21.png','SBST_22.png','SBST_24.png','SBST_25.png','SBST_27.png'],
+  SD: ['SD_1.png','SD_2.png','SD_3.png','SD_5.png','SD_7.png','SD_8.png','SD_9.png','SD_10.png','SD_11.png','SD_12.png'],
+  VK: ['VK_1.png','VK_2.png','VK_5.png','VK_6.png','VK_9.png','VK_10.png','VK_13.png','VK_14.png','VK_17.png','VK_18.png'],
+  WS: ['WS_1.png','WS_2.png','WS_3.png','WS_4.png','WS_5.png','WS_6.png','WS_7.png','WS_8.png','WS_9.png','WS_10.png','WS_11.png','WS_12.png','WS_13.png','WS_14.png'],
+};
+
+// IRT parameters from the standard unidimensional 2PL calibration.
+// `a` = discrimination, `b` = difficulty (θ where P(correct) = 0.5).
+const ITEM_PARAMS = {
+  VK: {
+    'VK_1.png':  { a: 1.83, b: -0.13 },
+    'VK_2.png':  { a: 2.11, b: 0.03 },
+    'VK_5.png':  { a: 1.61, b: -0.28 },
+    'VK_6.png':  { a: 2.38, b: -0.26 },
+    'VK_9.png':  { a: 2.37, b: 0.38 },
+    'VK_10.png': { a: 1.78, b: 0.39 },
+    'VK_13.png': { a: 2.14, b: -0.07 },
+    'VK_14.png': { a: 2.24, b: -0.07 },
+    'VK_17.png': { a: 2.30, b: 0.03 },
+    'VK_18.png': { a: 2.18, b: -0.18 },
+  },
+  Flags: {
+    'F_1.png':  { a: 1.40, b: -0.78 },
+    'F_2.png':  { a: 0.86, b: -0.16 },
+    'F_6.png':  { a: 1.30, b: -0.77 },
+    'F_13.png': { a: 1.13, b: -1.09 },
+    'F_15.png': { a: 1.46, b: -1.58 },
+    'F_16.png': { a: 1.32, b: -0.41 },
+    'F_17.png': { a: 1.28, b: -1.18 },
+    'F_18.png': { a: 1.53, b: -0.29 },
+    'F_19.png': { a: 1.05, b: -0.56 },
+    'F_20.png': { a: 1.19, b: -0.38 },
+  },
+  PSVT: {
+    'PSVT_1.png':  { a: 1.27, b: -0.97 },
+    'PSVT_2.png':  { a: 1.55, b: -0.78 },
+    'PSVT_3.png':  { a: 1.30, b: -0.95 },
+    'PSVT_4.png':  { a: 1.18, b: -0.83 },
+    'PSVT_5.png':  { a: 1.10, b: -0.28 },
+    'PSVT_6.png':  { a: 1.35, b: -0.35 },
+    'PSVT_7.png':  { a: 1.80, b: -0.46 },
+    'PSVT_12.png': { a: 1.12, b: 0.08 },
+    'PSVT_13.png': { a: 0.85, b: -0.24 },
+    'PSVT_14.png': { a: 0.82, b: -0.03 },
+    'PSVT_18.png': { a: 1.16, b: 0.24 },
+    'PSVT_21.png': { a: 1.09, b: 0.83 },
+    'PSVT_24.png': { a: 0.87, b: 0.66 },
+    'PSVT_26.png': { a: 0.56, b: 1.04 },
+    'PSVT_28.png': { a: 0.67, b: 1.18 },
+  },
+};
+
+// P(correct | θ), standard 2PL.
+function irtP(theta, p){ return 1 / (1 + Math.exp(-p.a * (theta - p.b))); }
+// 2PL item information at θ.
+function irtInfo(theta, p){ const P = irtP(theta, p); return p.a * p.a * P * (1 - P); }
+
+// Default text for each test's FINAL instructions page (the one stating item
+// count / timing rules, e.g. VK_Instructions8.png / Flags_Instructions8.png)
+// — the starting point for the optional custom-instructions override below.
+// {itemCount} and {timeMin} fill in from the test's actual configured values;
+// intentionally no {timeMax}/{totalTimeLimit} tokens since the source text
+// for these tests doesn't reference those. Only tests with confirmed source
+// text are listed here — everything else still uses the default image.
+const DEFAULT_INSTRUCTIONS = {
+  VK: `Remember: There are always two and only two correct answers for each item.
+
+Work as quickly as you can without sacrificing accuracy. Your score on this test will reflect both the
+correct and incorrect responses. Therefore, it will not be to your advantage to guess unless you have
+some idea which choice is correct.
+
+This test consists of {itemCount} problems. You must spend a minimum of {timeMin} seconds per problem before you can
+move on to the next one. Once you have answered a problem, you cannot go back to an earlier problem.
+The test begins on the next page.
+
+Press Enter to begin the test.`,
+  Flags: `This test consists of {itemCount} problems. You must spend a minimum of {timeMin} seconds
+on each problem before you can move on to the next one. Once you have
+answered a problem, you cannot go back to an earlier problem. The test
+begins on the next page.
+
+Press Enter to begin the test.`,
+  PSVT: `There are {itemCount} problems on this test. You will be required to spend at
+least {timeMin} seconds on each problem. Press Enter to begin the test.`,
+  MC: `There are {itemCount} problems on this test. You will be required to spend at
+least {timeMin} seconds on each problem. Press Enter to begin the test.`,
+  SBST: `Remember, select the cross-section you would see when the cutting plane slices the object.
+Imagine that you are facing the cutting plane head-on, as if you were looking in a mirror. Make your
+choice based on the shapes of the possible answers, not their sizes.
+
+This test consists of {itemCount} problems. You will have to wait at least {timeMin} seconds before you can advance
+to the next item. Work as quickly as you can without sacrificing accuracy.
+
+Press Enter to begin the test.`,
+  PFT: `In these problems all of the folds that are made are shown in the figures at the left of the
+line, and the paper is not turned or moved in any way except to make the folds shown in the
+figures. Remember, the correct answer is the figure that shows the positions of the holes when
+the paper is completely unfolded.
+
+Your score on this test will be the number marked correctly minus a fraction of the number
+marked incorrectly. Therefore, it will not be to your advantage to guess unless you are able to
+eliminate one or more of the answer choices as wrong.
+
+There are {itemCount} problems total. You will have to spend at least {timeMin} seconds on each problem.
+Once you submit an answer to a problem, you will not be able to go back.
+
+Press Enter to begin the test.`,
+  DAT: `Remember, the pattern always shows the *outside* surface of the completed figure. Each answer
+figure is the correct shape, but *only one* figure can be made from the pattern.
+
+You will not be able to submit an answer until {timeMin} seconds have passed. There are {itemCount} total items.
+
+Press Enter to begin the test.`,
+  SD: `Your score on this test will be the number of correct letters minus a fraction of the number
+of incorrect letters. Therefore, it will not be to your advantage to guess unless you are able
+to eliminate one or more of the answer choices as wrong.
+
+There are {itemCount} items total on this test. You will not be able to submit your answers until at least
+{timeMin} seconds have passed. Press Enter when you are ready to begin.`,
+};
+
+// Every instructions-screen image for a test, in the order given in its
+// <Test>_Instructions.csv — includes embedded practice/feedback pages, not
+// just the plain reading pages. The last entry is always the page the
+// custom-instructions text field above replaces.
+const TEST_INSTRUCTIONS_PAGES = {
+  VK: ['VK_Instructions1.png','VK_Instructions2.png','VK_Instructions3.png','VK_Instructions4.png','VK_Instructions4F.png','VK_Instructions4R.png','VK_Instructions4F2.png','VK_Instructions6.png','VK_Instructions7.png','VK_Instructions8.png'],
+  Flags: ['Flags_Instructions1.png','Flags_Instructions2.png','Flags_Instructions3.png','Flags_Instructions4.png','Flags_Instructions4F.png','Flags_Instructions4R.png','Flags_Instructions4F2.png','Flags_Instructions6.png','Flags_Instructions7.png','Flags_Instructions8.png'],
+  PSVT: ['PSVT_Instructions1.png','PSVT_Instructions2.png','PSVT_Instructions3.png','PSVT_Instructions3F.png','PSVT_Instructions3R.png','PSVT_Instructions3F2.png','PSVT_Instructions5.png'],
+  MC: ['MC_Instructions1.png','MC_Instructions2.png','MC_Instructions3.png','MC_Instructions3F.png','MC_Instructions3R.png','MC_Instructions3F2.png','MC_Instructions5.png'],
+  SBST: ['SBST_Instructions1.png','SBST_Instructions2.png','SBST_Instructions3.png','SBST_Instructions4.png','SBST_Instructions5.png','SBST_InstructionsP2.png','SBST_InstructionsP2F.png','SBST_InstructionsP2R.png','SBST_InstructionsP2F2.png','SBST_Instructions6.png'],
+  PFT: ['PFT_Instructions1.png','PFT_Instructions2.png','PFT_InstructionsP2.png','PFT_InstructionsP2F.png','PFT_InstructionsP2R.png','PFT_InstructionsP2F2.png','PFT_Instructions3.png'],
+  DAT: ['DAT_Instructions1.png','DAT_Instructions2.png','DAT_Instructions3.png','DAT_Instructions3F.png','DAT_Instructions3R.png','DAT_Instructions3F2.png','DAT_Instructions5.png'],
+  SD: ['SD_Instructions1.png','SD_Instructions2.png','SD_Instructions3.png','SD_Instructions3F.png','SD_Instructions3R.png','SD_Instructions3F2.png','SD_Instructions5.png'],
+};
+
+// Mirrors TEST_DEFINITIONS in test_creator/spatial_battery.js — needed to
+// generate a PsychoPy conditions row for "Download PsychoPy files" below.
+// Keep in sync if a test's file/type/selector config ever changes there.
+const PSYCHOPY_TEST_DEFS = {
+  AC1:   { stim_folder: 'AC1_Stimuli',   stim_file: 'AC1_Stimuli.csv',   type_of_test: 'fill in the blank',   instructions_file: 'AC1_Instructions.csv',   selector_box_image: '',               choices: 0 },
+  AC2:   { stim_folder: 'AC1_Stimuli',   stim_file: 'AC1_Stimuli.csv',   type_of_test: 'fill in the blank',   instructions_file: 'AC2_Instructions.csv',   selector_box_image: '',               choices: 0 },
+  ACF:   { stim_folder: 'ACF_Stimuli',   stim_file: 'ACF_Stimuli.csv',   type_of_test: 'multiple choice',     instructions_file: 'ACF_Instructions.csv',   selector_box_image: 'selector.png',   choices: 2 },
+  AO:    { stim_folder: 'AO_Stimuli',    stim_file: 'AO_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'AO_Instructions.csv',    selector_box_image: 'selector.png',   choices: 4 },
+  DAT:   { stim_folder: 'DAT_Stimuli',   stim_file: 'DAT_Stimuli.csv',   type_of_test: 'multiple choice',     instructions_file: 'DAT_Instructions.csv',   selector_box_image: 'selector.png',   choices: 4 },
+  Demos: { stim_folder: 'Demos_Stimuli', stim_file: 'Demos_Stimuli.csv', type_of_test: 'multiple choice',     instructions_file: 'Demos_Instructions.csv', selector_box_image: 'selector.png',   choices: 0 },
+  Flags: { stim_folder: 'Flags_Stimuli', stim_file: 'Flags_Stimuli.csv', type_of_test: 'same different',      instructions_file: 'Flags_Instructions.csv', selector_box_image: 'o_selector.png', choices: 6 },
+  MC:    { stim_folder: 'MC_Stimuli',    stim_file: 'MC_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'MC_Instructions.csv',    selector_box_image: 'selector.png',   choices: 5 },
+  PFT:   { stim_folder: 'PFT_Stimuli',   stim_file: 'PFT_Stimuli.csv',   type_of_test: 'multiple choice',     instructions_file: 'PFT_Instructions.csv',   selector_box_image: 'selector.png',   choices: 5 },
+  PSVT:  { stim_folder: 'PSVT_Stimuli',  stim_file: 'PSVT_Stimuli.csv',  type_of_test: 'multiple choice',     instructions_file: 'PSVT_Instructions.csv',  selector_box_image: 'selector.png',   choices: 5 },
+  SBST:  { stim_folder: 'SBST_Stimuli',  stim_file: 'SBST_Stimuli.csv',  type_of_test: 'multiple choice',     instructions_file: 'SBST_Instructions.csv',  selector_box_image: 'selector.png',   choices: 4 },
+  SD:    { stim_folder: 'SD_Stimuli',    stim_file: 'SD_Stimuli.csv',    type_of_test: 'fill in the blank',   instructions_file: 'SD_Instructions.csv',    selector_box_image: '',               choices: 0 },
+  VK:    { stim_folder: 'VK_Stimuli',    stim_file: 'VK_Stimuli.csv',    type_of_test: 'multiple selections', instructions_file: 'VK_Instructions.csv',    selector_box_image: 'x_selector.png', choices: 4 },
+  WS:    { stim_folder: 'WS_Stimuli',    stim_file: 'WS_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'WS_Instructions.csv',    selector_box_image: 'selector.png',   choices: 5 },
+};
+
+// Shared config fields every real test gets: which items (specific picks or
+// just a count), timing, randomization, and whether it counts toward scoring.
+// `choices` (answer-box layout) is intentionally NOT here — it's fixed by the
+// stimulus images themselves and lives in spatial_battery.js's TEST_DEFINITIONS.
+function standardFields(testId, defaultCount){
+  const n = TEST_ITEMS[testId].length;
+  const itemDefault = Math.min(defaultCount, n);
+  const timeMinDefault = 5;
+  const timeMaxDefault = 60;
+  const totalTimeDefault = 0;
+  const fields = [
+    { key: 'selectedItems', label: 'Specific items', hint: `optional — pick from ${n} available, overrides count below`, type: 'itemPicker', testId, default: [] },
+    { key: 'itemCount', label: 'Number of items', hint: `used if no specific items chosen, up to ${n} — recommended default = ${itemDefault}`, type: 'number', min: 1, max: n, step: 1, default: itemDefault },
+    { key: 'timeMin', label: 'Min time per item', hint: `seconds — recommended default = ${timeMinDefault}`, type: 'number', min: 0, max: 120, step: 1, default: timeMinDefault },
+    { key: 'timeMax', label: 'Max time per item', hint: `seconds — recommended default = ${timeMaxDefault}`, type: 'number', min: 5, max: 300, step: 1, default: timeMaxDefault },
+    { key: 'totalTimeLimit', label: 'Total time limit', hint: `seconds, 0 = no limit — recommended default = ${totalTimeDefault}`, type: 'number', min: 0, max: 3600, step: 30, default: totalTimeDefault },
+    { key: 'randomizeItems', label: 'Randomize item order', hint: '', type: 'toggle', default: true },
+    { key: 'randomizeOrder', label: 'Randomize test position', hint: 'let this test land anywhere in the battery, instead of staying at its set position in the battery', type: 'toggle', default: false },
+    { key: 'includeScore', label: 'Show score to participants', hint: "Turning this on will reveal the number correct and percentile rank of the participant's score at the end of this test.", type: 'toggle', default: false },
+  ];
+  if (DEFAULT_INSTRUCTIONS[testId]){
+    fields.push(
+      { key: 'customInstructions', label: 'Custom instructions', hint: 'Override the final instructions page with editable text below. Off uses the default instructions image, unchanged.', type: 'toggle', default: false },
+      { key: 'customInstructionsText', label: 'Instructions text', hint: '{itemCount} and {timeMin} fill in automatically from this test\'s settings. Wrap words in *asterisks* for italics.', type: 'textarea', formatted: true, pagesKey: testId, showIf: v => v.customInstructions, default: DEFAULT_INSTRUCTIONS[testId] },
+    );
+  }
+  return fields;
+}
+
+const TESTS = [
+  {
+    id: 'VK',
+    name: 'Mental Rotations Test',
+    shortName: 'Vandenberg & Kuse MRT',
+    description: 'Two-of-four forced choice mental rotation task using Shepard-Metzler cube figures.',
+    iconSpeed: '',
+    stats: { items: TEST_ITEMS.VK.length, timeLabel: '' },
+    fields: standardFields('VK', 10)
+  },
+  {
+    id: 'PSVT',
+    name: 'Purdue Spatial Visualization Test: Rotations',
+    shortName: 'PSVT:R',
+    description: 'Single-choice rotation-matching task using rotated solid objects, widely used in engineering education research.',
+    iconSpeed: 'speed-2',
+    stats: { items: TEST_ITEMS.PSVT.length, timeLabel: '' },
+    fields: standardFields('PSVT', 15)
+  },
+  {
+    id: 'Flags',
+    name: 'Flags Test',
+    shortName: 'Flags (Thurstone)',
+    description: 'Timed multi-select judgment task on rotated and mirrored flag silhouettes, measuring spatial orientation speed.',
+    iconSpeed: 'speed-3',
+    stats: { items: TEST_ITEMS.Flags.length, timeLabel: '' },
+    fields: standardFields('Flags', 10)
+  },
+  {
+    id: 'DAT',
+    name: 'Differential Aptitude Test: Space Relations',
+    shortName: 'DAT:SR',
+    description: 'Multiple-choice task matching 2D unfolded patterns to their corresponding 3D solid shapes.',
+    iconSpeed: '',
+    stats: { items: TEST_ITEMS.DAT.length, timeLabel: '' },
+    fields: standardFields('DAT', 12)
+  },
+  {
+    id: 'SBST',
+    name: 'Santa Barbara Solids Test',
+    shortName: 'SBST',
+    description: 'Cross-section identification task — select the 2D shape produced by a cutting plane through a 3D solid.',
+    iconSpeed: 'speed-2',
+    stats: { items: TEST_ITEMS.SBST.length, timeLabel: '' },
+    fields: standardFields('SBST', 15)
+  },
+  {
+    id: 'AO',
+    name: 'Assembling Objects',
+    shortName: 'AO',
+    description: 'Multiple-choice task selecting how disassembled parts fit together when connected.',
+    iconSpeed: 'speed-3',
+    stats: { items: TEST_ITEMS.AO.length, timeLabel: '' },
+    fields: standardFields('AO', 20)
+  },
+  {
+    id: 'SD',
+    name: 'Surface Development Test',
+    shortName: 'SD',
+    description: 'Typed-answer task matching a folded surface pattern to the labeled edge it corresponds to on the finished solid.',
+    iconSpeed: '',
+    stats: { items: TEST_ITEMS.SD.length, timeLabel: '' },
+    fields: standardFields('SD', 10)
+  },
+  {
+    id: 'PFT',
+    name: 'Paper Folding Test',
+    shortName: 'PFT',
+    description: 'Multiple-choice task predicting hole-punch patterns after a sequence of paper folds.',
+    iconSpeed: 'speed-2',
+    stats: { items: TEST_ITEMS.PFT.length, timeLabel: '' },
+    fields: standardFields('PFT', 10)
+  },
+  {
+    id: 'MC',
+    name: 'Mental Cutting Test',
+    shortName: 'MC',
+    description: 'Multiple-choice cross-section task — select the shape revealed when a cutting plane slices a 3D object.',
+    iconSpeed: 'speed-3',
+    stats: { items: TEST_ITEMS.MC.length, timeLabel: '' },
+    fields: standardFields('MC', 15)
+  },
+  {
+    id: 'WS',
+    name: 'Wordsum+',
+    shortName: 'WS (Wordsum+)',
+    description: 'Vocabulary knowledge task (Cor et al., 2012), typically included as a verbal control measure alongside spatial tasks.',
+    iconSpeed: '',
+    stats: { items: TEST_ITEMS.WS.length, timeLabel: '' },
+    fields: standardFields('WS', 14)
+  },
+  {
+    id: 'AC1',
+    name: 'Attention Check 1',
+    shortName: 'AC1',
+    description: 'Typed-answer attention-check item.',
+    attentionCheck: true,
+    iconSpeed: '',
+    stats: { items: TEST_ITEMS.AC1.length, timeLabel: '' },
+    fields: standardFields('AC1', 1)
+  },
+  {
+    id: 'AC2',
+    name: 'Attention Check 2',
+    shortName: 'AC2',
+    description: 'Typed-answer attention-check item.',
+    attentionCheck: true,
+    iconSpeed: '',
+    stats: { items: TEST_ITEMS.AC2.length, timeLabel: '' },
+    fields: standardFields('AC2', 1)
+  },
+  {
+    id: 'ACF',
+    name: 'Attention Check (Final)',
+    shortName: 'ACF',
+    description: 'Click-selection attention-check item.',
+    attentionCheck: true,
+    iconSpeed: '',
+    stats: { items: TEST_ITEMS.ACF.length, timeLabel: '' },
+    fields: standardFields('ACF', 1)
+  },
+  {
+    id: 'Demos',
+    name: 'Demographics',
+    shortName: 'Demos',
+    description: 'Participant demographic questionnaire (age, sex, race, ethnicity, GPA, and more).',
+    iconSpeed: '',
+    stats: { items: TEST_ITEMS.Demos.length, timeLabel: '' },
+    fields: standardFields('Demos', 10)
+  },
+];
+
+let currentTest = null;
+let currentValues = {};
+let editingIndex = null; // null = adding a new item; number = editing battery[index]
+let battery = []; // [{ testId, params }]
+let batteryName = '';
+// Customizable text for the between-tests break screen. Empty string =
+// use spatial_battery.js's built-in default copy.
+let breakMessage = '';
+let breakMessageCounter = '';
+// Tracks which saved `batteries` row (if any) the in-progress battery maps
+// to, so Save/pilot/run update that row instead of inserting a duplicate.
+// null = not saved yet. Status only ever advances draft -> pilot -> run;
+// once a battery reaches 'run' it's locked (see duplicateCurrentBattery()).
+let currentBatteryId = null;
+let batteryStatus = 'draft';
+let currentDatasetRows = [];
+
+// Local record of generated links, used only to sketch the datasets view in
+// DEV_MODE (real mode reads from the `batteries` table instead). Seeded with
+// a couple of examples so the page isn't empty on first look.
+let localDatasets = DEV_MODE ? [
+  {
+    id: 'k3f7m2pq',
+    name: 'Example run battery',
+    status: 'run',
+    createdAt: new Date(Date.now() - 3 * 86400000),
+    items: [
+      { testId: 'mrt', params: { itemCount: 24, timeLimit: 10, scoring: 'Strict (both correct)', practice: true } },
+      { testId: 'flags', params: { trialCount: 20, timePerTrial: 15, rotationIncrement: '45°', feedback: false } }
+    ],
+    participantCount: 14
+  },
+  {
+    id: 'x9d2h5wr',
+    name: 'Example pilot battery',
+    status: 'pilot',
+    createdAt: new Date(Date.now() - 1 * 86400000),
+    items: [
+      { testId: 'psvtr', params: { itemCount: 30, timeLimit: 20, responseOptions: '5 options', practice: true } }
+    ],
+    participantCount: 3
+  }
+] : [];
+
+// ---------------------------------------------------------------------
+// Per-test 3D icons. Each catalog card gets a small wireframe shape built
+// from absolutely-positioned box/plane pieces (not a generic cube) so the
+// icon nods at that test's actual stimuli. box3d() draws a 6-face
+// rectangular prism (a cube is just w=h=d); plane()/rule() draw single
+// flat faces/lines for card- and sheet-like shapes. All pieces are placed
+// relative to a shared center (0,0,0) inside the spinning .icon-rotor.
+// ---------------------------------------------------------------------
+function box3d(w, h, d, opts = {}){
+  const { x = 0, y = 0, z = 0, rotY = 0, rotX = 0, accent = false } = opts;
+  const hw = w / 2, hh = h / 2, hd = d / 2;
+  const sideLeft = (w - d) / 2, topOff = (h - d) / 2;
+  const cls = accent ? 'bf accent' : 'bf';
+  return `<div class="b3d" style="position:absolute;width:${w}px;height:${h}px;left:${x - hw}px;top:${y - hh}px;transform-style:preserve-3d;transform:translateZ(${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg);">
+    <div class="${cls}" style="width:${w}px;height:${h}px;transform:translateZ(${hd}px)"></div>
+    <div class="${cls}" style="width:${w}px;height:${h}px;transform:translateZ(${-hd}px) rotateY(180deg)"></div>
+    <div class="${cls}" style="width:${d}px;height:${h}px;left:${sideLeft}px;transform:rotateY(90deg) translateZ(${hw}px)"></div>
+    <div class="${cls}" style="width:${d}px;height:${h}px;left:${sideLeft}px;transform:rotateY(-90deg) translateZ(${hw}px)"></div>
+    <div class="${cls}" style="width:${w}px;height:${d}px;top:${topOff}px;transform:rotateX(90deg) translateZ(${hh}px)"></div>
+    <div class="${cls}" style="width:${w}px;height:${d}px;top:${topOff}px;transform:rotateX(-90deg) translateZ(${hh}px)"></div>
+  </div>`;
+}
+function plane(w, h, x = 0, y = 0, z = 0, rotY = 0, rotX = 0, extra = '', accent = false){
+  const cls = accent ? 'flat accent' : 'flat';
+  return `<div class="${cls}" style="width:${w}px;height:${h}px;left:${x - w / 2}px;top:${y - h / 2}px;transform:translateZ(${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg);">${extra}</div>`;
+}
+function rule(w, x, y, z, rotY = 0, rotX = 0){
+  return `<div class="rule" style="width:${w}px;height:2px;left:${x - w / 2}px;top:${y - 1}px;transform:translateZ(${z}px) rotateX(${rotX}deg) rotateY(${rotY}deg);"></div>`;
+}
+
+const ICONS = {
+  // Shepard-Metzler jointed cube pair — matches the VK stimuli directly
+  VK: () => `
+    ${box3d(26, 26, 26, { x: -9, y: 8 })}
+    ${box3d(26, 26, 26, { x: 15, y: -8 })}
+  `,
+  // Stepped block (wide base + narrow riser) — echoes the notched/stair solids
+  PSVT: () => `
+    ${box3d(50, 20, 30, { x: 0, y: 14 })}
+    ${box3d(20, 34, 20, { x: -13, y: -11 })}
+  `,
+  // Flat two-tone silhouette card — the rotated/mirrored flag stimuli are flat shapes
+  Flags: () => `
+    ${plane(23, 32, -23, 0, 0)}
+    ${plane(23, 32, 0, 0, 0.5, 0, 0, '', true)}
+  `,
+  // Flat unfolded net with one end flap folded up — the DAT net-folding stimulus
+  DAT: () => `
+    ${plane(18, 30, -18, 0, 0)}
+    ${plane(18, 30, 0, 0, 0)}
+    <div class="flat" style="width:18px;height:30px;left:9px;top:-15px;transform-origin:0% 50%;transform:rotateY(-55deg)"></div>
+    <div class="rule" style="width:30px;height:2px;left:-6px;top:-1px;transform:translateZ(0.3px) rotateZ(90deg)"></div>
+  `,
+  // Pyramid solid with a wide cutting plane through the middle — mirrors the SBST cross-section
+  // diagram. Each slant face pivots about its own apex (transform-origin: top center) by the
+  // slope angle theta=atan(b/h), so all 4 apexes stay pinned on the central axis and the shape
+  // closes into a real point — a translateZ-based version pushes the apex off-axis too, which
+  // splays the faces open like an umbrella instead of a closed solid.
+  SBST: () => `
+    <div class="tri" style="width:36px;height:49.4px;left:-18px;top:-23px;clip-path:polygon(50% 0%,0% 100%,100% 100%);transform-origin:50% 0%;transform:rotateY(0deg) rotateX(21.4deg)"></div>
+    <div class="tri" style="width:36px;height:49.4px;left:-18px;top:-23px;clip-path:polygon(50% 0%,0% 100%,100% 100%);transform-origin:50% 0%;transform:rotateY(90deg) rotateX(21.4deg)"></div>
+    <div class="tri" style="width:36px;height:49.4px;left:-18px;top:-23px;clip-path:polygon(50% 0%,0% 100%,100% 100%);transform-origin:50% 0%;transform:rotateY(180deg) rotateX(21.4deg)"></div>
+    <div class="tri" style="width:36px;height:49.4px;left:-18px;top:-23px;clip-path:polygon(50% 0%,0% 100%,100% 100%);transform-origin:50% 0%;transform:rotateY(270deg) rotateX(21.4deg)"></div>
+    <div class="bf" style="width:36px;height:36px;left:-18px;top:0px;transform:rotateX(-90deg) translateZ(23px)"></div>
+    <div class="bf accent" style="width:58px;height:36px;left:-29px;top:-1px;transform:rotateX(90deg);opacity:0.8"></div>
+  `,
+  // Two blocks joined by a bidirectional arrow — assembling disassembled parts
+  AO: () => `
+    ${box3d(22, 22, 22, { x: -20, y: 12, z: -6 })}
+    ${box3d(22, 22, 22, { x: 20, y: -12, z: 6 })}
+    <div class="flat accent" style="width:30px;height:7px;left:-15px;top:-3.5px;"></div>
+    <div class="tri accent" style="width:13px;height:20px;left:-27px;top:-10px;clip-path:polygon(100% 0%,100% 100%,0% 50%);"></div>
+    <div class="tri accent" style="width:13px;height:20px;left:15px;top:-10px;clip-path:polygon(0% 0%,0% 100%,100% 50%);"></div>
+  `,
+  // Flattened, labelled net — surface development / labelled-edge matching
+  SD: () => `
+    ${plane(20, 32, -20, 0, 0, 0, 0, '<span class="lbl">A</span>')}
+    ${plane(20, 32, 0, 0, 0, 0, 0, '<span class="lbl">B</span>')}
+    ${plane(20, 32, 20, 0, 0, 0, 0, '<span class="lbl">C</span>')}
+  `,
+  // A page folded ~50°, punched through near the crease — paper folding + hole punch
+  PFT: () => `
+    <div class="flat" style="width:19px;height:38px;left:-19px;top:-19px;">
+      <div class="dot" style="width:8px;height:8px;left:6px;top:13px;"></div>
+    </div>
+    <div class="flat" style="width:19px;height:38px;left:0px;top:-19px;transform-origin:0% 50%;transform:rotateY(-50deg);">
+      <div class="dot" style="width:8px;height:8px;left:5px;top:13px;"></div>
+    </div>
+  `,
+  // Solid cube sliced by a diagonal cutting plane, larger than the solid — mental cutting
+  MC: () => `
+    ${box3d(44, 44, 44, {})}
+    <div class="bf accent" style="width:76px;height:60px;left:-38px;top:-30px;transform:rotateY(35deg);opacity:0.8"></div>
+  `,
+  // Thick closed dictionary — spine band + page-edge striations
+  WS: () => `
+    ${box3d(34, 46, 16, {})}
+    <div class="bf accent" style="width:6px;height:46px;left:-17px;top:-23px;transform:translateZ(8.3px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-15px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-8px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-1px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:6px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:13px;transform:rotateY(90deg) translateZ(17.2px)"></div>
+  `,
+  // Clipboard sheet with field lines — demographic questionnaire
+  Demos: () => `
+    ${box3d(40, 48, 6, {})}
+    ${rule(26, 0, -14, 4)}
+    ${rule(26, 0, -4, 4)}
+    ${rule(26, 0, 6, 4)}
+    ${rule(26, 0, 16, 4)}
+  `,
+};
+
+function renderCatalog(){
+  const grid = document.getElementById('catalog-grid');
+  // Attention checks aren't full tests to configure — they're offered as a
+  // quick add-on toggle from the battery view instead (see renderAttentionChecks()).
+  grid.innerHTML = TESTS.filter(t => !t.attentionCheck).map(t => `
+    <div class="test-card">
+      <div class="cube-stage">
+        <div class="icon-rotor ${t.iconSpeed}">${ICONS[t.id] ? ICONS[t.id]() : ''}</div>
+      </div>
+      <h3>${t.name}</h3>
+      <p class="subname">${t.shortName}</p>
+      <p class="desc">${t.description}</p>
+      <div class="stat-row">
+        <span><strong>${t.stats.items}</strong> items</span>
+        ${t.stats.timeLabel ? `<span><strong>${t.stats.timeLabel}</strong></span>` : ''}
+      </div>
+      <button class="btn" onclick="openCustomize('${t.id}')">Configure</button>
+    </div>
+  `).join('');
+}
+
+function updateBatteryBadge(){
+  document.getElementById('battery-count').textContent = battery.length;
+}
+
+// Open the customize form to ADD a new item to the battery
+function openCustomize(id){
+  currentTest = TESTS.find(t => t.id === id);
+  currentValues = {};
+  currentTest.fields.forEach(f => currentValues[f.key] = f.default);
+  editingIndex = null;
+
+  document.getElementById('cust-title').textContent = currentTest.name;
+  document.getElementById('cust-sub').textContent = 'Adjust parameters, then add this test to your battery. Defaults reflect the standard published protocol.';
+  document.getElementById('cust-submit-btn').textContent = 'Add to battery';
+  document.getElementById('cust-back-btn').textContent = '← back to catalog';
+  document.getElementById('cust-back-btn').onclick = goToCatalog;
+  document.getElementById('cust-cancel-btn').onclick = goToCatalog;
+
+  renderFields();
+  showView('view-customize');
+}
+
+// Open the customize form to EDIT an existing battery item
+function editBatteryItem(index){
+  const item = battery[index];
+  currentTest = TESTS.find(t => t.id === item.testId);
+  currentValues = { ...item.params };
+  editingIndex = index;
+
+  document.getElementById('cust-title').textContent = currentTest.name;
+  document.getElementById('cust-sub').textContent = 'Adjust parameters for this item in your battery.';
+  document.getElementById('cust-submit-btn').textContent = 'Save changes';
+  document.getElementById('cust-back-btn').textContent = '← back to battery';
+  document.getElementById('cust-back-btn').onclick = goToBattery;
+  document.getElementById('cust-cancel-btn').onclick = goToBattery;
+
+  renderFields();
+  showView('view-customize');
+}
+
+function submitCustomize(){
+  if (editingIndex === null){
+    battery.push({ testId: currentTest.id, params: { ...currentValues } });
+    updateBatteryBadge();
+    goToCatalog();
+  } else {
+    battery[editingIndex].params = { ...currentValues };
+    editingIndex = null;
+    goToBattery();
+  }
+}
+
+// Fills {itemCount}/{timeMin} tokens with this test's actual current
+// values, then applies *word* -> italics. Escapes first so neither the
+// token nor the markup convention can be used to inject real HTML.
+function renderFormattedText(text){
+  const filled = (text || '')
+    .replace(/\{itemCount\}/g, currentValues.itemCount)
+    .replace(/\{timeMin\}/g, currentValues.timeMin);
+  return escapeHtml(filled)
+    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br>');
+}
+
+function updateFormattedPreview(key){
+  document.getElementById(`preview-${key}`).innerHTML = renderFormattedText(currentValues[key]);
+}
+
+function renderFields(){
+  const container = document.getElementById('cust-fields');
+  container.innerHTML = currentTest.fields.filter(f => !f.showIf || f.showIf(currentValues)).map(f => {
+    let control = '';
+    if (f.type === 'number'){
+      control = `<input type="number" min="${f.min}" max="${f.max}" step="${f.step}" value="${currentValues[f.key]}" onchange="updateValue('${f.key}', this.value, 'number')">`;
+    } else if (f.type === 'select'){
+      control = `<select onchange="updateValue('${f.key}', this.value, 'string')">
+        ${f.options.map(o => `<option value="${o}" ${o === currentValues[f.key] ? 'selected' : ''}>${o}</option>`).join('')}
+      </select>`;
+    } else if (f.type === 'toggle'){
+      control = `<label class="toggle">
+        <input type="checkbox" ${currentValues[f.key] ? 'checked' : ''} onchange="updateValue('${f.key}', this.checked, 'bool'); renderFields()">
+        <span class="slider"></span>
+      </label>`;
+    } else if (f.type === 'textarea'){
+      control = `<textarea rows="8" oninput="updateValue('${f.key}', this.value, 'string')${f.formatted ? `; updateFormattedPreview('${f.key}')` : ''}">${escapeHtml(currentValues[f.key])}</textarea>`
+        + (f.formatted ? `<div class="formatted-preview" id="preview-${f.key}">${renderFormattedText(currentValues[f.key])}</div>` : '')
+        + (f.pagesKey ? renderInstructionsPagesStrip(f.pagesKey) : '');
+    } else if (f.type === 'itemPicker'){
+      const items = TEST_ITEMS[f.testId] || [];
+      const selected = currentValues[f.key] || [];
+      control = `<div class="item-picker">${items.map(item => `
+        <label class="item-picker-cell ${selected.includes(item) ? 'selected' : ''}">
+          <input type="checkbox" ${selected.includes(item) ? 'checked' : ''} onchange="toggleItemSelection('${f.key}', '${item}', this.checked)">
+          <img src="test_creator/${f.testId}_Stimuli/${item}" loading="lazy" alt="${item}"
+               onmouseenter="showItemPreview(event, 'test_creator/${f.testId}_Stimuli/${item}', '${f.testId}', '${item}')"
+               onmousemove="positionItemPreview(event)"
+               onmouseleave="hideItemPreview()">
+          <span>${item}</span>
+        </label>
+      `).join('')}</div>`;
+    }
+    return `<div class="field-row">
+      <div class="field-label">${f.label}${f.hint ? `<span class="field-hint">${f.hint}</span>` : ''}</div>
+      <div>${control}</div>
+    </div>`;
+  }).join('');
+
+  renderIrtSidebar();
+}
+
+// Shows every instructions-screen image for this test in order, highlighting
+// the one the custom text field above replaces — the rest stay exactly as
+// the default instructions images, untouched.
+function renderInstructionsPagesStrip(testId){
+  const pages = TEST_INSTRUCTIONS_PAGES[testId];
+  if (!pages) return '';
+  const lastIndex = pages.length - 1;
+  return `<div class="instructions-pages">
+      ${pages.map((file, i) => `
+        <div class="instructions-page-cell ${i === lastIndex ? 'editing' : ''}">
+          <img src="test_creator/${testId}_Stimuli/${file}" loading="lazy" alt="${file}"
+               onmouseenter="showItemPreview(event, 'test_creator/${testId}_Stimuli/${file}', '${testId}', '${file}')"
+               onmousemove="positionItemPreview(event)"
+               onmouseleave="hideItemPreview()">
+          <span>${file}</span>
+        </div>
+      `).join('')}
+      <p class="instructions-pages-note">Highlighted page is the one being edited above — the rest stay as the default instructions images.</p>
+    </div>`;
+}
+
+// Discards every change made in this form and puts the test back to its
+// as-configured-from-scratch state.
+function resetToDefaults(){
+  if (!confirm('Reset all settings for this test back to their defaults? This discards any changes made here.')) return;
+  currentTest.fields.forEach(f => currentValues[f.key] = f.default);
+  renderFields();
+}
+
+// Shows the currently-selected items' IRT parameters and a live plot of
+// their summed information function, for tests with a calibrated item bank.
+function renderIrtSidebar(){
+  const sidebar = document.getElementById('irt-sidebar');
+  const params = ITEM_PARAMS[currentTest.id];
+  if (!params){
+    sidebar.classList.add('hidden');
+    return;
+  }
+  sidebar.classList.remove('hidden');
+
+  const pickerField = currentTest.fields.find(f => f.type === 'itemPicker');
+  const selected = (currentValues[pickerField.key] || []).filter(item => params[item]);
+
+  const listEl = document.getElementById('irt-item-list');
+  listEl.innerHTML = selected.length === 0
+    ? `<p class="irt-empty">Select specific items above to see their parameters and a live information-function estimate for this set.</p>`
+    : selected.map(item => {
+        const p = params[item];
+        return `<div class="irt-item-row"><span>${item}</span><span>a ${p.a.toFixed(2)}</span><span>b ${p.b.toFixed(2)}</span></div>`;
+      }).join('');
+
+  document.getElementById('irt-plot-wrap').innerHTML = selected.length > 0
+    ? renderIifPlot(selected.map(item => params[item]))
+    : '';
+}
+
+// Renders an SVG plot of summed 2PL item information across ability (θ,
+// -3 to 3) for the given item parameters — an estimate of measurement
+// precision across the ability range for the currently selected items.
+function renderIifPlot(paramList){
+  const width = 260, height = 150, padL = 28, padB = 20, padT = 14, padR = 8;
+  const plotW = width - padL - padR, plotH = height - padT - padB;
+  const thetaMin = -3, thetaMax = 3, steps = 60;
+
+  let maxInfo = 0.1;
+  const points = [];
+  for (let i = 0; i <= steps; i++){
+    const theta = thetaMin + (thetaMax - thetaMin) * i / steps;
+    const info = paramList.reduce((sum, p) => sum + irtInfo(theta, p), 0);
+    points.push([theta, info]);
+    if (info > maxInfo) maxInfo = info;
+  }
+
+  const xPos = theta => padL + (theta - thetaMin) / (thetaMax - thetaMin) * plotW;
+  const yPos = info => padT + plotH - (info / maxInfo) * plotH;
+  const zeroX = xPos(0).toFixed(1);
+  const path = points.map(([t, i], idx) => `${idx === 0 ? 'M' : 'L'}${xPos(t).toFixed(1)},${yPos(i).toFixed(1)}`).join(' ');
+
+  return `<svg viewBox="0 0 ${width} ${height}" class="irt-plot">
+      <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + plotH}" class="irt-axis"/>
+      <line x1="${padL}" y1="${padT + plotH}" x2="${padL + plotW}" y2="${padT + plotH}" class="irt-axis"/>
+      <line x1="${zeroX}" y1="${padT}" x2="${zeroX}" y2="${padT + plotH}" class="irt-gridline"/>
+      <path d="${path}" class="irt-curve"/>
+      <text x="${padL + 2}" y="${padT + 8}" class="irt-tick">${maxInfo.toFixed(1)}</text>
+      <text x="${padL - 4}" y="${padT + plotH}" class="irt-tick" text-anchor="end">0</text>
+      <text x="${padL}" y="${height - 4}" class="irt-tick">-3</text>
+      <text x="${zeroX}" y="${height - 4}" class="irt-tick" text-anchor="middle">0 (θ)</text>
+      <text x="${padL + plotW}" y="${height - 4}" class="irt-tick" text-anchor="end">3</text>
+    </svg>
+    <div class="irt-plot-caption">Summed item information vs. ability (θ) for the selected items.</div>`;
+}
+
+function updateValue(key, value, type){
+  if (type === 'number') value = Number(value);
+  if (type === 'bool') value = Boolean(value);
+  currentValues[key] = value;
+
+  // Changing item count or min time off their default can silently make the
+  // default instructions image wrong (it states a fixed number) — auto-turn
+  // on custom instructions, which auto-fills the real value via tokens
+  // instead. Only flips it on, never back off, so it doesn't fight a
+  // researcher who deliberately turned it off after changing these. Either
+  // way, re-render so the instructions preview (if visible) reflects the
+  // new value instead of going stale.
+  if (key === 'itemCount' || key === 'timeMin'){
+    const hasCustomInstructions = currentTest.fields.some(f => f.key === 'customInstructions');
+    if (hasCustomInstructions){
+      const field = currentTest.fields.find(f => f.key === key);
+      if (!currentValues.customInstructions && field && value !== field.default){
+        currentValues.customInstructions = true;
+      }
+      renderFields();
+    }
+  }
+}
+
+function toggleItemSelection(key, item, checked){
+  const current = currentValues[key] || [];
+  currentValues[key] = checked ? [...current, item] : current.filter(i => i !== item);
+  renderFields();
+}
+
+// Floating larger preview of an item-picker thumbnail, shown near the cursor on hover.
+// Also shows discrimination/difficulty underneath when this item has been calibrated.
+function showItemPreview(evt, src, testId, item){
+  document.getElementById('item-preview-img').src = src;
+  const p = (ITEM_PARAMS[testId] || {})[item];
+  document.getElementById('item-preview-params').innerHTML = p
+    ? `<span>a ${p.a.toFixed(2)}</span><span>b ${p.b.toFixed(2)}</span>`
+    : '';
+  document.getElementById('item-preview').style.display = 'block';
+  positionItemPreview(evt);
+}
+function positionItemPreview(evt){
+  const box = document.getElementById('item-preview');
+  const pad = 18;
+  let x = evt.clientX + pad;
+  let y = evt.clientY + pad;
+  if (x + box.offsetWidth + 10 > window.innerWidth) x = evt.clientX - box.offsetWidth - pad;
+  if (y + box.offsetHeight + 10 > window.innerHeight) y = evt.clientY - box.offsetHeight - pad;
+  box.style.left = Math.max(10, x) + 'px';
+  box.style.top = Math.max(10, y) + 'px';
+}
+function hideItemPreview(){
+  document.getElementById('item-preview').style.display = 'none';
+}
+
+function showView(id){
+  ['view-home', 'view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
+    document.getElementById(v).classList.toggle('hidden', v !== id);
+  });
+}
+
+function goToHome(){
+  showView('view-home');
+}
+
+function goToCatalog(){
+  showView('view-catalog');
+}
+
+function goToTestCreator(){
+  resetTestCreator();
+  showView('view-test-creator');
+}
+
+function goToBattery(){
+  document.getElementById('battery-name-input').value = batteryName;
+  updateBatterySettingsBadge();
+  renderBatteryList();
+  showView('view-battery');
+}
+
+// Battery-wide options beyond the tests themselves (currently just the
+// between-tests break screen text) live in this modal instead of the main
+// flow — everything in it has a working default, so it's opt-in.
+function openBatterySettings(){
+  document.getElementById('break-counter-input').value = breakMessageCounter;
+  document.getElementById('break-message-input').value = breakMessage;
+  document.getElementById('battery-settings-modal').classList.remove('hidden');
+}
+
+function closeBatterySettings(){
+  document.getElementById('battery-settings-modal').classList.add('hidden');
+  updateBatterySettingsBadge();
+}
+
+function updateBatterySettingsBadge(){
+  const btn = document.getElementById('battery-settings-btn');
+  const customized = !!(breakMessage.trim() || breakMessageCounter.trim());
+  btn.textContent = customized ? '⚙ Settings •' : '⚙ Settings';
+}
+
+function paramSummary(test, params){
+  return test.fields.map(f => {
+    let val = params[f.key];
+    if (Array.isArray(val)){
+      if (val.length === 0) return null; // no specific items chosen — itemCount governs instead
+      val = `${val.length} chosen`;
+    } else if (typeof val === 'boolean'){
+      val = val ? 'yes' : 'no';
+    }
+    return `${f.label.toLowerCase()}: ${val}`;
+  }).filter(Boolean).join(' · ');
+}
+
+// Attention checks aren't picked from the catalog — they're single-item
+// add-ons offered here as toggles. Turning one on drops it straight into the
+// battery (with its standard defaults) at the end; turning it off removes it.
+// Once added, it behaves like any other battery item (reorder/edit/remove).
+const ATTENTION_CHECK_IDS = ['AC1', 'AC2', 'ACF'];
+
+function renderAttentionChecks(){
+  const wrap = document.getElementById('attention-panel-wrap');
+  wrap.innerHTML = `
+    <div class="attention-panel">
+      <h4>Attention checks</h4>
+      <p class="attention-sub">Optional — add a quick attention-check item to the battery. Once added, reorder it like any other item below.</p>
+      ${ATTENTION_CHECK_IDS.map(id => {
+        const test = TESTS.find(t => t.id === id);
+        const active = battery.some(b => b.testId === id);
+        return `
+          <div class="attention-row">
+            <div class="attention-label">
+              <strong>${test.name}</strong>
+              <span>${test.description}</span>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" ${active ? 'checked' : ''} onchange="toggleAttentionCheck('${id}', this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function toggleAttentionCheck(id, checked){
+  if (checked){
+    if (!battery.some(b => b.testId === id)){
+      const test = TESTS.find(t => t.id === id);
+      const params = {};
+      test.fields.forEach(f => params[f.key] = f.default);
+      battery.push({ testId: id, params });
+    }
+  } else {
+    const idx = battery.findIndex(b => b.testId === id);
+    if (idx !== -1) battery.splice(idx, 1);
+  }
+  updateBatteryBadge();
+  renderBatteryList();
+}
+
+function renderBatteryList(){
+  renderAttentionChecks();
+  const wrap = document.getElementById('battery-list-wrap');
+  const actionBtns = ['battery-save-btn', 'battery-pilot-btn', 'battery-run-btn'].map(id => document.getElementById(id));
+
+  if (battery.length === 0){
+    wrap.innerHTML = `<div class="battery-empty">Your battery is empty. Add a test from the catalog to get started.</div>`;
+    actionBtns.forEach(btn => { btn.disabled = true; btn.style.opacity = '0.5'; });
+    return;
+  }
+
+  actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = '1'; });
+
+  wrap.innerHTML = `<div class="battery-list">${battery.map((item, i) => {
+    const test = TESTS.find(t => t.id === item.testId);
+    return `
+      <div class="battery-item">
+        <div class="battery-order">
+          <span class="order-num">${i + 1}</span>
+          <button class="reorder-btn" onclick="moveBatteryItem(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
+          <button class="reorder-btn" onclick="moveBatteryItem(${i}, 1)" ${i === battery.length - 1 ? 'disabled' : ''}>▼</button>
+        </div>
+        <div>
+          <h4>${test.name}</h4>
+          <div class="param-summary">${paramSummary(test, item.params)}</div>
+        </div>
+        <div class="battery-item-actions">
+          <button onclick="editBatteryItem(${i})">Edit</button>
+          <button class="remove" onclick="removeFromBattery(${i})">Remove</button>
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+function moveBatteryItem(index, direction){
+  const target = index + direction;
+  if (target < 0 || target >= battery.length) return;
+  [battery[index], battery[target]] = [battery[target], battery[index]];
+  renderBatteryList();
+}
+
+function removeFromBattery(index){
+  battery.splice(index, 1);
+  updateBatteryBadge();
+  renderBatteryList();
+}
+
+function startNewBattery(){
+  battery = [];
+  batteryName = '';
+  breakMessage = '';
+  breakMessageCounter = '';
+  currentBatteryId = null;
+  batteryStatus = 'draft';
+  updateBatteryBadge();
+  goToCatalog();
+}
+
+// Inserts (first save) or updates (every save after) the batteries row for
+// the in-progress battery. Status only ever advances — saving a battery
+// that's already 'pilot' or 'run' never downgrades it back to 'draft'.
+async function persistBattery(targetStatus){
+  const rank = { draft: 0, pilot: 1, run: 2 };
+  const nextStatus = rank[targetStatus] > rank[batteryStatus] ? targetStatus : batteryStatus;
+
+  if (DEV_MODE){
+    if (!currentBatteryId){
+      const chars = 'abcdefghjkmnpqrstuvwxyz23456789';
+      currentBatteryId = Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      localDatasets.unshift({
+        id: currentBatteryId,
+        name: batteryName.trim(),
+        status: nextStatus,
+        createdAt: new Date(),
+        items: battery.map(i => ({ ...i })),
+        participantCount: 0
+      });
+    } else {
+      const row = localDatasets.find(d => d.id === currentBatteryId);
+      if (row){
+        row.name = batteryName.trim();
+        row.status = nextStatus;
+        row.items = battery.map(i => ({ ...i }));
+      }
+    }
+    batteryStatus = nextStatus;
+    return { id: currentBatteryId, status: nextStatus };
+  }
+
+  const user = await requireUser();
+  if (!user) return null;
+
+  const payload = {
+    researcher_id: user.id,
+    name: batteryName.trim() || null,
+    items: battery,
+    status: nextStatus,
+    break_message: breakMessage.trim() || null,
+    break_message_counter: breakMessageCounter.trim() || null
+  };
+
+  const query = currentBatteryId
+    ? supabaseClient.from('batteries').update(payload).eq('id', currentBatteryId)
+    : supabaseClient.from('batteries').insert(payload);
+  const { data, error } = await query.select().single();
+
+  if (error){
+    // PGRST116 = the update/insert matched zero rows before .single() tried
+    // to coerce the result — almost always a missing/misconfigured RLS
+    // policy (e.g. the researcher-update policy on `batteries`) rather than
+    // a real data problem, so surface that instead of the cryptic PostgREST text.
+    if (error.code === 'PGRST116'){
+      alert("Could not save battery: no matching row came back after the write. This usually means a required Supabase RLS policy hasn't been added yet (e.g. the researcher-update policy on `batteries`) — check the setup SQL for this app.");
+    } else {
+      alert('Could not save battery: ' + error.message);
+    }
+    return null;
+  }
+  currentBatteryId = data.id;
+  batteryStatus = data.status;
+  return data;
+}
+
+async function saveBatteryDraft(){
+  if (battery.length === 0){ alert('Add at least one test first.'); return; }
+  const btn = document.getElementById('battery-save-btn');
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+  const data = await persistBattery('draft');
+  btn.disabled = false;
+  btn.textContent = data ? 'Saved ✓' : 'Save';
+  updateBatteryBadge();
+  if (data) setTimeout(() => { btn.textContent = 'Save'; }, 1600);
+}
+
+async function generatePilotLink(){
+  if (battery.length === 0) return;
+  const btn = document.getElementById('battery-pilot-btn');
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+  const data = await persistBattery('pilot');
+  btn.disabled = false;
+  btn.textContent = 'Generate pilot link';
+  if (!data) return;
+  showLinkView(data.status);
+}
+
+async function generateRunLink(){
+  if (battery.length === 0) return;
+  if (!confirm("Set this battery to Run? Once it's running it can't be edited or deleted — you'd duplicate it to make a similar battery later.")) return;
+  const btn = document.getElementById('battery-run-btn');
+  btn.textContent = 'Generating…';
+  btn.disabled = true;
+  const data = await persistBattery('run');
+  btn.disabled = false;
+  btn.textContent = 'Generate final link';
+  if (!data) return;
+  showLinkView(data.status);
+}
+
+function showLinkView(status){
+  const link = `${RUNNER_URL}?session=${currentBatteryId}`;
+  document.getElementById('link-text').textContent = link;
+
+  const summary = document.getElementById('link-summary');
+  summary.innerHTML = battery.map((item, i) => {
+    const test = TESTS.find(t => t.id === item.testId);
+    return `<div><span>${i + 1}. ${test.shortName}</span><span>${paramSummary(test, item.params)}</span></div>`;
+  }).join('');
+
+  const copyBtn = document.getElementById('copy-btn');
+  copyBtn.textContent = 'copy';
+  copyBtn.classList.remove('copied');
+
+  document.getElementById('link-status-line').innerHTML = status === 'run'
+    ? '<span class="status-dot"></span>run session created — locked for editing'
+    : '<span class="status-dot"></span>pilot session created — still editable';
+  document.getElementById('link-edit-btn').classList.toggle('hidden', status === 'run');
+  document.getElementById('link-duplicate-btn').classList.toggle('hidden', status !== 'run');
+
+  showView('view-link');
+}
+
+// Forks the currently loaded battery into a brand-new draft (new id, name
+// forced to stand out from the locked run battery it came from).
+function duplicateCurrentBattery(){
+  batteryName = (batteryName.trim() || 'Untitled battery') + ' (copy)';
+  currentBatteryId = null;
+  batteryStatus = 'draft';
+  goToBattery();
+}
+
+async function goToDatasets(){
+  showView('view-datasets');
+  const wrap = document.getElementById('dataset-list-wrap');
+  wrap.innerHTML = `<div class="dataset-empty">Loading…</div>`;
+
+  let rows = [];
+  if (DEV_MODE){
+    rows = localDatasets;
+  } else {
+    const user = await requireUser();
+    if (!user) return;
+    const { data, error } = await supabaseClient
+      .from('batteries')
+      .select('id, name, status, items, break_message, break_message_counter, created_at')
+      .eq('researcher_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (error){
+      wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${error.message}</div>`;
+      return;
+    }
+    rows = data.map(r => ({
+      id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at),
+      items: r.items, participantCount: null,
+      breakMessage: r.break_message || '', breakMessageCounter: r.break_message_counter || ''
+    }));
+
+    const ids = rows.map(r => r.id);
+    if (ids.length > 0){
+      const { data: resultRows, error: countError } = await supabaseClient
+        .from('psychojs_results')
+        .select('session_id')
+        .in('session_id', ids);
+      if (!countError && resultRows){
+        const counts = {};
+        resultRows.forEach(r => { counts[r.session_id] = (counts[r.session_id] || 0) + 1; });
+        rows.forEach(r => { r.participantCount = counts[r.id] || 0; });
+      }
+    }
+  }
+
+  currentDatasetRows = rows;
+  renderDatasets(rows);
+}
+
+function escapeHtml(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+// Admin-only: every battery across every researcher, not just the current
+// user's own rows. Requires the admin SELECT policies from the setup SQL —
+// without them this will just come back empty (RLS still scopes it).
+async function goToAdmin(){
+  if (!isAdmin) return;
+  showView('view-admin');
+  const wrap = document.getElementById('admin-list-wrap');
+  wrap.innerHTML = `<div class="dataset-empty">Loading…</div>`;
+
+  const { data: batteryData, error: batteryError } = await supabaseClient
+    .from('batteries')
+    .select('id, name, status, items, researcher_id, created_at')
+    .order('created_at', { ascending: false });
+
+  if (batteryError){
+    wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${escapeHtml(batteryError.message)}</div>`;
+    return;
+  }
+
+  const { data: researcherData } = await supabaseClient
+    .from('researchers')
+    .select('id, name, institution');
+  const researcherById = {};
+  (researcherData || []).forEach(r => { researcherById[r.id] = r; });
+
+  const rows = batteryData.map(r => {
+    const researcher = researcherById[r.researcher_id] || {};
+    return {
+      id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at),
+      items: r.items, participantCount: null, researcherId: r.researcher_id,
+      researcherName: researcher.name || '', researcherInstitution: researcher.institution || '',
+    };
+  });
+
+  const ids = rows.map(r => r.id);
+  if (ids.length > 0){
+    const { data: resultRows, error: countError } = await supabaseClient
+      .from('psychojs_results')
+      .select('session_id')
+      .in('session_id', ids);
+    if (!countError && resultRows){
+      const counts = {};
+      resultRows.forEach(r => { counts[r.session_id] = (counts[r.session_id] || 0) + 1; });
+      rows.forEach(r => { r.participantCount = counts[r.id] || 0; });
+    }
+  }
+
+  currentAdminRows = rows;
+  renderAdminDatasets(rows);
+}
+
+function renderAdminDatasets(rows){
+  const wrap = document.getElementById('admin-list-wrap');
+
+  if (rows.length === 0){
+    wrap.innerHTML = `<div class="dataset-empty">No datasets exist yet across any lab.</div>`;
+    return;
+  }
+
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const statusLabel = { draft: 'Draft', pilot: 'Pilot', run: 'Run' };
+
+  wrap.innerHTML = `<div class="dataset-list">${rows.map(row => {
+    const chips = row.items.map(i => {
+      const test = TESTS.find(t => t.id === i.testId);
+      return `<span class="test-chip">${escapeHtml(test ? test.shortName : i.testId)}</span>`;
+    }).join('');
+    const countDisplay = row.participantCount === null ? '—' : row.participantCount;
+    const site = escapeHtml([row.researcherName, row.researcherInstitution].filter(Boolean).join(' · ') || row.researcherId);
+    return `
+      <div class="dataset-row">
+        <div class="dataset-main">
+          <div class="dataset-name"><span class="status-badge status-${row.status}">${statusLabel[row.status] || row.status}</span>${row.name ? escapeHtml(row.name) : '<em>Untitled battery</em>'}</div>
+          <div class="chips">${chips}</div>
+          <div class="dataset-meta">${site} · created ${dateFmt.format(row.createdAt)} · session <span class="session-id">${row.id}</span></div>
+        </div>
+        <div class="dataset-metric">
+          <div class="num">${countDisplay}</div>
+          <div class="lbl">participants</div>
+        </div>
+        <div class="dataset-actions">
+          <button onclick="downloadDatasetCSV('${row.id}')">Export raw CSV</button>
+          <button onclick="downloadCleanCSV('${row.id}')">Export clean CSV</button>
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+// Pulls every battery's trials and stitches them into one cross-lab CSV,
+// tagging each row with the owning researcher/institution/battery so the
+// combined sheet can be split back apart later if needed.
+async function downloadCombinedCSV(mode){
+  if (!isAdmin) return;
+  if (currentAdminRows.length === 0){
+    alert('No datasets to export.');
+    return;
+  }
+
+  const tagged = await Promise.all(currentAdminRows.map(async row => {
+    let trials = [];
+    try { trials = await fetchBatteryTrials(row.id); } catch (e){ trials = []; }
+    return { row, trials };
+  }));
+
+  const tagRow = (row, obj) => ({
+    researcher: row.researcherName || '',
+    institution: row.researcherInstitution || '',
+    battery_name: row.name || '',
+    battery_id: row.id,
+    ...obj,
+  });
+
+  if (mode === 'raw'){
+    const combined = [];
+    tagged.forEach(({ row, trials }) => trials.forEach(t => combined.push(tagRow(row, t))));
+    if (combined.length === 0){
+      alert('No participant data yet across any battery.');
+      return;
+    }
+    downloadCsv(rowsToCsv(combined), `all_labs_raw_${Date.now()}.csv`);
+    return;
+  }
+
+  const combinedParticipant = [];
+  const combinedTrial = [];
+  tagged.forEach(({ row, trials }) => {
+    if (trials.length === 0) return;
+    const testIds = row.items.map(i => i.testId);
+    const { scoreRows, cleanTrialRows } = buildCleanExport(trials, testIds);
+    scoreRows.forEach(r => combinedParticipant.push(tagRow(row, r)));
+    cleanTrialRows.forEach(r => combinedTrial.push(tagRow(row, r)));
+  });
+
+  if (combinedParticipant.length === 0){
+    alert('No completed participants yet across any battery.');
+    return;
+  }
+  downloadCsv(rowsToCsv(combinedParticipant), `all_labs_participant_clean_${Date.now()}.csv`);
+  downloadCsv(rowsToCsv(combinedTrial), `all_labs_trial_clean_${Date.now()}.csv`);
+}
+
+// Max per-item time across the battery, plus a rough total-duration
+// estimate (effective item count × midpoint of min/max time per test,
+// capped at that test's total_time_limit if one is set). An estimate, not
+// a guarantee — different participants move at different speeds.
+function estimateBatteryTiming(items){
+  let maxPerItem = 0;
+  let totalSeconds = 0;
+  items.forEach(item => {
+    const p = item.params || {};
+    const timeMin = Number(p.timeMin) || 0;
+    const timeMax = Number(p.timeMax) || 0;
+    if (timeMax > maxPerItem) maxPerItem = timeMax;
+    const effectiveCount = (Array.isArray(p.selectedItems) && p.selectedItems.length > 0)
+      ? p.selectedItems.length
+      : (Number(p.itemCount) || 0);
+    let testSeconds = effectiveCount * ((timeMin + timeMax) / 2);
+    if (p.totalTimeLimit > 0) testSeconds = Math.min(testSeconds, p.totalTimeLimit);
+    totalSeconds += testSeconds;
+  });
+  return { maxPerItem, estimatedMinutes: Math.max(1, Math.round(totalSeconds / 60)) };
+}
+
+function renderProjectTestTile(item){
+  const test = TESTS.find(t => t.id === item.testId);
+  const p = item.params || {};
+  const count = (Array.isArray(p.selectedItems) && p.selectedItems.length > 0) ? p.selectedItems.length : (p.itemCount || 0);
+  return `
+    <div class="project-test-tile">
+      <div class="cube-stage">
+        <div class="icon-rotor">${ICONS[item.testId] ? ICONS[item.testId]() : ''}</div>
+      </div>
+      <div class="project-test-tile-name">${escapeHtml(test ? test.shortName : item.testId)}</div>
+      <div class="project-test-tile-count">${count} item${count === 1 ? '' : 's'}</div>
+    </div>
+  `;
+}
+
+function renderDatasets(rows){
+  const wrap = document.getElementById('dataset-list-wrap');
+
+  if (rows.length === 0){
+    wrap.innerHTML = `<div class="dataset-empty">
+      No projects yet — save or generate a battery to create your first one.
+      <br><button class="btn accent" onclick="goToCatalog()">Go to catalog</button>
+    </div>`;
+    return;
+  }
+
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const statusLabel = { draft: 'Draft', pilot: 'Pilot', run: 'Run' };
+
+  wrap.innerHTML = `<div class="dataset-list">${rows.map(row => {
+    const testNames = row.items.map(i => (TESTS.find(t => t.id === i.testId) || {}).shortName || i.testId).join(', ');
+    const tiles = row.items.map(renderProjectTestTile).join('');
+    const { maxPerItem, estimatedMinutes } = estimateBatteryTiming(row.items);
+    const locked = row.status === 'run';
+    const editAction = locked
+      ? `<button onclick="duplicateBattery('${row.id}')">Duplicate</button>`
+      : `<button onclick="editSavedBattery('${row.id}')">Edit</button>`;
+    const deleteAction = locked ? '' : `<button class="remove" onclick="deleteBattery('${row.id}')">Delete</button>`;
+    const countDisplay = row.participantCount === null ? '—' : row.participantCount;
+
+    return `
+      <div class="project-card">
+        <div class="project-columns">
+          <div class="project-info">
+            <div class="project-col-label">Info</div>
+            <div class="dataset-name"><span class="status-badge status-${row.status}">${statusLabel[row.status] || row.status}</span>${row.name ? escapeHtml(row.name) : '<em>Untitled battery</em>'}</div>
+            <div class="project-tests-summary"><strong>${row.items.length}</strong> test${row.items.length === 1 ? '' : 's'}: ${escapeHtml(testNames)}</div>
+            <div class="project-tests-row">${tiles}</div>
+            <div class="project-timing">${maxPerItem}s max per item · ~${estimatedMinutes} min estimated</div>
+            <div class="project-meta">created ${dateFmt.format(row.createdAt)} · session <span class="session-id">${row.id}</span></div>
+            <div class="project-actions">
+              ${editAction}
+              <button onclick="copyDatasetLink('${row.id}')">Copy link</button>
+              ${deleteAction}
+            </div>
+          </div>
+          <div class="project-data">
+            <div class="project-col-label">Data</div>
+            <div class="project-stats-line" id="project-stats-${row.id}">Participants: ${countDisplay}${row.participantCount ? ', incomplete: <span class="stats-loading">loading…</span>' : ''}</div>
+            <div class="project-progress" id="project-progress-${row.id}" style="display:none;"></div>
+            <div class="project-quality" id="project-quality-${row.id}"></div>
+            <div class="project-data-actions">
+              <button onclick="downloadDatasetCSV('${row.id}')">Export raw CSV</button>
+              <button onclick="downloadCleanCSV('${row.id}')" title="Deduplicated, rescored, and filtered to completed participants only — practice items folded in, demographics decoded, one summary row per participant plus a cleaned trial-level file. Ported from the lab's read_data_script.R.">Export clean CSV</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('')}</div>`;
+
+  loadProjectStats(rows);
+}
+
+// Fills in the completed/incomplete participant breakdown per project,
+// after the cards are already on screen — this needs each battery's full
+// trial data (to check for the "reached the end" marker), which is much
+// heavier than the plain participant count already shown, so it loads in
+// the background per-card instead of blocking the whole page.
+// Classifies every participant in a battery as pass/fail/incomplete and
+// computes a composite % score and total time taken, for the data-quality
+// visualizer. Pass/fail follows the lab's actual final exclusion block in
+// read_data_script.R (df_clean) — everything above that block in the real
+// script (histograms, Mahalanobis distance) was exploratory work used to
+// arrive at this rule, not the rule itself. Fails if ANY of:
+//  1. Attention_Final !== 1 (didn't confirm good-effort on the ACF check)
+//  2. mean per-item RT < 15s AND composite score <= 25% (sped through AND
+//     scored low — fails only on the combination, not either alone)
+//  3. Practice_Check_Avg <= 0.2 (near-chance on embedded attention items)
+//  4. every present typed check is wrong (AC1's correct answer is '413',
+//     AC2's is '899' — fails only if all the ones actually in the battery
+//     are wrong, matching "AC1 correct OR AC2 correct" when both present)
+// Any criterion whose underlying test isn't in the battery, or whose value
+// wasn't computed, doesn't count against the participant.
+// Tiny 5-bin histogram of composite scores (0-100%), with small end-point
+// axis labels and a dashed vertical line marking chance-level performance
+// — deliberately small since a project list could run long; the square
+// grid and tooltips already carry the full detail.
+function renderScoreHistogram(pcts, chancePct){
+  if (pcts.length === 0) return '';
+  const bins = [0, 0, 0, 0, 0];
+  pcts.forEach(pct => { bins[Math.min(4, Math.max(0, Math.floor(pct / 20)))]++; });
+  const maxCount = Math.max(...bins, 1);
+  const w = 76, h = 36;
+  const barTop = 2, barBottom = 26, labelY = 35;
+  const barAreaH = barBottom - barTop;
+  const barW = w / bins.length;
+  const bars = bins.map((count, i) => {
+    const barH = (count / maxCount) * barAreaH;
+    return `<rect x="${(i * barW + 1).toFixed(1)}" y="${(barBottom - barH).toFixed(1)}" width="${(barW - 2).toFixed(1)}" height="${barH.toFixed(1)}" class="quality-hist-bar"/>`;
+  }).join('');
+  const chanceLine = (chancePct !== null && chancePct !== undefined)
+    ? `<line x1="${(chancePct / 100 * w).toFixed(1)}" y1="${barTop}" x2="${(chancePct / 100 * w).toFixed(1)}" y2="${barBottom}" class="quality-hist-chance"><title>Chance performance: ~${chancePct.toFixed(0)}%</title></line>`
+    : '';
+  return `<svg viewBox="0 0 ${w} ${h}" class="quality-histogram">
+    <title>Score distribution, 0-100% in 5 bins${chancePct !== null && chancePct !== undefined ? `; dashed line = chance performance (~${chancePct.toFixed(0)}%)` : ''}</title>
+    <line x1="0" y1="${barBottom}" x2="${w}" y2="${barBottom}" class="quality-hist-axis"/>
+    ${bars}
+    ${chanceLine}
+    <text x="0" y="${labelY}" class="quality-hist-label">0%</text>
+    <text x="${w}" y="${labelY}" class="quality-hist-label" text-anchor="end">100%</text>
+  </svg>`;
+}
+
+// Expected % correct from pure guessing, by task mechanic:
+//  - multiple choice: 1 in `choices`
+//  - same different (Flags): each item is a binary same/opposite call,
+//    regardless of how many flag choices are laid out on screen
+//  - multiple selections (VK): must pick exactly 2 of `choices` options,
+//    so chance is 1 / C(choices, 2), not 1 / choices
+//  - fill in the blank (SD): typing an exact answer isn't meaningfully
+//    guessable, treated as ~0
+function testChanceLevel(testId){
+  const def = PSYCHOPY_TEST_DEFS[testId];
+  if (!def || !def.choices) return 0;
+  if (def.type_of_test === 'multiple choice') return 1 / def.choices;
+  if (def.type_of_test === 'same different') return 0.5;
+  if (def.type_of_test === 'multiple selections'){
+    const combos = (def.choices * (def.choices - 1)) / 2;
+    return combos > 0 ? 1 / combos : 0;
+  }
+  return 0;
+}
+
+function computeProjectQuality(rawTrials, testIds){
+  const allParticipants = [...new Set(rawTrials.map(r => r.participant))];
+  const { scoreRows } = buildCleanExport(rawTrials, testIds);
+  const hasACF = testIds.includes('ACF');
+  const hasAC1 = testIds.includes('AC1');
+  const hasAC2 = testIds.includes('AC2');
+
+  const participants = allParticipants.map(pid => {
+    const row = scoreRows.find(r => r.id === pid);
+    if (!row) return { id: pid, status: 'incomplete', compositePct: null, totalMinutes: null, reasons: [] };
+
+    const scoreKeys = Object.keys(row).filter(k => k.endsWith('_score') && typeof row[k] === 'number' && !Number.isNaN(row[k]));
+    const rtKeys = Object.keys(row).filter(k => k.endsWith('_rt') && typeof row[k] === 'number' && !Number.isNaN(row[k]));
+    const compositeScore = scoreKeys.length ? scoreKeys.reduce((a, k) => a + row[k], 0) / scoreKeys.length : null; // 0-1
+    const meanRt = rtKeys.length ? rtKeys.reduce((a, k) => a + row[k], 0) / rtKeys.length : null; // seconds/item
+
+    const stopMarker = rawTrials.find(t => t.participant === pid && cleanBlank(t['feedback.stopped']));
+    const totalMinutes = stopMarker ? Number(stopMarker['feedback.stopped']) / 60 : null;
+
+    const reasons = [];
+    if (hasACF && row.Attention_Final !== 1) reasons.push('failed final attention check');
+    if (meanRt !== null && compositeScore !== null && meanRt < 15 && compositeScore <= 0.25) reasons.push('sped through with a low score');
+    if (row.Practice_Check_Avg !== undefined && row.Practice_Check_Avg !== '' && row.Practice_Check_Avg <= 0.2) reasons.push('low practice attention-check accuracy');
+    const presentChecks = [];
+    if (hasAC1) presentChecks.push(row.Attention_Check1 === '413');
+    if (hasAC2) presentChecks.push(row.Attention_Check2 === '899');
+    if (presentChecks.length > 0 && !presentChecks.some(Boolean)) reasons.push('missed all typed attention-check questions');
+
+    return {
+      id: pid,
+      status: reasons.length ? 'fail' : 'pass',
+      compositePct: compositeScore !== null ? compositeScore * 100 : null,
+      totalMinutes,
+      reasons,
+    };
+  });
+
+  const completedPcts = participants.filter(p => p.compositePct !== null).map(p => p.compositePct);
+  const mean = completedPcts.length ? completedPcts.reduce((a, b) => a + b, 0) / completedPcts.length : null;
+  const sd = completedPcts.length > 1
+    ? Math.sqrt(completedPcts.reduce((a, b) => a + (b - mean) ** 2, 0) / (completedPcts.length - 1))
+    : null;
+
+  const completedMinutes = participants.filter(p => p.totalMinutes !== null).map(p => p.totalMinutes);
+  const meanMinutes = completedMinutes.length ? completedMinutes.reduce((a, b) => a + b, 0) / completedMinutes.length : null;
+  const sdMinutes = completedMinutes.length > 1
+    ? Math.sqrt(completedMinutes.reduce((a, b) => a + (b - meanMinutes) ** 2, 0) / (completedMinutes.length - 1))
+    : null;
+
+  // Composite chance level — mean of each actually-scored test's own
+  // chance level, matching how the composite score itself is the mean of
+  // each test's _score field.
+  const scoredTestIds = testIds.filter(id => CLEAN_TEST_PATTERNS.some(([name]) => name === id));
+  const chancePct = scoredTestIds.length
+    ? (scoredTestIds.reduce((a, id) => a + testChanceLevel(id), 0) / scoredTestIds.length) * 100
+    : null;
+
+  return {
+    participants, mean, sd, meanMinutes, sdMinutes, chancePct,
+    total: allParticipants.length,
+    completed: participants.filter(p => p.status !== 'incomplete').length,
+  };
+}
+
+async function loadProjectStats(rows){
+  for (const row of rows){
+    if (!row.participantCount){
+      const line = document.getElementById(`project-stats-${row.id}`);
+      if (line) line.textContent = `Participants: ${row.participantCount === null ? '—' : 0}`;
+      continue;
+    }
+    try {
+      const trials = await fetchBatteryTrials(row.id);
+      const testIds = row.items.map(i => i.testId);
+      const quality = computeProjectQuality(trials, testIds);
+      const incomplete = quality.total - quality.completed;
+
+      const line = document.getElementById(`project-stats-${row.id}`);
+      if (line) line.innerHTML = `Participants: ${quality.total}, incomplete: ${incomplete}`;
+
+      const bar = document.getElementById(`project-progress-${row.id}`);
+      if (bar && quality.total > 0){
+        const completePct = (quality.completed / quality.total) * 100;
+        bar.innerHTML = `<div class="project-progress-complete" style="width:${completePct}%"></div><div class="project-progress-incomplete" style="width:${100 - completePct}%"></div>`;
+        bar.style.display = 'flex';
+      }
+
+      const qualityWrap = document.getElementById(`project-quality-${row.id}`);
+      if (qualityWrap){
+        const meanLine = quality.mean !== null
+          ? `<div class="quality-mean-line">Mean (SD) score = ${quality.mean.toFixed(0)}% (${quality.sd !== null ? quality.sd.toFixed(0) : '—'}%)</div>`
+          : '';
+        const timeLine = quality.meanMinutes !== null
+          ? `<div class="quality-mean-line">Mean (SD) time = ${quality.meanMinutes.toFixed(1)} min (${quality.sdMinutes !== null ? quality.sdMinutes.toFixed(1) : '—'} min)</div>`
+          : '';
+        const histogram = renderScoreHistogram(quality.participants.filter(p => p.compositePct !== null).map(p => p.compositePct), quality.chancePct);
+        const squares = quality.participants.map(p => {
+          const detail = p.status === 'incomplete' ? 'incomplete'
+            : p.reasons.length ? `fail — ${p.reasons.join('; ')}`
+            : 'pass';
+          const pct = p.compositePct !== null ? ` (${p.compositePct.toFixed(0)}%)` : '';
+          return `<div class="quality-square ${p.status}" title="${escapeHtml(p.id)}: ${escapeHtml(detail)}${pct}"></div>`;
+        }).join('');
+        qualityWrap.innerHTML = `<div class="quality-summary-row"><div class="quality-summary-text">${meanLine}${timeLine}</div>${histogram}</div><div class="quality-grid">${squares}</div>`;
+      }
+    } catch (e){
+      const line = document.getElementById(`project-stats-${row.id}`);
+      if (line) line.textContent = `Participants: ${row.participantCount} (couldn't load completion detail)`;
+    }
+  }
+}
+
+function editSavedBattery(id){
+  const row = currentDatasetRows.find(r => r.id === id);
+  if (!row) return;
+  battery = row.items.map(i => ({ ...i }));
+  batteryName = row.name || '';
+  breakMessage = row.breakMessage || '';
+  breakMessageCounter = row.breakMessageCounter || '';
+  currentBatteryId = row.id;
+  batteryStatus = row.status;
+  updateBatteryBadge();
+  goToBattery();
+}
+
+// Only reachable for locked (run) batteries — see renderDatasets(). Forks
+// into a fresh draft rather than editing the locked row in place.
+function duplicateBattery(id){
+  const row = currentDatasetRows.find(r => r.id === id);
+  if (!row) return;
+  battery = row.items.map(i => ({ ...i }));
+  batteryName = (row.name || 'Untitled battery') + ' (copy)';
+  breakMessage = row.breakMessage || '';
+  breakMessageCounter = row.breakMessageCounter || '';
+  currentBatteryId = null;
+  batteryStatus = 'draft';
+  updateBatteryBadge();
+  goToBattery();
+}
+
+async function deleteBattery(id){
+  const row = currentDatasetRows.find(r => r.id === id);
+  if (!row || row.status === 'run') return;
+  const label = row.name || 'this untitled battery';
+  const participantNote = row.participantCount ? ` and its ${row.participantCount} participant result(s)` : '';
+  if (!confirm(`Delete "${label}"${participantNote}? This can't be undone.`)) return;
+
+  if (DEV_MODE){
+    localDatasets = localDatasets.filter(d => d.id !== id);
+    currentDatasetRows = localDatasets;
+    renderDatasets(currentDatasetRows);
+    return;
+  }
+
+  const { error: resultsError } = await supabaseClient.from('psychojs_results').delete().eq('session_id', id);
+  if (resultsError){
+    alert('Could not delete this battery\'s results: ' + resultsError.message);
+    return;
+  }
+  const { error: batteryError } = await supabaseClient.from('batteries').delete().eq('id', id);
+  if (batteryError){
+    alert('Could not delete battery: ' + batteryError.message);
+    return;
+  }
+
+  currentDatasetRows = currentDatasetRows.filter(r => r.id !== id);
+  renderDatasets(currentDatasetRows);
+}
+
+function copyDatasetLink(sessionId){
+  const link = `${RUNNER_URL}?session=${sessionId}`;
+  navigator.clipboard.writeText(link);
+}
+
+function csvEscape(val){
+  if (val === null || val === undefined) return '';
+  const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+  return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
+}
+
+// Builds a CSV from an array of row objects. `columns` fixes the column
+// order/set; omit it to use the union of every key seen across every row
+// (each row gets blanks for keys it doesn't have).
+function rowsToCsv(rows, columns){
+  const cols = columns || (() => {
+    const seen = new Set();
+    const out = [];
+    rows.forEach(row => Object.keys(row).forEach(key => { if (!seen.has(key)){ seen.add(key); out.push(key); } }));
+    return out;
+  })();
+  const lines = [cols.map(csvEscape).join(',')];
+  rows.forEach(row => lines.push(cols.map(col => csvEscape(row[col])).join(',')));
+  return lines.join('\n');
+}
+
+function downloadCsv(csvText, filename){
+  const blob = new Blob([csvText], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Pulls the filename out of each row's first column (standard_stim /
+// instructions_page) — safe because that column is always a plain
+// filename, never containing a comma, regardless of what quoted/bracketed
+// content follows later in the row.
+function extractFirstColumnValues(csvText){
+  return csvText.trim().split('\n').slice(1).map(line => line.split(',')[0].trim()).filter(Boolean);
+}
+
+// The live .psyexp has a code component that POSTs results straight to
+// THIS platform's own Supabase project (with its URL/key hardcoded) instead
+// of saving via Pavlovia's normal mechanism — added so the web runner can
+// redirect results into our database. That must never ship in a
+// researcher's own download: it would silently fail to save to their own
+// Pavlovia project and send their participants' data to ours instead,
+// using credentials that shouldn't be public. This strips those specific
+// param values (identified by containing our Supabase reference or the
+// save-results override), restoring Pavlovia's default save behavior.
+function sanitizePsyexpForDownload(psyexpText){
+  const doc = new DOMParser().parseFromString(psyexpText, 'text/xml');
+  if (doc.querySelector('parsererror')) return psyexpText; // don't risk corrupting it if parsing failed
+  doc.querySelectorAll('CodeComponent Param').forEach(param => {
+    const val = param.getAttribute('val') || '';
+    if (val.includes('supabase') || val.includes('_saveResults')){
+      param.setAttribute('val', '');
+    }
+  });
+
+  // Clear the end-of-experiment redirect URLs — "Completed URL" is set to
+  // our own UCSB SONA study's credit-granting link (with our experiment_id
+  // and credit_token baked in). Left in, a researcher's participants would
+  // get redirected to OUR SONA credit page instead of theirs at the end.
+  doc.querySelectorAll('Settings Param').forEach(param => {
+    const name = param.getAttribute('name');
+    if (name === 'Completed URL' || name === 'Incomplete URL'){
+      param.setAttribute('val', '');
+    }
+  });
+
+  return new XMLSerializer().serializeToString(doc);
+}
+
+// Assets every battery needs regardless of which tests are selected —
+// referenced directly by the intro_screen/score_break routines, or the
+// default/placeholder value baked into shared components in the .psyexp.
+const PSYCHOPY_SHARED_ASSETS = ['selector.png', 'break_image.png', 'intro.png'];
+
+// Packages a Pavlovia-ready PsychoPy Builder project (spatial_battery.psyexp
+// + a conditions CSV covering only the selected tests + their stimuli and
+// instructions resources) for researchers who want to edit/integrate the
+// battery offline themselves, rather than use this platform's own runner.
+// Deliberately v1-scoped: only the settings the original PsychoPy project
+// already understands (timing, order, randomize, score) carry over — the
+// web-only extras built this session (specific-item picks, item-count
+// limits, custom instructions text) don't, since researchers taking this
+// route are expected to edit the stimuli/instructions CSVs themselves.
+async function downloadPsychopyFiles(){
+  if (battery.length === 0){
+    alert('Add at least one test to the battery first.');
+    return;
+  }
+
+  const btn = document.getElementById('battery-psychopy-btn');
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Packaging…';
+
+  try {
+    const columns = ['name_of_test','stim_folder','stim_file','type_of_test','instructions_file','choices','time_min','time_max','total_time_limit','selector_box_image','randomize','test_order','prev_scores','include_score'];
+    const rows = [];
+    const missingDefs = [];
+    battery.forEach((item, index) => {
+      const def = PSYCHOPY_TEST_DEFS[item.testId];
+      if (!def){ missingDefs.push(item.testId); return; }
+      const p = item.params || {};
+      rows.push({
+        name_of_test: item.testId,
+        stim_folder: def.stim_folder,
+        stim_file: def.stim_file,
+        type_of_test: def.type_of_test,
+        instructions_file: def.instructions_file,
+        choices: def.choices,
+        time_min: p.timeMin,
+        time_max: p.timeMax,
+        total_time_limit: p.totalTimeLimit || 0,
+        selector_box_image: def.selector_box_image,
+        randomize: p.randomizeItems ? 1 : 0,
+        test_order: p.randomizeOrder ? 'R' : index,
+        prev_scores: '[]',
+        include_score: p.includeScore ? 1 : 0,
+      });
+    });
+    if (missingDefs.length > 0){
+      alert(`No PsychoPy definition for: ${missingDefs.join(', ')} — these were left out of the download.`);
+    }
+    if (rows.length === 0){
+      alert('None of the tests in this battery have a PsychoPy definition yet.');
+      return;
+    }
+
+    const zip = new JSZip();
+    zip.file('test_list.csv', rowsToCsv(rows, columns));
+
+    const psyexpRes = await fetch('test_creator/spatial_battery.psyexp');
+    if (!psyexpRes.ok) throw new Error('Could not load spatial_battery.psyexp');
+    zip.file('spatial_battery.psyexp', sanitizePsyexpForDownload(await psyexpRes.text()));
+
+    const selectorImages = new Set(PSYCHOPY_SHARED_ASSETS);
+    rows.forEach(r => { if (r.selector_box_image) selectorImages.add(r.selector_box_image); });
+    for (const filename of selectorImages){
+      const res = await fetch(`test_creator/${filename}`);
+      if (res.ok) zip.file(filename, await res.blob());
+      else console.warn('Missing shared asset:', filename);
+    }
+
+    const uniqueTestIds = [...new Set(rows.map(r => r.name_of_test))];
+    for (const testId of uniqueTestIds){
+      const def = PSYCHOPY_TEST_DEFS[testId];
+
+      const stimRes = await fetch(`test_creator/${def.stim_file}`);
+      if (!stimRes.ok) throw new Error(`Could not load ${def.stim_file}`);
+      const stimText = await stimRes.text();
+      zip.file(def.stim_file, stimText);
+
+      const instRes = await fetch(`test_creator/${def.instructions_file}`);
+      if (!instRes.ok) throw new Error(`Could not load ${def.instructions_file}`);
+      const instText = await instRes.text();
+      zip.file(def.instructions_file, instText);
+
+      const imageFiles = new Set([...extractFirstColumnValues(stimText), ...extractFirstColumnValues(instText)]);
+      for (const filename of imageFiles){
+        const imgRes = await fetch(`test_creator/${def.stim_folder}/${filename}`);
+        if (imgRes.ok) zip.file(`${def.stim_folder}/${filename}`, await imgRes.blob());
+        else console.warn('Missing stimulus/instructions image:', `${def.stim_folder}/${filename}`);
+      }
+    }
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(batteryName.trim() || 'battery').replace(/[^a-z0-9_-]+/gi, '_')}_psychopy.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (e){
+    alert('Could not build the PsychoPy download: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+}
+
+async function fetchBatteryTrials(sessionId){
+  const { data, error } = await supabaseClient
+    .from('psychojs_results')
+    .select('*')
+    .eq('session_id', sessionId);
+  if (error) throw new Error(error.message);
+
+  const rows = [];
+  (data || []).forEach(resultRow => {
+    const trials = Array.isArray(resultRow.trials) ? resultRow.trials : [];
+    trials.forEach(trial => rows.push(trial));
+  });
+  return rows;
+}
+
+// Flattens every participant's trial data for a battery into one CSV, one
+// row per trial. Trial shape varies a lot across tests, so columns are the
+// union of every key seen across every trial — anything a given trial
+// doesn't have is left blank. This is the untouched PsychoJS output —
+// see downloadCleanCSV() for the filtered/scored version.
+async function downloadDatasetCSV(sessionId){
+  if (DEV_MODE){
+    alert('CSV export needs a real Supabase session — not available in dev mode.');
+    return;
+  }
+
+  let rows;
+  try {
+    rows = await fetchBatteryTrials(sessionId);
+  } catch (e){
+    alert('Could not load results: ' + e.message);
+    return;
+  }
+  if (rows.length === 0){
+    alert('No participant data yet for this battery.');
+    return;
+  }
+
+  downloadCsv(rowsToCsv(rows), `battery_${sessionId}_results.csv`);
+}
+
+// ---------------------------------------------------------------------
+// "Clean" CSV export — a JS port of the lab's read_data_script.R. That
+// script filters raw per-participant PsychoJS trial rows down to the
+// real items (folding practice-item columns onto the same names as real
+// trials), dedupes reruns, patches a known SD scoring quirk (typing a
+// repeated letter still counts if it's the right one), and rolls
+// everything into a per-participant score/RT summary plus a cleaned
+// trial-level file — the same two outputs the R script produces
+// (`_participant.csv` / `_trial.csv`), just runnable from the Datasets
+// view instead of requiring a manual R run.
+//
+// The test-name patterns, attention-check filenames, and demographic
+// answer-code tables below are ported directly from that script; they're
+// safe to hardcode (not per-battery config) because AC1/AC2/ACF/Demos
+// and the 10 real tests are fixed, shared test definitions across every
+// battery in this app, not something a researcher can redefine.
+// ---------------------------------------------------------------------
+const CLEAN_TEST_PATTERNS = [
+  ['SBST', /SBST/], ['MC', /MC|PR/], ['VK', /VK/], ['Flags', /^F/],
+  ['PSVT', /PSVT/], ['PFT', /PFT/], ['DAT', /DAT/], ['SD', /SD/],
+  ['AO', /AO/], ['WS', /WS/],
+];
+// [filename, sourceTestId] — each is an attention-check item embedded in
+// that test's own instructions loop, so it's only relevant if the battery
+// actually included that test.
+const CLEAN_ATTENTION_ITEMS = [
+  ['MC_Instructions1.png', 'MC'], ['SBST_Instructions4.png', 'SBST'], ['DAT_Instructions1.png', 'DAT'],
+  ['SD_Instructions1.png', 'SD'], ['PFT_Instructions1.png', 'PFT'], ['VK_Instructions2.png', 'VK'],
+  ['PSVT_Instructions1.png', 'PSVT'], ['Flags_Instructions2.png', 'Flags'], ['AO_Instructions1.png', 'AO'],
+];
+const CLEAN_RACE_CHOICES = {
+  ans_box_A: 'White', ans_box_B: 'Black/African American', ans_box_C: 'Asian/Asian American',
+  ans_box_D: 'American Indian', ans_box_E: 'Alaska Native', ans_box_F: 'Native Hawaiian/Pacific Islander',
+  ans_box_G: 'None of the above',
+};
+const CLEAN_PARENTS_ED_CHOICES = {
+  ans_box_A: 'Graduate/professional degree', ans_box_B: 'College degree', ans_box_C: 'Associates degree',
+  ans_box_D: 'High school diploma', ans_box_E: 'Other',
+};
+const CLEAN_VISION_CHOICES = {
+  ans_box_A: 'Normal Vision', ans_box_B: 'Glasses or contacts', ans_box_C: 'No (not corrected vision)',
+};
+
+function cleanBlank(v){ return v !== null && v !== undefined && v !== ''; }
+
+// Keep rows that are either a real item or a (nonblank) practice item,
+// then remap practice-item columns (Pselected_answer/Ppoints/etc, which
+// live under the instructions loop) onto the same names real items use,
+// so every kept row can be treated uniformly from here on.
+function cleanNormalizeTrials(rawTrials){
+  return rawTrials
+    .filter(t => cleanBlank(t.standard_stim) || (t.practice_item == 1))
+    .map(t => {
+      const row = { ...t };
+      if (row.practice_item == 1){
+        row.standard_stim = row.instructions_page;
+        row.selected_answer = row.Pselected_answer;
+        row.correct_answer = row.correct_answerP;
+        row.points = row.Ppoints;
+      }
+      return row;
+    });
+}
+
+// PsychoJS timestamps look like "2026-01-01_10h00.00" (date_HHhMM.SS) —
+// not a format the Date constructor understands, so it has to be parsed
+// by hand rather than just `new Date(str)`.
+function cleanParseDate(str){
+  if (typeof str !== 'string') return null;
+  const m = str.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})h(\d{2})\.(\d+)/);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, s] = m;
+  return new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
+}
+
+// Keep only the first attempt per (participant, trial), in case someone
+// ran the same link more than once.
+function cleanDedupe(rows){
+  const sorted = [...rows].sort((a, b) => {
+    if (a.participant !== b.participant) return a.participant < b.participant ? -1 : 1;
+    if (a.standard_stim !== b.standard_stim) return a.standard_stim < b.standard_stim ? -1 : 1;
+    const da = cleanParseDate(a.date), db = cleanParseDate(b.date);
+    if (!da || !db) return 0;
+    return da - db;
+  });
+  const seen = new Set();
+  return sorted.filter(r => {
+    const key = r.participant + '|' + r.standard_stim;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+// SD lets a participant type extra repeated letters ("AAA" instead of
+// "A"); count it correct if every character is the same letter and that
+// letter is the right answer.
+function cleanFixSDScoring(rows){
+  rows.forEach(r => {
+    if (typeof r.standard_stim === 'string' && r.standard_stim.includes('SD') &&
+        typeof r.selected_answer === 'string' && r.selected_answer.length > 1 &&
+        r.selected_answer !== 'no selection'){
+      const chars = r.selected_answer.split('');
+      const allSame = new Set(chars).size === 1;
+      if (allSame && chars[chars.length - 1] === r.correct_answer) r.points = 1;
+    }
+  });
+  return rows;
+}
+
+// key_resp.rt is the "press enter" reaction time recorded for every real
+// item; it's missing (participant timed out) or bracket-wrapped, and the
+// 5s minimum display time isn't included in the raw value.
+function cleanParseRT(row){
+  let rt = row['key_resp.rt'];
+  if (Array.isArray(rt)) rt = rt[0];
+  if (typeof rt === 'string') rt = parseFloat(rt.replace(/[[\]]/g, ''));
+  if (rt === null || rt === undefined || Number.isNaN(rt)) rt = 55;
+  return rt + 5;
+}
+
+function cleanMean(nums){
+  return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : '';
+}
+
+// Runs the full pipeline and returns both output tables: a wide
+// per-participant score/RT/demographics summary, and the cleaned
+// trial-level rows (dedup'd, SD-fixed, limited to completed participants).
+// `testIds` is the list of tests actually configured in this battery
+// (battery.items.map(i => i.testId)) — score/rt, attention-check, and
+// demographic columns are only included for tests that were actually
+// run, instead of every test the platform knows how to run.
+function buildCleanExport(rawTrials, testIds){
+  const has = (id) => testIds.includes(id);
+  const testPatterns = CLEAN_TEST_PATTERNS.filter(([name]) => has(name));
+  const attentionItems = CLEAN_ATTENTION_ITEMS.filter(([, testId]) => has(testId)).map(([filename]) => filename);
+
+  // Completion has to be checked against the raw trials, not the
+  // filtered/normalized set below — the 'feedback.stopped' marker is a
+  // bookkeeping row with no standard_stim, so cleanNormalizeTrials()
+  // would otherwise drop it before we ever get to look for it.
+  const completedParticipants = new Set(
+    [...new Set(rawTrials.map(r => r.participant))]
+      .filter(pid => rawTrials.some(r => r.participant === pid && cleanBlank(r['feedback.stopped'])))
+  );
+
+  const normalized = cleanNormalizeTrials(rawTrials);
+  const deduped = cleanDedupe(normalized);
+  cleanFixSDScoring(deduped);
+
+  const scoreRows = [];
+
+  completedParticipants.forEach(pid => {
+    const rows = deduped.filter(r => r.participant === pid);
+    const realRows = rows.filter(r => r.practice_item != 1);
+    const scoreRow = { id: pid };
+
+    testPatterns.forEach(([name, pattern]) => {
+      const testRows = realRows.filter(r => pattern.test(r.standard_stim || ''));
+      scoreRow[name + '_score'] = cleanMean(testRows.map(r => Number(r.points)).filter(n => !Number.isNaN(n)));
+      scoreRow[name + '_rt'] = cleanMean(testRows.map(cleanParseRT).filter(n => !Number.isNaN(n)));
+    });
+
+    const dates = rows.map(r => cleanParseDate(r.date)).filter(Boolean);
+    scoreRow.date = dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))).toISOString() : '';
+
+    if (attentionItems.length){
+      const practiceAttItems = rows.filter(r => r.practice_item == 1 && attentionItems.includes(r.standard_stim));
+      scoreRow.Practice_Check_Avg = cleanMean(practiceAttItems.map(r => Number(r.points)).filter(n => !Number.isNaN(n)));
+    }
+    if (has('AC1')){
+      const ac1 = rows.find(r => r.practice_item == 1 && r.standard_stim === 'AC_1.png');
+      scoreRow.Attention_Check1 = ac1 ? ac1.selected_answer : '';
+    }
+    if (has('AC2')){
+      const ac2 = rows.find(r => r.practice_item == 1 && r.standard_stim === 'AC_2.png');
+      scoreRow.Attention_Check2 = ac2 ? ac2.selected_answer : '';
+    }
+    if (has('ACF')){
+      const acf = rows.find(r => r.standard_stim === 'ACF_Final.png' || r.standard_stim === 'ACF_Final2.png');
+      scoreRow.Attention_Final = acf
+        ? (acf.selected_answer === 'ans_box_B' ? 1 : acf.selected_answer === 'ans_box_A' ? 0 : '')
+        : '';
+    }
+
+    if (!has('Demos')){
+      scoreRows.push(scoreRow);
+      return;
+    }
+
+    const demoFor = (pattern) => rows.find(r => typeof r.standard_stim === 'string' && r.standard_stim.includes(pattern));
+    const age = demoFor('D_age');
+    scoreRow.age = age ? age.selected_answer : '';
+    const sex = demoFor('D_sex');
+    scoreRow.sex = sex ? (sex.selected_answer === 'ans_box_A' ? 'M' : sex.selected_answer === 'ans_box_B' ? 'F' : '') : '';
+    const race = demoFor('D_race');
+    scoreRow.race = race ? (CLEAN_RACE_CHOICES[race.selected_answer] || '') : '';
+    const ethnicity = demoFor('D_ethnicity');
+    scoreRow.ethnicity = ethnicity ? (ethnicity.selected_answer === 'ans_box_A' ? 'Hispanic' : ethnicity.selected_answer === 'ans_box_B' ? 'Non-Hispanic' : '') : '';
+    const gpa = demoFor('D_GPA');
+    scoreRow.GPA = gpa ? gpa.selected_answer : '';
+    const math = demoFor('D_math');
+    scoreRow.math_courses = (math && typeof math.selected_answer === 'string')
+      ? math.selected_answer.replace(/[[\]"]/g, '').split(',').filter(Boolean).length
+      : '';
+    const parentsEd = demoFor('D_parents_ed');
+    scoreRow.parents_ed = parentsEd ? (CLEAN_PARENTS_ED_CHOICES[parentsEd.selected_answer] || '') : '';
+    const language = demoFor('D_language');
+    scoreRow.language = language ? language.selected_answer : '';
+    const vision = demoFor('D_vision');
+    scoreRow.vision = vision ? (CLEAN_VISION_CHOICES[vision.selected_answer] || '') : '';
+
+    scoreRows.push(scoreRow);
+  });
+
+  scoreRows.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  const keptParticipants = new Set(scoreRows.map(r => r.id));
+  const cleanTrialRows = deduped.filter(r => keptParticipants.has(r.participant));
+
+  return { scoreRows, cleanTrialRows };
+}
+
+async function downloadCleanCSV(sessionId){
+  if (DEV_MODE){
+    alert('Clean CSV export needs a real Supabase session — not available in dev mode.');
+    return;
+  }
+
+  const datasetRow = currentDatasetRows.find(r => r.id === sessionId) || currentAdminRows.find(r => r.id === sessionId);
+  const testIds = datasetRow ? datasetRow.items.map(i => i.testId) : [];
+
+  let rawTrials;
+  try {
+    rawTrials = await fetchBatteryTrials(sessionId);
+  } catch (e){
+    alert('Could not load results: ' + e.message);
+    return;
+  }
+  if (rawTrials.length === 0){
+    alert('No participant data yet for this battery.');
+    return;
+  }
+
+  const { scoreRows, cleanTrialRows } = buildCleanExport(rawTrials, testIds);
+  if (scoreRows.length === 0){
+    alert('No completed participants yet for this battery — clean export only includes participants who reached the end.');
+    return;
+  }
+
+  downloadCsv(rowsToCsv(scoreRows), `battery_${sessionId}_participant_clean.csv`);
+  downloadCsv(rowsToCsv(cleanTrialRows), `battery_${sessionId}_trial_clean.csv`);
+}
+
+function copyLink(){
+  const text = document.getElementById('link-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1600);
+  });
+}
+
+// ----------------------------
+// CUSTOM TEST CREATOR
+// ----------------------------
+// Draw answer-box positions on a template image, bulk-tag which answer is
+// correct across the uploaded item bank, then save to Supabase Storage +
+// the custom_tests table. Generates data in the same shape (standard_stim /
+// answer_positionX / answer_positionY / selector_size / correct_answer)
+// the runtime's existing test_loop already reads for every built-in test.
+//
+// Not yet wired into the battery builder — saving a custom test here
+// doesn't make it selectable in the catalog yet. That needs the runtime to
+// learn to fetch a test it doesn't already know about at build time
+// (see buildTestListRows / ALL_RESOURCES in spatial_battery.js), which is
+// a separate, later piece of work.
+const TC_NATIVE_DEFAULT = { w: 1920, h: 1080 };
+let tcNativeW = TC_NATIVE_DEFAULT.w, tcNativeH = TC_NATIVE_DEFAULT.h;
+let tcBoxes = [];
+let tcDraw = null;
+let tcInteraction = null;
+let tcNextLetter = 0;
+const TC_LETTERS = 'ABCDEFGH';
+const TC_MIN_PX = 16;
+const TC_CLICK_SLOP = 3;
+
+let tcPhase = 'layout';
+let tcItems = [];
+let tcItemFiles = [];
+let tcItemImageUrls = [];
+let tcCurrentItem = 0;
+let tcTemplateFile = null;
+let tcTemplateImageUrl = null;
+
+const TC_HINTS = {
+  mc: 'Drag empty space to draw a box, drag a box to move, drag a corner to resize',
+  ms: 'Drag empty space to draw a box, drag a box to move, drag a corner to resize',
+  sd: 'Draw boxes one at a time, same as any type — every two, in order, form a same/different pair',
+  fib: 'Drag once to place the answer field — only one is needed'
+};
+const TC_EMPTY_HINTS = {
+  mc: 'Draw at least 2 boxes, then continue.',
+  ms: 'Draw at least 2 boxes, then continue.',
+  sd: 'Draw at least 1 pair, then continue.',
+  fib: 'Place the answer field, then continue.'
+};
+
+function tcEl(id){ return document.getElementById(id); }
+
+function resetTestCreator(){
+  tcNativeW = TC_NATIVE_DEFAULT.w; tcNativeH = TC_NATIVE_DEFAULT.h;
+  tcBoxes = []; tcDraw = null; tcInteraction = null; tcNextLetter = 0;
+  tcPhase = 'layout'; tcItems = []; tcItemFiles = []; tcItemImageUrls = [];
+  tcCurrentItem = 0; tcTemplateFile = null; tcTemplateImageUrl = null;
+
+  tcEl('tc-testType').value = 'mc';
+  tcEl('tc-templateFileName').textContent = 'No image uploaded';
+  tcEl('tc-placeholderBg').style.display = 'flex';
+  tcEl('tc-stimImg').style.display = 'none';
+  tcEl('tc-imageArea').style.aspectRatio = '16/9';
+  tcEl('tc-layoutToolbar').style.display = 'flex';
+  tcEl('tc-taggingToolbar').style.display = 'none';
+  tcEl('tc-taggingHint').style.display = 'none';
+  tcEl('tc-answerInputWrap').style.display = 'none';
+  tcEl('tc-layoutSidebar').style.display = 'block';
+  tcEl('tc-taggingSidebar').style.display = 'none';
+  tcEl('tc-mainRow').style.display = 'flex';
+  tcEl('tc-reviewScreen').style.display = 'none';
+  tcEl('tc-imageArea').style.cursor = 'crosshair';
+  tcEl('tc-coordReadout').style.display = 'block';
+  tcEl('tc-testNameInput').value = '';
+  tcEl('tc-testDescInput').value = '';
+  const saveMsg = tcEl('tc-saveMsg');
+  saveMsg.textContent = '';
+  saveMsg.classList.remove('error');
+  tcRenderLayout();
+}
+
+function tcToNativeLen(px, dim){
+  const rect = tcEl('tc-imageArea').getBoundingClientRect();
+  const size = dim === 'x' ? rect.width : rect.height;
+  const native = dim === 'x' ? tcNativeW : tcNativeH;
+  return Math.round((px / size) * native);
+}
+function tcPxFromPct(p, rect){
+  return { left: p.leftPct/100*rect.width, top: p.topPct/100*rect.height, w: p.wPct/100*rect.width, h: p.hPct/100*rect.height };
+}
+function tcPctFromPx(left, top, w, h, rect){
+  return {
+    leftPct: left/rect.width*100, topPct: top/rect.height*100, wPct: w/rect.width*100, hPct: h/rect.height*100,
+    nativeX: tcToNativeLen(left,'x'), nativeY: tcToNativeLen(top,'y'), nativeW: tcToNativeLen(w,'x'), nativeH: tcToNativeLen(h,'y')
+  };
+}
+function tcGetEffectiveBox(box){
+  if (tcPhase === 'tagging'){
+    const ov = tcItems[tcCurrentItem] && tcItems[tcCurrentItem].overrides[box.id];
+    if (ov) return ov;
+  }
+  return box;
+}
+function tcApplyBoxPosition(box, left, top, w, h, rect){
+  const pct = tcPctFromPx(left, top, w, h, rect);
+  if (tcPhase === 'layout') Object.assign(box, pct);
+  else tcItems[tcCurrentItem].overrides[box.id] = pct;
+}
+function tcShowCoords(left, top, w, h){
+  tcEl('tc-coordReadout').textContent = `x: ${tcToNativeLen(left,'x')}, y: ${tcToNativeLen(top,'y')}, w: ${tcToNativeLen(w,'x')}, h: ${tcToNativeLen(h,'y')} (px, at image resolution)`;
+}
+
+tcEl('tc-uploadTemplateBtn').addEventListener('click', () => tcEl('tc-templateImageInput').click());
+tcEl('tc-templateImageInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    tcNativeW = img.naturalWidth;
+    tcNativeH = img.naturalHeight;
+    tcEl('tc-imageArea').style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+    tcTemplateFile = file;
+    tcTemplateImageUrl = url;
+    tcEl('tc-templateFileName').textContent = file.name;
+    tcEl('tc-placeholderBg').style.display = 'none';
+    tcEl('tc-stimImg').src = url;
+    tcEl('tc-stimImg').style.display = 'block';
+    tcUpdateContinueEnabled();
+  };
+  img.src = url;
+});
+
+tcEl('tc-itemImagesInput').addEventListener('change', (e) => {
+  const files = [...e.target.files];
+  if (files.length === 0) return;
+  tcItemFiles = files;
+  tcItemImageUrls = files.map(f => URL.createObjectURL(f));
+  tcPhase = 'tagging';
+  tcItems = tcItemImageUrls.map(() => ({ correctBoxIds: [], overrides: {}, answerText: '' }));
+  tcCurrentItem = 0;
+  tcEl('tc-layoutToolbar').style.display = 'none';
+  tcEl('tc-layoutHint').style.display = 'none';
+  tcEl('tc-taggingToolbar').style.display = 'flex';
+  tcEl('tc-taggingHint').style.display = 'block';
+  tcEl('tc-layoutSidebar').style.display = 'none';
+  tcEl('tc-taggingSidebar').style.display = 'block';
+  tcEl('tc-imageArea').style.cursor = 'default';
+  tcEl('tc-coordReadout').style.display = 'none';
+  tcGoToItem(0);
+});
+
+function tcUpdateContinueEnabled(){
+  const mode = tcEl('tc-testType').value;
+  const minBoxes = mode === 'fib' ? 1 : 2;
+  tcEl('tc-continueBtn').disabled = tcBoxes.length < minBoxes || !tcTemplateImageUrl;
+}
+
+tcEl('tc-imageArea').addEventListener('mousedown', (e) => {
+  if (e.target.closest('.tc-reset-btn')) return;
+  const handle = e.target.closest('.tc-handle');
+  const boxEl = e.target.closest('.tc-qbox');
+  const rect = tcEl('tc-imageArea').getBoundingClientRect();
+  const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
+
+  if (handle){
+    const box = tcBoxes.find(b => b.id === handle.closest('.tc-qbox').dataset.id);
+    tcInteraction = { mode: 'resize', box, corner: handle.dataset.corner, startX: mouseX, startY: mouseY, orig: tcPxFromPct(tcGetEffectiveBox(box), rect), moved: false };
+  } else if (boxEl){
+    const box = tcBoxes.find(b => b.id === boxEl.dataset.id);
+    tcInteraction = { mode: 'move', box, startX: mouseX, startY: mouseY, orig: tcPxFromPct(tcGetEffectiveBox(box), rect), moved: false };
+  } else if (tcPhase === 'layout' && !(tcEl('tc-testType').value === 'fib' && tcBoxes.length >= 1)){
+    tcDraw = { startX: mouseX, startY: mouseY };
+    tcEl('tc-dragBox').style.display = 'block';
+  }
+});
+
+tcEl('tc-imageArea').addEventListener('mousemove', (e) => {
+  const rect = tcEl('tc-imageArea').getBoundingClientRect();
+  const mouseX = e.clientX - rect.left, mouseY = e.clientY - rect.top;
+
+  if (tcDraw){
+    const left = Math.min(tcDraw.startX, mouseX), top = Math.min(tcDraw.startY, mouseY);
+    const w = Math.abs(mouseX - tcDraw.startX), h = Math.abs(mouseY - tcDraw.startY);
+    const dragBox = tcEl('tc-dragBox');
+    dragBox.style.left = left+'px'; dragBox.style.top = top+'px';
+    dragBox.style.width = w+'px'; dragBox.style.height = h+'px';
+    tcShowCoords(left, top, w, h);
+    return;
+  }
+  if (!tcInteraction) return;
+  const dx = mouseX - tcInteraction.startX, dy = mouseY - tcInteraction.startY;
+  if (Math.abs(dx) > TC_CLICK_SLOP || Math.abs(dy) > TC_CLICK_SLOP) tcInteraction.moved = true;
+  if (!tcInteraction.moved) return;
+  const o = tcInteraction.orig;
+  let left = o.left, top = o.top, w = o.w, h = o.h;
+
+  if (tcInteraction.mode === 'move'){
+    left = Math.max(0, Math.min(rect.width - o.w, o.left + dx));
+    top = Math.max(0, Math.min(rect.height - o.h, o.top + dy));
+  } else {
+    const c = tcInteraction.corner;
+    if (c.includes('e')) w = Math.max(TC_MIN_PX, o.w + dx);
+    if (c.includes('s')) h = Math.max(TC_MIN_PX, o.h + dy);
+    if (c.includes('w')){ w = Math.max(TC_MIN_PX, o.w - dx); left = o.left + o.w - w; }
+    if (c.includes('n')){ h = Math.max(TC_MIN_PX, o.h - dy); top = o.top + o.h - h; }
+  }
+  tcApplyBoxPosition(tcInteraction.box, left, top, w, h, rect);
+  tcShowCoords(left, top, w, h);
+  tcRenderBoxLayer();
+});
+
+window.addEventListener('mouseup', () => {
+  if (tcDraw){
+    const dragBox = tcEl('tc-dragBox');
+    const left = parseFloat(dragBox.style.left) || 0, top = parseFloat(dragBox.style.top) || 0;
+    const w = parseFloat(dragBox.style.width) || 0, h = parseFloat(dragBox.style.height) || 0;
+    tcDraw = null;
+    dragBox.style.display = 'none';
+    if (w >= TC_MIN_PX && h >= TC_MIN_PX) tcAddBox(left, top, w, h);
+    else tcEl('tc-coordReadout').textContent = 'x: —, y: —, w: —, h: — (px, at image resolution)';
+  }
+  if (tcInteraction){
+    if (tcInteraction.mode === 'move' && !tcInteraction.moved && tcPhase === 'tagging' && tcEl('tc-testType').value !== 'fib') tcToggleItemCorrect(tcInteraction.box.id);
+    tcInteraction = null;
+    if (tcPhase === 'layout') tcRenderLayout(); else tcRenderTagging();
+  }
+});
+
+function tcAddBox(left, top, w, h){
+  const rect = tcEl('tc-imageArea').getBoundingClientRect();
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'fib'){
+    const box = { id: 'field', letter: 'Answer field' };
+    Object.assign(box, tcPctFromPx(left, top, w, h, rect));
+    tcBoxes = [box];
+  } else if (mode === 'sd'){
+    const sdCount = tcBoxes.length;
+    const pairNum = Math.floor(sdCount / 2) + 1;
+    const isFirstOfPair = sdCount % 2 === 0;
+    const box = { id: 'b'+(Date.now()+Math.random()), letter: pairNum+(isFirstOfPair?'S':'O'), pairId: 'p'+pairNum, side: isFirstOfPair?'S':'O' };
+    Object.assign(box, tcPctFromPx(left, top, w, h, rect));
+    tcBoxes.push(box);
+  } else {
+    const box = { id: 'b' + (Date.now() + Math.random()), letter: TC_LETTERS[tcNextLetter % TC_LETTERS.length] };
+    tcNextLetter++;
+    Object.assign(box, tcPctFromPx(left, top, w, h, rect));
+    tcBoxes.push(box);
+  }
+  tcRenderLayout();
+}
+function tcRemoveBox(id){
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'sd'){ const b = tcBoxes.find(x => x.id === id); tcBoxes = tcBoxes.filter(x => x.pairId !== b.pairId); }
+  else tcBoxes = tcBoxes.filter(b => b.id !== id);
+  tcRenderLayout();
+}
+function tcResetBoxOverride(boxId){
+  delete tcItems[tcCurrentItem].overrides[boxId];
+  tcRenderTagging();
+}
+
+function tcIsItemComplete(item){
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'mc') return item.correctBoxIds.length >= 1;
+  if (mode === 'ms') return item.correctBoxIds.length >= 2;
+  if (mode === 'sd'){
+    const pairIds = [...new Set(tcBoxes.map(b => b.pairId))];
+    return pairIds.length > 0 && pairIds.every(pid => item.correctBoxIds.some(id => { const b = tcBoxes.find(x => x.id === id); return b && b.pairId === pid; }));
+  }
+  if (mode === 'fib') return !!(item.answerText && item.answerText.trim());
+  return false;
+}
+
+function tcToggleItemCorrect(boxId){
+  const mode = tcEl('tc-testType').value;
+  const item = tcItems[tcCurrentItem];
+  const box = tcBoxes.find(b => b.id === boxId);
+  if (mode === 'mc'){ item.correctBoxIds = [boxId]; }
+  else if (mode === 'ms'){
+    const idx = item.correctBoxIds.indexOf(boxId);
+    if (idx > -1) item.correctBoxIds.splice(idx, 1);
+    else { if (item.correctBoxIds.length >= 2) item.correctBoxIds.shift(); item.correctBoxIds.push(boxId); }
+  } else if (mode === 'sd'){
+    item.correctBoxIds = item.correctBoxIds.filter(id => { const b = tcBoxes.find(x => x.id === id); return !b || b.pairId !== box.pairId; });
+    item.correctBoxIds.push(boxId);
+  }
+  tcRenderTagging();
+}
+
+function tcBoxHtml(b, eff, highlight, adjusted){
+  const handleHtml = ['nw','ne','sw','se'].map(c => {
+    const pos = { nw:'top:-4px;left:-4px;cursor:nwse-resize;', ne:'top:-4px;right:-4px;cursor:nesw-resize;', sw:'bottom:-4px;left:-4px;cursor:nesw-resize;', se:'bottom:-4px;right:-4px;cursor:nwse-resize;' }[c];
+    return `<div class="tc-handle" data-corner="${c}" style="${pos}"></div>`;
+  }).join('');
+  const resetHtml = adjusted ? `<button class="tc-reset-btn" aria-label="Reset box ${escapeHtml(b.letter)} to template position" onclick="tcResetBoxOverride('${b.id}')">&#8635;</button>` : '';
+  return `
+    <div class="tc-qbox ${highlight ? 'tc-correct' : ''} ${adjusted ? 'tc-adjusted' : ''}" data-id="${b.id}" style="left:${eff.leftPct}%; top:${eff.topPct}%; width:${eff.wPct}%; height:${eff.hPct}%;">
+      <span class="tc-qbox-label">${escapeHtml(b.letter)}</span>
+      ${handleHtml}
+      ${resetHtml}
+    </div>
+  `;
+}
+function tcRenderBoxLayer(){
+  const mode = tcEl('tc-testType').value;
+  const item = tcPhase === 'tagging' ? tcItems[tcCurrentItem] : null;
+  const correctIds = item ? item.correctBoxIds : [];
+  tcEl('tc-boxLayer').innerHTML = tcBoxes.map(b => {
+    const eff = tcGetEffectiveBox(b);
+    const adjusted = !!(item && item.overrides[b.id]);
+    const highlight = mode !== 'fib' && correctIds.includes(b.id);
+    return tcBoxHtml(b, eff, highlight, adjusted);
+  }).join('');
+}
+
+function tcRenderLayout(){
+  const mode = tcEl('tc-testType').value;
+  tcEl('tc-layoutHint').textContent = TC_HINTS[mode];
+  tcEl('tc-emptyHint').textContent = TC_EMPTY_HINTS[mode];
+  tcRenderBoxLayer();
+  tcEl('tc-boxList').innerHTML = tcBoxes.map(b => `
+    <div class="tc-box-row">
+      <span style="font-weight:500;">${escapeHtml(b.letter)}</span>
+      <span style="color:var(--ink-faint); font-family:'IBM Plex Mono', monospace; font-size:11px; flex:1;">${b.nativeX},${b.nativeY} &middot; ${b.nativeW}&times;${b.nativeH}</span>
+      <button aria-label="Remove box ${escapeHtml(b.letter)}" onclick="tcRemoveBox('${b.id}')">&times;</button>
+    </div>
+  `).join('');
+  tcEl('tc-emptyHint').style.display = tcBoxes.length ? 'none' : 'block';
+  tcUpdateContinueEnabled();
+}
+
+function tcGoToItem(i){
+  tcCurrentItem = i;
+  const item = tcItems[i];
+  const mode = tcEl('tc-testType').value;
+  const isEmpty = mode === 'fib' ? !item.answerText : item.correctBoxIds.length === 0;
+  if (isEmpty && i > 0){
+    const prev = tcItems[i - 1];
+    if (mode === 'fib') item.answerText = prev.answerText || '';
+    else item.correctBoxIds = [...prev.correctBoxIds];
+  }
+  tcEl('tc-stimImg').src = tcItemImageUrls[i];
+  tcRenderTagging();
+}
+
+function tcItemTileHtml(it, i){
+  return `
+    <button class="tc-item-tile ${i === tcCurrentItem ? 'tc-current' : ''}" onclick="tcGoToItem(${i})">
+      <div class="tc-item-thumb" style="background-image:url('${tcItemImageUrls[i]}');"></div>
+      <span style="font-size:11px; display:flex; align-items:center; gap:4px;">${i + 1} ${tcIsItemComplete(it) ? '&#10003;' : ''}</span>
+    </button>
+  `;
+}
+
+function tcRenderTagging(){
+  const mode = tcEl('tc-testType').value;
+  tcRenderBoxLayer();
+  const item = tcItems[tcCurrentItem];
+  const labels = { mc: 'mark the correct box', ms: 'mark the correct boxes', sd: 'mark same or different for each pair', fib: 'type the correct answer' };
+  tcEl('tc-itemLabel').textContent = `Item ${tcCurrentItem + 1} of ${tcItems.length} — ${labels[mode]}`;
+  tcEl('tc-answerInputWrap').style.display = mode === 'fib' ? 'block' : 'none';
+  if (mode === 'fib') tcEl('tc-answerInput').value = item.answerText || '';
+  const nextBtn = tcEl('tc-nextBtn');
+  nextBtn.disabled = !tcIsItemComplete(item);
+  nextBtn.textContent = tcCurrentItem === tcItems.length - 1 ? 'Finish' : 'Next item';
+  tcEl('tc-itemStrip').innerHTML = tcItems.map(tcItemTileHtml).join('');
+}
+
+tcEl('tc-answerInput').addEventListener('input', () => {
+  tcItems[tcCurrentItem].answerText = tcEl('tc-answerInput').value;
+  tcEl('tc-nextBtn').disabled = !tcIsItemComplete(tcItems[tcCurrentItem]);
+  tcEl('tc-itemStrip').innerHTML = tcItems.map(tcItemTileHtml).join('');
+});
+
+tcEl('tc-continueBtn').addEventListener('click', () => {
+  if (tcEl('tc-continueBtn').disabled) return;
+  tcEl('tc-itemImagesInput').click();
+});
+
+tcEl('tc-backBtn').addEventListener('click', () => {
+  tcPhase = 'layout';
+  tcEl('tc-layoutToolbar').style.display = 'flex';
+  tcEl('tc-layoutHint').style.display = 'block';
+  tcEl('tc-taggingToolbar').style.display = 'none';
+  tcEl('tc-taggingHint').style.display = 'none';
+  tcEl('tc-answerInputWrap').style.display = 'none';
+  tcEl('tc-layoutSidebar').style.display = 'block';
+  tcEl('tc-taggingSidebar').style.display = 'none';
+  tcEl('tc-imageArea').style.cursor = 'crosshair';
+  tcEl('tc-coordReadout').style.display = 'block';
+  if (tcTemplateImageUrl) tcEl('tc-stimImg').src = tcTemplateImageUrl;
+  tcRenderLayout();
+});
+
+tcEl('tc-nextBtn').addEventListener('click', () => {
+  if (tcEl('tc-nextBtn').disabled) return;
+  if (tcCurrentItem < tcItems.length - 1) tcGoToItem(tcCurrentItem + 1);
+  else tcShowReview();
+});
+
+function tcItemCorrectSummary(item){
+  const mode = tcEl('tc-testType').value;
+  if (mode === 'fib') return item.answerText || '(no answer)';
+  if (mode === 'sd'){
+    const pairIds = [...new Set(tcBoxes.map(b => b.pairId))];
+    return pairIds.map(pid => {
+      const boxId = item.correctBoxIds.find(id => { const b = tcBoxes.find(x => x.id === id); return b && b.pairId === pid; });
+      const b = tcBoxes.find(x => x.id === boxId);
+      return b ? b.letter : '—';
+    }).join(', ');
+  }
+  return item.correctBoxIds.map(id => { const b = tcBoxes.find(x => x.id === id); return b ? b.letter : '?'; }).join(', ') || '—';
+}
+
+function tcEffectiveBoxForItemIndex(box, idx){
+  const ov = tcItems[idx] && tcItems[idx].overrides[box.id];
+  return ov || box;
+}
+
+function tcBuildCsvRow(item, index){
+  const mode = tcEl('tc-testType').value;
+  const filename = `item_${index + 1}.png`;
+  if (mode === 'fib'){
+    const b = tcEffectiveBoxForItemIndex(tcBoxes[0], index);
+    return `${filename},"[${b.nativeX},${b.nativeY}]","[${b.nativeW},${b.nativeH}]",${JSON.stringify(item.answerText || '')}`;
+  }
+  const xs = tcBoxes.map(b => tcEffectiveBoxForItemIndex(b, index).nativeX);
+  const ys = tcBoxes.map(b => tcEffectiveBoxForItemIndex(b, index).nativeY);
+  const size = tcEffectiveBoxForItemIndex(tcBoxes[0], index);
+  const correct = mode === 'sd'
+    ? [...new Set(tcBoxes.map(b => b.pairId))].map(pid => {
+        const boxId = item.correctBoxIds.find(id => { const b = tcBoxes.find(x => x.id === id); return b && b.pairId === pid; });
+        const b = tcBoxes.find(x => x.id === boxId);
+        return b ? `ans_box_${b.letter}` : '';
+      }).join(', ')
+    : item.correctBoxIds.map(id => { const b = tcBoxes.find(x => x.id === id); return b ? `ans_box_${b.letter}` : ''; }).join(', ');
+  return `${filename},"[${xs.join(', ')}]","[${ys.join(', ')}]","[${size.nativeW}, ${size.nativeH}]","${correct}"`;
+}
+
+function tcShowReview(){
+  tcPhase = 'review';
+  tcEl('tc-taggingToolbar').style.display = 'none';
+  tcEl('tc-taggingHint').style.display = 'none';
+  tcEl('tc-mainRow').style.display = 'none';
+  tcEl('tc-reviewScreen').style.display = 'block';
+  const saveMsg = tcEl('tc-saveMsg');
+  saveMsg.textContent = '';
+  saveMsg.classList.remove('error');
+
+  const modeLabels = { mc: 'Multiple choice', ms: 'Multiple selections', sd: 'Same/different', fib: 'Fill in the blank' };
+  tcEl('tc-reviewStats').innerHTML = [
+    ['Items', tcItems.length],
+    ['Answer type', modeLabels[tcEl('tc-testType').value]],
+    ['Boxes', tcBoxes.length],
+    ['Adjusted items', tcItems.filter(it => Object.keys(it.overrides).length > 0).length]
+  ].map(([label, val]) => `
+    <div class="tc-stat-card">
+      <p class="tc-stat-label">${label}</p>
+      <p class="tc-stat-value">${val}</p>
+    </div>
+  `).join('');
+
+  tcEl('tc-reviewList').innerHTML = tcItems.map((it, i) => `
+    <div class="tc-review-row">
+      <div class="tc-review-thumb" style="background-image:url('${tcItemImageUrls[i]}');"></div>
+      <span style="color:var(--ink-faint); width:20px;">${i + 1}</span>
+      <span style="flex:1;">Correct: <strong style="font-weight:600;">${escapeHtml(tcItemCorrectSummary(it))}</strong></span>
+      ${Object.keys(it.overrides).length > 0 ? '<span title="Position adjusted for this item" style="color:#A9820A; font-size:11px;">&#9998;</span>' : ''}
+    </div>
+  `).join('');
+
+  const csvHeader = tcEl('tc-testType').value === 'fib'
+    ? 'standard_stim,textbox_position,textbox_size,correct_answer'
+    : 'standard_stim,answer_positionX,answer_positionY,selector_size,correct_answer';
+  tcEl('tc-csvPreview').textContent = csvHeader + '\n' + tcBuildCsvRow(tcItems[0], 0);
+  tcEl('tc-csvPreview').style.display = 'none';
+  tcEl('tc-toggleCsvBtn').textContent = 'View generated data row';
+}
+
+tcEl('tc-toggleCsvBtn').addEventListener('click', () => {
+  const el = tcEl('tc-csvPreview');
+  const showing = el.style.display === 'block';
+  el.style.display = showing ? 'none' : 'block';
+  tcEl('tc-toggleCsvBtn').textContent = showing ? 'View generated data row' : 'Hide generated data row';
+});
+
+tcEl('tc-backToTaggingBtn').addEventListener('click', () => {
+  tcPhase = 'tagging';
+  tcEl('tc-reviewScreen').style.display = 'none';
+  tcEl('tc-mainRow').style.display = 'flex';
+  tcEl('tc-taggingToolbar').style.display = 'flex';
+  tcEl('tc-taggingHint').style.display = 'block';
+  tcGoToItem(tcItems.length - 1);
+});
+
+function tcUuid(){
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// Uploads every image to Supabase Storage under this researcher's own
+// folder, then writes one custom_tests row holding the box layout and
+// per-item correct answers — the same data buildCsvRow() already renders
+// as a preview, just as JSON instead of a literal CSV line.
+async function tcSaveTest(){
+  const saveMsg = tcEl('tc-saveMsg');
+  saveMsg.classList.remove('error');
+  const name = tcEl('tc-testNameInput').value.trim();
+  if (!name){
+    saveMsg.textContent = 'Give this test a name first.';
+    saveMsg.classList.add('error');
+    return;
+  }
+  if (DEV_MODE){
+    saveMsg.textContent = 'Saving needs a real Supabase session — not available in dev mode.';
+    saveMsg.classList.add('error');
+    return;
+  }
+  const user = await requireUser();
+  if (!user) return;
+
+  const saveBtn = tcEl('tc-saveTestBtn');
+  saveBtn.disabled = true;
+  saveMsg.textContent = 'Uploading images…';
+
+  try {
+    const testId = tcUuid();
+    const mode = tcEl('tc-testType').value;
+
+    const itemsForDb = [];
+    for (let i = 0; i < tcItemFiles.length; i++){
+      const path = `${user.id}/${testId}/items/${i + 1}.png`;
+      const { error: uploadError } = await supabaseClient.storage
+        .from('custom-test-images')
+        .upload(path, tcItemFiles[i]);
+      if (uploadError) throw new Error(`Uploading item ${i + 1}: ${uploadError.message}`);
+      const { data: urlData } = supabaseClient.storage.from('custom-test-images').getPublicUrl(path);
+      itemsForDb.push({
+        filename: `item_${i + 1}.png`,
+        imageUrl: urlData.publicUrl,
+        correctAnswer: tcItemCorrectSummary(tcItems[i]),
+        answerText: mode === 'fib' ? (tcItems[i].answerText || '') : undefined,
+        overrides: tcItems[i].overrides,
+      });
+    }
+
+    if (tcTemplateFile){
+      const templatePath = `${user.id}/${testId}/template.png`;
+      await supabaseClient.storage.from('custom-test-images').upload(templatePath, tcTemplateFile);
+    }
+
+    saveMsg.textContent = 'Saving test…';
+    const { error: insertError } = await supabaseClient.from('custom_tests').insert({
+      id: testId,
+      researcher_id: user.id,
+      name,
+      description: tcEl('tc-testDescInput').value.trim() || null,
+      type_of_test: { mc: 'multiple choice', ms: 'multiple selections', sd: 'same different', fib: 'fill in the blank' }[mode],
+      choices: mode === 'fib' ? 0 : tcBoxes.length,
+      boxes: tcBoxes,
+      items: itemsForDb,
+    });
+    if (insertError) throw new Error(insertError.message);
+
+    saveMsg.classList.remove('error');
+    saveMsg.textContent = 'Saved. (Not yet selectable in the battery builder — that needs the runtime-loading piece built separately.)';
+  } catch (e){
+    saveMsg.textContent = 'Could not save: ' + e.message;
+    saveMsg.classList.add('error');
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+tcEl('tc-saveTestBtn').addEventListener('click', tcSaveTest);
+
+tcEl('tc-testType').addEventListener('change', () => {
+  tcBoxes = [];
+  tcNextLetter = 0;
+  tcRenderLayout();
+});
+
+renderCatalog();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+﻿instructions_page,answer_positionPX,answer_positionPY,selector_sizeP,correct_answerP,practice_item,feedback,att_check,retry
+VK_Instructions1.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box0, Rclick_box1",0,0,0,0
+VK_Instructions2.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box0, Rclick_box1",1,0,0,0
+VK_Instructions3.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box0, Rclick_box1",0,1,0,0
+VK_Instructions4.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box0, Rclick_box2",1,0,0,0
+VK_Instructions4F.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box0, Rclick_box2",0,1,0,1
+VK_Instructions4R.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box0, Rclick_box2",1,0,0,-1
+VK_Instructions4F2.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box0, Rclick_box2",0,1,0,-1
+VK_Instructions6.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box1, Rclick_box2",1,0,0,0
+VK_Instructions7.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box1, Rclick_box2",0,1,0,0
+VK_Instructions8.png,"[674, 998, 1317, 1632]","[710,710,710,710]","[75, 75]","Rclick_box1, Rclick_box2",0,0,0,0

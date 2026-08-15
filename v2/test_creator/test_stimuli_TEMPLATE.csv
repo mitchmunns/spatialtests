@@ -1,0 +1,7 @@
+﻿name_of_test,stim_folder,stim_file,type_of_test,instructions_file,choices,time_min,time_max,selector_box_image,redirect_url,prev_scores
+PSVT,PSVT_Stimuli,PSVT_Stimuli.csv,multiple choice,PSVT_Instructions.csv,5,0,60,selector.png,,"[1, 2, 3, 4, 5]"
+PFT,PFT_Stimuli,PFT_Stimuli.csv,multiple choice,PFT_Instructions.csv,4,0,60,selector.png,,"[1, 2, 3, 4, 5]"
+DAT,DAT_Stimuli,DAT_Stimuli.csv,multiple choice,DAT_Instructions.csv,4,0,60,selector.png,,"[1, 2, 3, 4, 5]"
+SD,SD_Stimuli,SD_Stimuli.csv,fill in the blank,SD_Instructions.csv,,0,60,selector.png,,"[1, 2, 3, 4, 5]"
+Flags,Flags_Stimuli,Flags_Stimuli.csv,multiple selections,Flags_Instructions.csv,12,0,60,selector.png,'https://app.prolific.com/submissions/complete?cc=C1IO86MY',"[1, 2, 3, 4, 5]"
+VK,VK_Stimuli,VK_Stimuli.csv,multiple selections,VK_Instructions.csv,4,0,60,selector.png,,"[1, 2, 3, 4, 5]"
