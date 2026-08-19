@@ -38,6 +38,22 @@ const TEST_DEFINITIONS = {
   WS:   { stim_folder: 'WS_Stimuli',   stim_file: 'WS_Stimuli.csv',   type_of_test: 'multiple choice',      instructions_file: 'WS_Instructions.csv',   selector_box_image: 'selector.png', choices: 5 },
 };
 
+// Researcher-authored custom tests (battery item testIds prefixed 'custom:')
+// have no fixed stim_folder/instructions of their own — they share one
+// generic instructions page (see custom_instructions.csv) and a
+// type-appropriate selector graphic already shipped for the matching
+// built-in answer type, instead of a bespoke per-test asset set.
+const CUSTOM_INSTRUCTIONS_FILE = 'custom_instructions.csv';
+const CUSTOM_SELECTOR_BY_TYPE = {
+  'multiple choice': 'selector.png',
+  'multiple selections': 'x_selector.png',
+  'same different': 'o_selector.png',
+  'fill in the blank': '',
+};
+// Bare custom_tests.id -> the fetched row, populated once in prepareAndStart()
+// before buildTestListRows()/resourcesForTests() run.
+let customTestDefs = {};
+
 // Falls back to the static test_list.csv (today's default battery) whenever
 // there's no ?session= param, or the battery config can't be fetched.
 var testListRows = 'test_list.csv';
@@ -50,10 +66,30 @@ var customBreakMessageCounter = null;
 
 function buildTestListRows(items) {
   return items.map((item, index) => {
-    const def = TEST_DEFINITIONS[item.testId];
-    if (!def) {
-      console.error('Unknown testId in battery config, skipping:', item.testId);
-      return null;
+    const isCustom = typeof item.testId === 'string' && item.testId.indexOf('custom:') === 0;
+    let def, customItems = null;
+    if (isCustom) {
+      const bareId = item.testId.slice('custom:'.length);
+      const custom = customTestDefs[bareId];
+      if (!custom) {
+        console.error('Unknown custom testId in battery config, skipping:', item.testId);
+        return null;
+      }
+      def = {
+        stim_folder: '',
+        stim_file: '',
+        type_of_test: custom.type_of_test,
+        instructions_file: CUSTOM_INSTRUCTIONS_FILE,
+        selector_box_image: CUSTOM_SELECTOR_BY_TYPE[custom.type_of_test] || '',
+        choices: custom.choices,
+      };
+      customItems = custom.items;
+    } else {
+      def = TEST_DEFINITIONS[item.testId];
+      if (!def) {
+        console.error('Unknown testId in battery config, skipping:', item.testId);
+        return null;
+      }
     }
     const params = item.params || {};
     return {
@@ -64,6 +100,9 @@ function buildTestListRows(items) {
       instructions_file: def.instructions_file,
       selector_box_image: def.selector_box_image,
       choices: def.choices,
+      // Only populated for custom tests — item_loop builds its trial list
+      // directly from this in-memory array instead of importing a CSV.
+      custom_items: customItems,
       time_min: params.timeMin,
       time_max: params.timeMax,
       total_time_limit: params.totalTimeLimit || 0,
@@ -472,7 +511,12 @@ function resourcesForTests(testIds) {
   const entries = new Map();
   SHARED_RESOURCE_NAMES.forEach((name) => entries.set(name, { name, path: name }));
   const folders = new Set();
+  const customBareIds = [];
   testIds.forEach((id) => {
+    if (typeof id === 'string' && id.indexOf('custom:') === 0) {
+      customBareIds.push(id.slice('custom:'.length));
+      return;
+    }
     const def = TEST_DEFINITIONS[id];
     if (!def) return;
     entries.set(def.stim_file, { name: def.stim_file, path: def.stim_file });
@@ -490,6 +534,21 @@ function resourcesForTests(testIds) {
       }
     }
   });
+  if (customBareIds.length > 0) {
+    // o_selector.png isn't in SHARED_RESOURCE_NAMES (only the built-in Flags
+    // test pulls it in today) — a custom same-different test run without
+    // Flags in the same battery still needs it preloaded explicitly here.
+    entries.set(CUSTOM_INSTRUCTIONS_FILE, { name: CUSTOM_INSTRUCTIONS_FILE, path: CUSTOM_INSTRUCTIONS_FILE });
+    customBareIds.forEach((bareId) => {
+      const custom = customTestDefs[bareId];
+      if (!custom) return;
+      const selector = CUSTOM_SELECTOR_BY_TYPE[custom.type_of_test];
+      if (selector) entries.set(selector, { name: selector, path: selector });
+      (custom.items || []).forEach((it) => {
+        if (it.standard_stim) entries.set(it.standard_stim, { name: it.standard_stim, path: it.standard_stim, download: true });
+      });
+    });
+  }
   return Array.from(entries.values());
 }
 
@@ -516,6 +575,22 @@ async function prepareAndStart() {
       if (error) {
         console.error('Failed to fetch battery config, using default test_list.csv:', error);
       } else if (data && Array.isArray(data.items) && data.items.length > 0) {
+        const customBareIds = [...new Set(
+          data.items
+            .filter((i) => typeof i.testId === 'string' && i.testId.indexOf('custom:') === 0)
+            .map((i) => i.testId.slice('custom:'.length))
+        )];
+        if (customBareIds.length > 0) {
+          const { data: customRows, error: customErr } = await supabaseClient
+            .from('custom_tests')
+            .select('id, type_of_test, choices, items')
+            .in('id', customBareIds);
+          if (customErr) {
+            console.error('Failed to fetch custom tests, they will be skipped:', customErr);
+          } else {
+            customRows.forEach((row) => { customTestDefs[row.id] = row; });
+          }
+        }
         testListRows = buildTestListRows(data.items);
         resourcesToUse = resourcesForTests(testListRows.map((row) => row.name_of_test));
         if (data.break_message) customBreakMessage = data.break_message;
@@ -1157,7 +1232,13 @@ function item_loopLoopBegin(item_loopLoopScheduler, snapshot) {
       }
       return array;
     }
-    let itemTrialList = TrialHandler.importConditions(psychoJS.serverManager, stim_file);
+    // Custom tests carry their own item rows in-memory (attached to the test
+    // row by buildTestListRows) instead of a CSV to import — TrialHandler
+    // already accepts a plain array here, the same way test_loop/init_loop
+    // are constructed from in-memory arrays rather than files.
+    let itemTrialList = test_loop.thisTrial['name_of_test'].indexOf('custom:') === 0
+      ? test_loop.thisTrial['custom_items'].slice()
+      : TrialHandler.importConditions(psychoJS.serverManager, stim_file);
     const configSelectedItems = test_loop.thisTrial['selectedItems'];
     const configItemCount = test_loop.thisTrial['itemCount'];
     if (Array.isArray(configSelectedItems) && configSelectedItems.length > 0) {
@@ -2556,7 +2637,7 @@ function instructionsRoutineEnd(snapshot) {
                 }
             }
             sd_item_score = sd_corr + sd_incorr;
-            if (sd_item_score == 6){
+            if (sd_item_score == choices){
                 perf_points++;
                 previous_correct = 1;
             }
@@ -2785,7 +2866,8 @@ function itemRoutineBegin(snapshot) {
     //    selector_box.setImage(item_loop.thisTrial['selector_box_image']);
     //}
     
-    image_path = stim_folder + "/" + item_loop.thisTrial["standard_stim"];
+    let standard_stim_val = item_loop.thisTrial["standard_stim"];
+    image_path = /^https?:\/\//i.test(standard_stim_val) ? standard_stim_val : (stim_folder + "/" + standard_stim_val);
     item_stim.setImage(image_path);
     item_stim.setSize([1920 * scale, 1080 * scale]);
     item_stim.setPos([0,0]);
@@ -3325,7 +3407,7 @@ function itemRoutineEnd(snapshot) {
             }
         }
         sd_item_score = sd_corr + sd_incorr;
-        if (sd_item_score == 6){
+        if (sd_item_score == choices){
             perf_points++;
         }
         item_loop.addData("selected_answer", SDcurrently_selected);
