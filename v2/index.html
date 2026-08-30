@@ -626,8 +626,7 @@
     color:var(--wire);
     flex:1;
     text-align:left;
-    overflow-x:auto;
-    white-space:nowrap;
+    overflow-wrap:anywhere;
   }
   .copy-btn{
     background:var(--ink);
@@ -1518,6 +1517,7 @@
       </div>
       <button class="btn secondary" style="width:auto; white-space:nowrap; padding:10px 14px;" id="battery-settings-btn" onclick="openBatterySettings()">⚙ Settings</button>
     </div>
+    <p class="status-line hidden" id="battery-timing-summary" style="margin-top:-10px;"></p>
     <div id="attention-panel-wrap"></div>
     <div id="battery-list-wrap"></div>
     <div class="battery-footer">
@@ -1612,6 +1612,19 @@
   </div>
 </div>
 
+<!-- APP CONFIRM / ALERT MODAL — shared replacement for native confirm()/alert(),
+     styled to match the rest of the app instead of an unstyled browser dialog. -->
+<div class="modal-overlay hidden" id="app-confirm-modal">
+  <div class="modal-card">
+    <h3 id="app-confirm-title">Notice</h3>
+    <p class="modal-sub" id="app-confirm-msg"></p>
+    <div class="modal-footer">
+      <button class="btn secondary hidden" id="app-confirm-cancel-btn" onclick="_resolveAppModal(false)">Cancel</button>
+      <button class="btn accent" id="app-confirm-ok-btn" onclick="_resolveAppModal(true)">OK</button>
+    </div>
+  </div>
+</div>
+
 <!-- Floating preview for item-picker thumbnails, positioned near the cursor on hover -->
 <div class="item-preview" id="item-preview">
   <img id="item-preview-img" src="" alt="">
@@ -1689,7 +1702,7 @@ async function submitAuth(){
 
 async function signOut(){
   if (DEV_MODE){
-    alert('Log out is disabled in dev mode (DEV_MODE = true at the top of the script). Set it to false to test the real login flow.');
+    await appAlert('Log out is disabled in dev mode (DEV_MODE = true at the top of the script). Set it to false to test the real login flow.');
     return;
   }
   await supabaseClient.auth.signOut();
@@ -2455,6 +2468,11 @@ function updateFormattedPreview(key){
 
 function renderFields(){
   const container = document.getElementById('cust-fields');
+  // Toggling a single item checkbox re-renders this whole panel, which would
+  // otherwise snap the item-picker's internal scroll back to the top on
+  // every click — preserve it across the rebuild.
+  const prevPicker = container.querySelector('.item-picker');
+  const prevPickerScroll = prevPicker ? prevPicker.scrollTop : 0;
   container.innerHTML = currentTest.fields.filter(f => !f.showIf || f.showIf(currentValues)).map(f => {
     let control = '';
     if (f.type === 'number'){
@@ -2496,6 +2514,9 @@ function renderFields(){
     </div>`;
   }).join('');
 
+  const newPicker = container.querySelector('.item-picker');
+  if (newPicker) newPicker.scrollTop = prevPickerScroll;
+
   renderIrtSidebar();
 }
 
@@ -2522,8 +2543,8 @@ function renderInstructionsPagesStrip(testId){
 
 // Discards every change made in this form and puts the test back to its
 // as-configured-from-scratch state.
-function resetToDefaults(){
-  if (!confirm('Reset all settings for this test back to their defaults? This discards any changes made here.')) return;
+async function resetToDefaults(){
+  if (!await appConfirm('Reset all settings for this test back to their defaults? This discards any changes made here.')) return;
   currentTest.fields.forEach(f => currentValues[f.key] = f.default);
   renderFields();
 }
@@ -2692,8 +2713,41 @@ function updateBatterySettingsBadge(){
   btn.textContent = customized ? '⚙ Settings •' : '⚙ Settings';
 }
 
+// ----------------------------
+// APP CONFIRM / ALERT — styled stand-ins for window.confirm()/alert() so
+// dialogs match the app instead of popping an unstyled browser box.
+// ----------------------------
+let _appModalResolve = null;
+
+function _showAppModal(message, { title, showCancel, okText }){
+  return new Promise(resolve => {
+    _appModalResolve = resolve;
+    document.getElementById('app-confirm-title').textContent = title;
+    document.getElementById('app-confirm-msg').textContent = message;
+    document.getElementById('app-confirm-cancel-btn').classList.toggle('hidden', !showCancel);
+    document.getElementById('app-confirm-ok-btn').textContent = okText;
+    document.getElementById('app-confirm-modal').classList.remove('hidden');
+  });
+}
+
+function _resolveAppModal(result){
+  document.getElementById('app-confirm-modal').classList.add('hidden');
+  if (_appModalResolve){ _appModalResolve(result); _appModalResolve = null; }
+}
+
+function appAlert(message, title = 'Notice'){
+  return _showAppModal(message, { title, showCancel: false, okText: 'OK' });
+}
+
+function appConfirm(message, title = 'Please confirm'){
+  return _showAppModal(message, { title, showCancel: true, okText: 'Confirm' });
+}
+
 function paramSummary(test, params){
-  return test.fields.map(f => {
+  // Instructions text is prose, not a short setting — folding it into this
+  // dot-joined summary buried every other parameter in a wall of text. The
+  // "custom instructions: yes/no" toggle field already says whether it's set.
+  return test.fields.filter(f => f.type !== 'textarea').map(f => {
     let val = params[f.key];
     if (Array.isArray(val)){
       if (val.length === 0) return null; // no specific items chosen — itemCount governs instead
@@ -2764,17 +2818,24 @@ function renderBatteryList(){
     ? 'Unavailable — this battery contains a custom test, which only runs on this platform.'
     : '';
 
+  const timingEl = document.getElementById('battery-timing-summary');
+
   if (battery.length === 0){
     wrap.innerHTML = `<div class="battery-empty">Your battery is empty. Add a test from the catalog to get started.</div>`;
     actionBtns.forEach(btn => { btn.disabled = true; btn.style.opacity = '0.5'; });
     psychopyBtn.disabled = true;
     psychopyBtn.style.opacity = '0.5';
+    timingEl.classList.add('hidden');
     return;
   }
 
   actionBtns.forEach(btn => { btn.disabled = false; btn.style.opacity = '1'; });
   psychopyBtn.disabled = hasCustomTest;
   psychopyBtn.style.opacity = hasCustomTest ? '0.5' : '1';
+
+  const { estimatedMinutes } = estimateBatteryTiming(battery);
+  timingEl.classList.remove('hidden');
+  timingEl.innerHTML = `<span class="status-dot"></span>~${estimatedMinutes} min estimated for a participant to complete this battery`;
 
   wrap.innerHTML = `<div class="battery-list">${battery.map((item, i) => {
     const test = TESTS.find(t => t.id === item.testId);
@@ -2876,9 +2937,9 @@ async function persistBattery(targetStatus){
     // policy (e.g. the researcher-update policy on `batteries`) rather than
     // a real data problem, so surface that instead of the cryptic PostgREST text.
     if (error.code === 'PGRST116'){
-      alert("Could not save battery: no matching row came back after the write. This usually means a required Supabase RLS policy hasn't been added yet (e.g. the researcher-update policy on `batteries`) — check the setup SQL for this app.");
+      await appAlert("Could not save battery: no matching row came back after the write. This usually means a required Supabase RLS policy hasn't been added yet (e.g. the researcher-update policy on `batteries`) — check the setup SQL for this app.");
     } else {
-      alert('Could not save battery: ' + error.message);
+      await appAlert('Could not save battery: ' + error.message);
     }
     return null;
   }
@@ -2888,7 +2949,7 @@ async function persistBattery(targetStatus){
 }
 
 async function saveBatteryDraft(){
-  if (battery.length === 0){ alert('Add at least one test first.'); return; }
+  if (battery.length === 0){ await appAlert('Add at least one test first.'); return; }
   const btn = document.getElementById('battery-save-btn');
   btn.textContent = 'Saving…';
   btn.disabled = true;
@@ -2913,7 +2974,7 @@ async function generatePilotLink(){
 
 async function generateRunLink(){
   if (battery.length === 0) return;
-  if (!confirm("Set this battery to Run? Once it's running it can't be edited or deleted — you'd duplicate it to make a similar battery later.")) return;
+  if (!await appConfirm("Set this battery to Run? Once it's running it can't be edited or deleted — you'd duplicate it to make a similar battery later.")) return;
   const btn = document.getElementById('battery-run-btn');
   btn.textContent = 'Generating…';
   btn.disabled = true;
@@ -3102,7 +3163,7 @@ function renderAdminDatasets(rows){
 async function downloadCombinedCSV(mode){
   if (!isAdmin) return;
   if (currentAdminRows.length === 0){
-    alert('No datasets to export.');
+    await appAlert('No datasets to export.');
     return;
   }
 
@@ -3124,7 +3185,7 @@ async function downloadCombinedCSV(mode){
     const combined = [];
     tagged.forEach(({ row, trials }) => trials.forEach(t => combined.push(tagRow(row, t))));
     if (combined.length === 0){
-      alert('No participant data yet across any battery.');
+      await appAlert('No participant data yet across any battery.');
       return;
     }
     downloadCsv(rowsToCsv(combined), `all_labs_raw_${Date.now()}.csv`);
@@ -3142,7 +3203,7 @@ async function downloadCombinedCSV(mode){
   });
 
   if (combinedParticipant.length === 0){
-    alert('No completed participants yet across any battery.');
+    await appAlert('No completed participants yet across any battery.');
     return;
   }
   downloadCsv(rowsToCsv(combinedParticipant), `all_labs_participant_clean_${Date.now()}.csv`);
@@ -3460,7 +3521,7 @@ async function deleteBattery(id){
   if (!row || row.status === 'run') return;
   const label = row.name || 'this untitled battery';
   const participantNote = row.participantCount ? ` and its ${row.participantCount} participant result(s)` : '';
-  if (!confirm(`Delete "${label}"${participantNote}? This can't be undone.`)) return;
+  if (!await appConfirm(`Delete "${label}"${participantNote}? This can't be undone.`)) return;
 
   if (DEV_MODE){
     localDatasets = localDatasets.filter(d => d.id !== id);
@@ -3471,12 +3532,12 @@ async function deleteBattery(id){
 
   const { error: resultsError } = await supabaseClient.from('psychojs_results').delete().eq('session_id', id);
   if (resultsError){
-    alert('Could not delete this battery\'s results: ' + resultsError.message);
+    await appAlert('Could not delete this battery\'s results: ' + resultsError.message);
     return;
   }
   const { error: batteryError } = await supabaseClient.from('batteries').delete().eq('id', id);
   if (batteryError){
-    alert('Could not delete battery: ' + batteryError.message);
+    await appAlert('Could not delete battery: ' + batteryError.message);
     return;
   }
 
@@ -3579,11 +3640,11 @@ const PSYCHOPY_SHARED_ASSETS = ['selector.png', 'break_image.png', 'intro.png'];
 // route are expected to edit the stimuli/instructions CSVs themselves.
 async function downloadPsychopyFiles(){
   if (battery.length === 0){
-    alert('Add at least one test to the battery first.');
+    await appAlert('Add at least one test to the battery first.');
     return;
   }
   if (battery.some(item => item.testId.startsWith('custom:'))){
-    alert('This battery contains a custom test. Custom tests require a live database lookup at runtime and cannot be exported as static PsychoPy files — remove them from the battery to use this export, or run the battery on this platform instead.');
+    await appAlert('This battery contains a custom test. Custom tests require a live database lookup at runtime and cannot be exported as static PsychoPy files — remove them from the battery to use this export, or run the battery on this platform instead.');
     return;
   }
 
@@ -3618,10 +3679,10 @@ async function downloadPsychopyFiles(){
       });
     });
     if (missingDefs.length > 0){
-      alert(`No PsychoPy definition for: ${missingDefs.join(', ')} — these were left out of the download.`);
+      await appAlert(`No PsychoPy definition for: ${missingDefs.join(', ')} — these were left out of the download.`);
     }
     if (rows.length === 0){
-      alert('None of the tests in this battery have a PsychoPy definition yet.');
+      await appAlert('None of the tests in this battery have a PsychoPy definition yet.');
       return;
     }
 
@@ -3672,7 +3733,7 @@ async function downloadPsychopyFiles(){
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (e){
-    alert('Could not build the PsychoPy download: ' + e.message);
+    await appAlert('Could not build the PsychoPy download: ' + e.message);
   } finally {
     btn.disabled = false;
     btn.textContent = originalLabel;
@@ -3701,7 +3762,7 @@ async function fetchBatteryTrials(sessionId){
 // see downloadCleanCSV() for the filtered/scored version.
 async function downloadDatasetCSV(sessionId){
   if (DEV_MODE){
-    alert('CSV export needs a real Supabase session — not available in dev mode.');
+    await appAlert('CSV export needs a real Supabase session — not available in dev mode.');
     return;
   }
 
@@ -3709,11 +3770,11 @@ async function downloadDatasetCSV(sessionId){
   try {
     rows = await fetchBatteryTrials(sessionId);
   } catch (e){
-    alert('Could not load results: ' + e.message);
+    await appAlert('Could not load results: ' + e.message);
     return;
   }
   if (rows.length === 0){
-    alert('No participant data yet for this battery.');
+    await appAlert('No participant data yet for this battery.');
     return;
   }
 
@@ -3945,7 +4006,7 @@ function buildCleanExport(rawTrials, testIds){
 
 async function downloadCleanCSV(sessionId){
   if (DEV_MODE){
-    alert('Clean CSV export needs a real Supabase session — not available in dev mode.');
+    await appAlert('Clean CSV export needs a real Supabase session — not available in dev mode.');
     return;
   }
 
@@ -3956,17 +4017,17 @@ async function downloadCleanCSV(sessionId){
   try {
     rawTrials = await fetchBatteryTrials(sessionId);
   } catch (e){
-    alert('Could not load results: ' + e.message);
+    await appAlert('Could not load results: ' + e.message);
     return;
   }
   if (rawTrials.length === 0){
-    alert('No participant data yet for this battery.');
+    await appAlert('No participant data yet for this battery.');
     return;
   }
 
   const { scoreRows, cleanTrialRows } = buildCleanExport(rawTrials, testIds);
   if (scoreRows.length === 0){
-    alert('No completed participants yet for this battery — clean export only includes participants who reached the end.');
+    await appAlert('No completed participants yet for this battery — clean export only includes participants who reached the end.');
     return;
   }
 
