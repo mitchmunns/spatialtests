@@ -533,6 +533,66 @@
     line-height:1.4;
   }
 
+  .catalog-layout{
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
+  }
+  .catalog-layout .catalog-main{flex:1; min-width:0;}
+  .battery-tracker-sidebar{
+    width:260px;
+    flex-shrink:0;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px;
+    position:sticky;
+    top:20px;
+  }
+  .battery-tracker-sidebar h3{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:var(--ink-soft);
+    margin:0 0 14px;
+  }
+  .sidebar-battery-list{
+    display:flex;
+    flex-direction:column;
+    margin-bottom:14px;
+  }
+  .sidebar-battery-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:7px 0;
+    border-bottom:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--ink);
+  }
+  .sidebar-battery-item:last-child{border-bottom:none;}
+  .sidebar-remove-btn{
+    background:none;
+    border:none;
+    color:var(--ink-faint);
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    padding:0 2px;
+    flex-shrink:0;
+  }
+  .sidebar-remove-btn:hover{color:#A32D2D;}
+  .sidebar-battery-time{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+    margin:0 0 14px;
+  }
+
   .panel-footer{
     display:flex;
     justify-content:flex-end;
@@ -1397,7 +1457,12 @@
       </div>
       <button class="btn secondary" style="width:auto; white-space:nowrap; padding:10px 14px; margin-bottom:22px;" onclick="goToTestCreator()">+ Create custom test</button>
     </div>
-    <div class="catalog-grid" id="catalog-grid"></div>
+    <div class="catalog-layout">
+      <div class="catalog-main">
+        <div class="catalog-grid" id="catalog-grid"></div>
+      </div>
+      <div class="battery-tracker-sidebar" id="catalog-battery-sidebar"></div>
+    </div>
   </div>
 
   <!-- CUSTOMIZE VIEW -->
@@ -2400,6 +2465,42 @@ function renderCatalog(){
 
 function updateBatteryBadge(){
   document.getElementById('battery-count').textContent = battery.length;
+  renderCatalogBatterySidebar();
+}
+
+// Keeps the current battery visible in a sidebar next to the catalog grid,
+// so a researcher can see what they've already added without leaving the
+// catalog. Hooked into updateBatteryBadge() so it stays in sync with every
+// path that changes `battery` (add, remove, reset, load a saved draft, ...).
+function renderCatalogBatterySidebar(){
+  const wrap = document.getElementById('catalog-battery-sidebar');
+  if (!wrap) return;
+
+  if (battery.length === 0){
+    wrap.innerHTML = `
+      <h3>Your battery</h3>
+      <p class="irt-empty">Nothing added yet — configure a test below to add it here.</p>
+    `;
+    return;
+  }
+
+  const { estimatedMinutes } = estimateBatteryTiming(battery);
+  wrap.innerHTML = `
+    <h3>Your battery <span class="battery-count">${battery.length}</span></h3>
+    <div class="sidebar-battery-list">
+      ${battery.map((item, i) => {
+        const test = TESTS.find(t => t.id === item.testId);
+        return `
+          <div class="sidebar-battery-item">
+            <span>${escapeHtml(test.shortName)}</span>
+            <button class="sidebar-remove-btn" title="Remove from battery" onclick="removeFromBattery(${i})">&times;</button>
+          </div>
+        `;
+      }).join('')}
+    </div>
+    <p class="sidebar-battery-time">~${estimatedMinutes} min estimated</p>
+    <button class="btn secondary" style="width:100%;" onclick="goToBattery()">Review battery →</button>
+  `;
 }
 
 // Open the customize form to ADD a new item to the battery
@@ -2678,6 +2779,7 @@ function goToHome(){
 }
 
 function goToCatalog(){
+  renderCatalogBatterySidebar();
   showView('view-catalog');
 }
 
