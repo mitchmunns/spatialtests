@@ -533,65 +533,105 @@
     line-height:1.4;
   }
 
-  .catalog-layout{
-    display:flex;
-    gap:20px;
-    align-items:flex-start;
-  }
-  .catalog-layout .catalog-main{flex:1; min-width:0;}
+  /* True full-height sidebar, pinned to the left edge of the viewport —
+     visible only while browsing the catalog (body.catalog-sidebar-open,
+     toggled in showView()). Dark on purpose to read as a distinct rail
+     rather than another card floating in the page, with the same five
+     compass-arc colors as the header stripe carried down its edge. */
   .battery-tracker-sidebar{
-    width:260px;
-    flex-shrink:0;
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:20px;
-    position:sticky;
-    top:20px;
+    display:none;
+    position:fixed;
+    left:0; top:0; bottom:0;
+    width:280px;
+    overflow-y:auto;
+    background:linear-gradient(190deg, var(--ink) 0%, var(--wire) 100%);
+    padding:32px 24px 28px;
+    z-index:10;
+    box-shadow:2px 0 28px rgba(10,20,35,0.25);
   }
+  .battery-tracker-sidebar::after{
+    content:'';
+    position:absolute;
+    top:0; right:-4px; bottom:0;
+    width:4px;
+    background:linear-gradient(180deg,
+      var(--compass-blue), var(--compass-purple), var(--compass-red),
+      var(--compass-gold), var(--compass-green));
+    opacity:0.85;
+  }
+  body.catalog-sidebar-open .battery-tracker-sidebar{display:block;}
+  body.catalog-sidebar-open .shell{padding-left:328px;}
+
   .battery-tracker-sidebar h3{
     display:flex;
     align-items:center;
     gap:8px;
     font-size:12px;
     text-transform:uppercase;
-    letter-spacing:.04em;
-    color:var(--ink-soft);
-    margin:0 0 14px;
+    letter-spacing:.06em;
+    color:#B9CBE0;
+    margin:0 0 16px;
   }
+  .battery-tracker-sidebar .irt-empty{color:rgba(233,240,247,0.55);}
   .sidebar-battery-list{
     display:flex;
     flex-direction:column;
-    margin-bottom:14px;
+    margin-bottom:16px;
   }
   .sidebar-battery-item{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:8px;
-    padding:7px 0;
-    border-bottom:1px solid var(--line);
+    padding:9px 0;
+    border-bottom:1px solid rgba(233,240,247,0.12);
     font-size:12.5px;
-    color:var(--ink);
+    color:#EAF1F8;
   }
   .sidebar-battery-item:last-child{border-bottom:none;}
+  .sidebar-battery-item-label{display:flex; align-items:center; gap:9px; min-width:0;}
+  .sidebar-battery-item-label span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .sidebar-battery-dot{
+    width:8px; height:8px;
+    border-radius:50%;
+    flex-shrink:0;
+    background:var(--compass-blue);
+  }
+  .sidebar-battery-item:nth-child(5n+2) .sidebar-battery-dot{background:var(--compass-purple);}
+  .sidebar-battery-item:nth-child(5n+3) .sidebar-battery-dot{background:var(--compass-red);}
+  .sidebar-battery-item:nth-child(5n+4) .sidebar-battery-dot{background:var(--compass-gold);}
+  .sidebar-battery-item:nth-child(5n+5) .sidebar-battery-dot{background:var(--compass-green);}
   .sidebar-remove-btn{
     background:none;
     border:none;
-    color:var(--ink-faint);
+    color:rgba(233,240,247,0.45);
     font-size:16px;
     line-height:1;
     cursor:pointer;
     padding:0 2px;
     flex-shrink:0;
   }
-  .sidebar-remove-btn:hover{color:#A32D2D;}
+  .sidebar-remove-btn:hover{color:#FF8A7A;}
   .sidebar-battery-time{
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
-    color:var(--ink-faint);
-    margin:0 0 14px;
+    color:rgba(233,240,247,0.55);
+    margin:0 0 16px;
   }
+  .sidebar-cta-btn{
+    display:block;
+    width:100%;
+    border:none;
+    border-radius:4px;
+    padding:11px 14px;
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    color:#fff;
+    cursor:pointer;
+    background:linear-gradient(100deg, var(--compass-blue), var(--compass-purple));
+  }
+  .sidebar-cta-btn:hover{background:linear-gradient(100deg, var(--compass-blue-dark), var(--compass-purple));}
 
   .panel-footer{
     display:flex;
@@ -1418,6 +1458,10 @@
   </div>
 </div>
 
+<!-- Full-height battery tracker — fixed to the left edge, visible only while
+     browsing the catalog (toggled via body.catalog-sidebar-open in showView()). -->
+<div class="battery-tracker-sidebar" id="catalog-battery-sidebar"></div>
+
 <div class="shell hidden" id="app-shell">
   <header class="top">
     <div class="brand">Online <span>Spatial Tests</span> and Assessments Repository</div>
@@ -1457,12 +1501,7 @@
       </div>
       <button class="btn secondary" style="width:auto; white-space:nowrap; padding:10px 14px; margin-bottom:22px;" onclick="goToTestCreator()">+ Create custom test</button>
     </div>
-    <div class="catalog-layout">
-      <div class="catalog-main">
-        <div class="catalog-grid" id="catalog-grid"></div>
-      </div>
-      <div class="battery-tracker-sidebar" id="catalog-battery-sidebar"></div>
-    </div>
+    <div class="catalog-grid" id="catalog-grid"></div>
   </div>
 
   <!-- CUSTOMIZE VIEW -->
@@ -2492,14 +2531,14 @@ function renderCatalogBatterySidebar(){
         const test = TESTS.find(t => t.id === item.testId);
         return `
           <div class="sidebar-battery-item">
-            <span>${escapeHtml(test.shortName)}</span>
+            <span class="sidebar-battery-item-label"><span class="sidebar-battery-dot"></span><span>${escapeHtml(test.shortName)}</span></span>
             <button class="sidebar-remove-btn" title="Remove from battery" onclick="removeFromBattery(${i})">&times;</button>
           </div>
         `;
       }).join('')}
     </div>
     <p class="sidebar-battery-time">~${estimatedMinutes} min estimated</p>
-    <button class="btn secondary" style="width:100%;" onclick="goToBattery()">Review battery →</button>
+    <button class="sidebar-cta-btn" onclick="goToBattery()">Review battery →</button>
   `;
 }
 
@@ -2772,6 +2811,7 @@ function showView(id){
   ['view-home', 'view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
+  document.body.classList.toggle('catalog-sidebar-open', id === 'view-catalog');
 }
 
 function goToHome(){
