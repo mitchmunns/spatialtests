@@ -482,12 +482,6 @@
     color:var(--ink-soft);
   }
 
-  .customize-layout{
-    display:flex;
-    gap:20px;
-    align-items:flex-start;
-  }
-  .customize-layout .config-panel{flex:1; min-width:0;}
   .irt-sidebar{
     width:300px;
     flex-shrink:0;
@@ -533,50 +527,88 @@
     line-height:1.4;
   }
 
-  /* True full-height sidebar, pinned to the left edge of the viewport —
-     visible only while browsing the catalog (body.catalog-sidebar-open,
-     toggled in showView()). Dark on purpose to read as a distinct rail
-     rather than another card floating in the page, with the same five
-     compass-arc colors as the header stripe carried down its edge. */
-  .battery-tracker-sidebar{
-    display:none;
-    position:fixed;
-    left:0; top:0; bottom:0;
-    width:280px;
-    overflow-y:auto;
-    background:linear-gradient(190deg, var(--ink) 0%, var(--wire) 100%);
-    padding:32px 24px 28px;
-    z-index:10;
-    box-shadow:2px 0 28px rgba(10,20,35,0.25);
+  /* WORKBENCH — configure (left), browse the catalog (middle), and watch the
+     battery take shape (right), all on one screen. Widened past the app's
+     normal 880px reading column only while this view is active (see
+     body.workbench-open, toggled in showView()) since three panes need the
+     room; every other view keeps the narrower column. */
+  body.workbench-open .shell{max-width:1180px;}
+  .workbench{
+    display:flex;
+    align-items:flex-start;
+    gap:20px;
   }
-  .battery-tracker-sidebar::after{
-    content:'';
-    position:absolute;
-    top:0; right:-4px; bottom:0;
-    width:4px;
-    background:linear-gradient(180deg,
-      var(--compass-blue), var(--compass-purple), var(--compass-red),
-      var(--compass-gold), var(--compass-green));
-    opacity:0.85;
-  }
-  body.catalog-sidebar-open .battery-tracker-sidebar{display:block;}
-  body.catalog-sidebar-open .shell{padding-left:328px;}
+  .wb-col{min-width:0;}
+  .wb-config{width:320px; flex-shrink:0;}
+  .wb-catalog{flex:1;}
+  .wb-battery{width:280px; flex-shrink:0; position:sticky; top:20px;}
 
-  .battery-tracker-sidebar h3{
+  .wb-empty{
+    background:var(--card);
+    border:1px dashed var(--line-strong);
+    border-radius:4px;
+    padding:32px 20px;
+    text-align:center;
+    color:var(--ink-faint);
+    font-size:13px;
+    line-height:1.5;
+  }
+  .wb-config-head{margin-bottom:14px;}
+  .wb-config-title{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:18px;
+    margin:0 0 4px;
+  }
+  .wb-config-sub{font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin:0;}
+  .wb-config .config-panel{padding:18px 18px 4px;}
+  .wb-config .field-row{grid-template-columns:1fr; gap:6px;}
+  .wb-config .irt-sidebar{width:100%; margin-top:14px;}
+  .wb-config-footer{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:16px 0 4px;
+  }
+  .wb-config-footer .btn{width:auto; flex:1;}
+  .wb-config-footer .reset-btn{flex-basis:100%; order:3;}
+
+  .wb-catalog-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .wb-catalog-head span{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-faint);
+  }
+  .wb-catalog .test-card.selected{border-color:var(--compass-gold); box-shadow:0 0 0 1px var(--compass-gold);}
+
+  .wb-battery{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px;
+  }
+  .wb-battery h3{
     display:flex;
     align-items:center;
     gap:8px;
     font-size:12px;
     text-transform:uppercase;
     letter-spacing:.06em;
-    color:#B9CBE0;
-    margin:0 0 16px;
+    color:var(--ink-soft);
+    margin:0 0 14px;
   }
-  .battery-tracker-sidebar .irt-empty{color:rgba(233,240,247,0.55);}
   .sidebar-battery-list{
     display:flex;
     flex-direction:column;
-    margin-bottom:16px;
+    margin-bottom:14px;
   }
   .sidebar-battery-item{
     display:flex;
@@ -584,13 +616,19 @@
     justify-content:space-between;
     gap:8px;
     padding:9px 0;
-    border-bottom:1px solid rgba(233,240,247,0.12);
+    border-bottom:1px solid var(--line);
     font-size:12.5px;
-    color:#EAF1F8;
+    color:var(--ink);
   }
   .sidebar-battery-item:last-child{border-bottom:none;}
   .sidebar-battery-item-label{display:flex; align-items:center; gap:9px; min-width:0;}
-  .sidebar-battery-item-label span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .sidebar-battery-item-label span.name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .sidebar-battery-item-time{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    flex-shrink:0;
+  }
   .sidebar-battery-dot{
     width:8px; height:8px;
     border-radius:50%;
@@ -604,19 +642,19 @@
   .sidebar-remove-btn{
     background:none;
     border:none;
-    color:rgba(233,240,247,0.45);
+    color:var(--ink-faint);
     font-size:16px;
     line-height:1;
     cursor:pointer;
     padding:0 2px;
     flex-shrink:0;
   }
-  .sidebar-remove-btn:hover{color:#FF8A7A;}
+  .sidebar-remove-btn:hover{color:#A32D2D;}
   .sidebar-battery-time{
     font-family:'IBM Plex Mono', monospace;
     font-size:11px;
-    color:rgba(233,240,247,0.55);
-    margin:0 0 16px;
+    color:var(--ink-faint);
+    margin:0 0 14px;
   }
   .sidebar-cta-btn{
     display:block;
@@ -1152,6 +1190,82 @@
   .quality-square.fail{background:#C63A2E;}
   .quality-square.incomplete{background:var(--line-strong);}
 
+  /* ---------- Home dashboard ---------- */
+  .dash-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:26px;
+    margin-bottom:36px;
+    max-width:56ch;
+  }
+  .dash-profile-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:20px;
+  }
+  .dash-avatar{
+    width:40px; height:40px;
+    border-radius:50%;
+    background:var(--compass-purple);
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    flex-shrink:0;
+  }
+  .dash-profile-name{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px;}
+  .dash-profile-inst{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace;}
+  .dash-profile-edit{
+    margin-left:auto;
+    font-size:12px;
+    color:var(--ink-soft);
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    padding:6px 11px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .dash-tile-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:20px;}
+  .dash-tile{border:1px solid var(--line); border-radius:4px; padding:12px 14px;}
+  .dash-tile .dash-tnum{font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:22px; line-height:1;}
+  .dash-tile .dash-tlabel{font-size:11px; color:var(--ink-soft); margin-top:5px; line-height:1.35;}
+  .dash-tile.blue .dash-tnum{color:var(--compass-blue);}
+  .dash-tile.gold .dash-tnum{color:var(--compass-gold);}
+  .dash-tile.green .dash-tnum{color:var(--compass-green);}
+  .dash-cta-row{display:flex; gap:10px; margin-bottom:24px;}
+  .dash-cta{
+    flex:1;
+    display:flex; align-items:center; justify-content:space-between;
+    border-radius:4px;
+    padding:11px 15px;
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+    border:none;
+  }
+  .dash-cta.primary{background:linear-gradient(100deg, var(--compass-blue), var(--compass-purple)); color:#fff;}
+  .dash-cta.secondary{background:none; border:1px solid var(--line-strong); color:var(--ink);}
+  .dash-diag-head{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-faint);
+    margin-bottom:10px;
+  }
+  .dash-study-row{padding:12px 0; border-top:1px solid var(--line);}
+  .dash-study-row:first-child{border-top:none;}
+  .dash-study-name{font-size:13px; font-weight:500; margin-bottom:2px;}
+  .dash-study-meta{font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace; margin-bottom:8px;}
+  .dash-study-row .quality-grid{gap:3px; max-width:none;}
+  .dash-study-row .quality-square{width:9px; height:9px; border-radius:1.5px;}
+
   .project-data-actions{
     display:flex;
     flex-wrap:wrap;
@@ -1458,10 +1572,6 @@
   </div>
 </div>
 
-<!-- Full-height battery tracker — fixed to the left edge, visible only while
-     browsing the catalog (toggled via body.catalog-sidebar-open in showView()). -->
-<div class="battery-tracker-sidebar" id="catalog-battery-sidebar"></div>
-
 <div class="shell hidden" id="app-shell">
   <header class="top">
     <div class="brand">Online <span>Spatial Tests</span> and Assessments Repository</div>
@@ -1478,6 +1588,8 @@
 
   <!-- HOME / OVERVIEW VIEW -->
   <div id="view-home">
+    <div id="home-dashboard"></div>
+
     <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository" style="height:88px; width:auto; margin-bottom:20px;">
     <p class="eyebrow">Overview</p>
     <h1 class="view-title">What you can do here</h1>
@@ -1491,38 +1603,46 @@
     <button class="btn accent" onclick="goToCatalog()">Browse test catalog →</button>
   </div>
 
-  <!-- CATALOG VIEW -->
+  <!-- WORKBENCH VIEW — configure on the left, browse the catalog in the
+       middle, watch the battery take shape on the right. Replaces the old
+       catalog -> configure -> battery page-hopping with one screen. -->
   <div id="view-catalog" class="hidden">
-    <p class="eyebrow">01 — Select tests</p>
-    <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-      <div>
-        <h1 class="view-title">Test catalog</h1>
-        <p class="view-sub">Add one or more tests to a battery. Configure each one, then generate a single link that runs the whole set for a participant — even a battery of one.</p>
-      </div>
-      <button class="btn secondary" style="width:auto; white-space:nowrap; padding:10px 14px; margin-bottom:22px;" onclick="goToTestCreator()">+ Create custom test</button>
-    </div>
-    <div class="catalog-grid" id="catalog-grid"></div>
-  </div>
+    <p class="eyebrow">01 — Build your battery</p>
+    <h1 class="view-title">Test catalog</h1>
+    <p class="view-sub">Select a test to configure it, add it to your battery, and keep going — everything stays on this screen.</p>
 
-  <!-- CUSTOMIZE VIEW -->
-  <div id="view-customize" class="hidden">
-    <button class="back-link" id="cust-back-btn">&larr; back</button>
-    <p class="eyebrow" id="cust-eyebrow">02 — Configure</p>
-    <h1 class="view-title" id="cust-title"></h1>
-    <p class="view-sub" id="cust-sub"></p>
-    <div class="customize-layout">
-      <div class="config-panel" id="cust-fields"></div>
-      <div class="irt-sidebar hidden" id="irt-sidebar">
-        <h3>Selected items</h3>
-        <div id="irt-item-list"></div>
-        <h3>Item information function</h3>
-        <div id="irt-plot-wrap"></div>
+    <div class="workbench">
+      <div class="wb-col wb-config">
+        <div class="wb-empty" id="wb-config-empty">Select a test from the catalog to configure it.</div>
+        <div class="hidden" id="wb-config-active">
+          <div class="wb-config-head">
+            <h2 class="wb-config-title" id="cust-title"></h2>
+            <p class="wb-config-sub" id="cust-sub"></p>
+          </div>
+          <div class="config-panel" id="cust-fields"></div>
+          <div class="irt-sidebar hidden" id="irt-sidebar">
+            <h3>Selected items</h3>
+            <div id="irt-item-list"></div>
+            <h3>Item information function</h3>
+            <div id="irt-plot-wrap"></div>
+          </div>
+          <div class="wb-config-footer">
+            <button class="btn secondary reset-btn" onclick="resetToDefaults()">Reset to defaults</button>
+            <button class="btn secondary" id="cust-cancel-btn">Cancel</button>
+            <button class="btn accent" id="cust-submit-btn" onclick="submitCustomize()">Add to battery</button>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="panel-footer">
-      <button class="btn secondary reset-btn" onclick="resetToDefaults()">Reset to defaults</button>
-      <button class="btn secondary" id="cust-cancel-btn">Cancel</button>
-      <button class="btn accent" id="cust-submit-btn" onclick="submitCustomize()">Add to battery</button>
+
+      <div class="wb-col wb-catalog">
+        <div class="wb-catalog-head">
+          <span>Catalog</span>
+          <button class="btn secondary" style="width:auto; padding:7px 12px; font-size:12px;" onclick="goToTestCreator()">+ Create custom test</button>
+        </div>
+        <div class="catalog-grid" id="catalog-grid"></div>
+      </div>
+
+      <div class="wb-col wb-battery" id="catalog-battery-sidebar"></div>
     </div>
   </div>
 
@@ -1820,7 +1940,7 @@ function showApp(session){
     : session.user.email;
   isAdmin = ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
   document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
-  showView('view-home');
+  goToHome();
   fetchAndMergeCustomTests();
 }
 
@@ -2486,7 +2606,7 @@ function renderCatalog(){
   // Attention checks aren't full tests to configure — they're offered as a
   // quick add-on toggle from the battery view instead (see renderAttentionChecks()).
   grid.innerHTML = TESTS.filter(t => !t.attentionCheck).map(t => `
-    <div class="test-card">
+    <div class="test-card" data-test-id="${t.id}">
       <div class="cube-stage">
         <div class="icon-rotor ${t.iconSpeed}">${ICONS[t.id] ? ICONS[t.id]() : ''}</div>
       </div>
@@ -2531,18 +2651,20 @@ function renderCatalogBatterySidebar(){
         const test = TESTS.find(t => t.id === item.testId);
         return `
           <div class="sidebar-battery-item">
-            <span class="sidebar-battery-item-label"><span class="sidebar-battery-dot"></span><span>${escapeHtml(test.shortName)}</span></span>
+            <span class="sidebar-battery-item-label"><span class="sidebar-battery-dot"></span><span class="name">${escapeHtml(test.shortName)}</span></span>
+            <span class="sidebar-battery-item-time">~${estimateItemMinutes(item)}m</span>
             <button class="sidebar-remove-btn" title="Remove from battery" onclick="removeFromBattery(${i})">&times;</button>
           </div>
         `;
       }).join('')}
     </div>
-    <p class="sidebar-battery-time">~${estimatedMinutes} min estimated</p>
+    <p class="sidebar-battery-time">~${estimatedMinutes} min total, estimated</p>
     <button class="sidebar-cta-btn" onclick="goToBattery()">Review battery →</button>
   `;
 }
 
-// Open the customize form to ADD a new item to the battery
+// Open the config panel to ADD a new item to the battery — the workbench's
+// left column, not a separate page, so the catalog and battery stay in view.
 function openCustomize(id){
   currentTest = TESTS.find(t => t.id === id);
   currentValues = {};
@@ -2552,16 +2674,21 @@ function openCustomize(id){
   document.getElementById('cust-title').textContent = currentTest.name;
   document.getElementById('cust-sub').textContent = 'Adjust parameters, then add this test to your battery. Defaults reflect the standard published protocol.';
   document.getElementById('cust-submit-btn').textContent = 'Add to battery';
-  document.getElementById('cust-back-btn').textContent = '← back to catalog';
-  document.getElementById('cust-back-btn').onclick = goToCatalog;
-  document.getElementById('cust-cancel-btn').onclick = goToCatalog;
+  document.getElementById('cust-cancel-btn').onclick = clearWorkbenchConfig;
 
   renderFields();
-  showView('view-customize');
+  showWorkbenchConfig();
+  highlightSelectedCard(id);
 }
 
-// Open the customize form to EDIT an existing battery item
+// Open the config panel to EDIT an existing battery item — reached from the
+// Battery view's "Edit" button, so it navigates into the workbench first.
 function editBatteryItem(index){
+  // goToCatalog() resets the config panel to its empty state as part of
+  // entering the workbench — do that first, then populate it, so its reset
+  // doesn't wipe the edit state being set up below.
+  goToCatalog();
+
   const item = battery[index];
   currentTest = TESTS.find(t => t.id === item.testId);
   currentValues = { ...item.params };
@@ -2570,19 +2697,43 @@ function editBatteryItem(index){
   document.getElementById('cust-title').textContent = currentTest.name;
   document.getElementById('cust-sub').textContent = 'Adjust parameters for this item in your battery.';
   document.getElementById('cust-submit-btn').textContent = 'Save changes';
-  document.getElementById('cust-back-btn').textContent = '← back to battery';
-  document.getElementById('cust-back-btn').onclick = goToBattery;
   document.getElementById('cust-cancel-btn').onclick = goToBattery;
 
   renderFields();
-  showView('view-customize');
+  showWorkbenchConfig();
+  highlightSelectedCard(item.testId);
+}
+
+// Shows the config panel and hides the "select a test" placeholder.
+function showWorkbenchConfig(){
+  document.getElementById('wb-config-empty').classList.add('hidden');
+  document.getElementById('wb-config-active').classList.remove('hidden');
+}
+
+// Highlights the selected test's card in the middle catalog column so it's
+// obvious which test the left panel is currently configuring.
+function highlightSelectedCard(id){
+  document.querySelectorAll('#catalog-grid .test-card').forEach(card => {
+    card.classList.toggle('selected', card.dataset.testId === id);
+  });
+}
+
+// Cancels out of adding a new item — clears the config panel back to its
+// empty placeholder and drops the selection highlight. (Editing an existing
+// item cancels via goToBattery() instead — see editBatteryItem() above.)
+function clearWorkbenchConfig(){
+  document.getElementById('wb-config-active').classList.add('hidden');
+  document.getElementById('wb-config-empty').classList.remove('hidden');
+  document.querySelectorAll('#catalog-grid .test-card.selected').forEach(card => card.classList.remove('selected'));
+  currentTest = null;
+  editingIndex = null;
 }
 
 function submitCustomize(){
   if (editingIndex === null){
     battery.push({ testId: currentTest.id, params: { ...currentValues } });
     updateBatteryBadge();
-    goToCatalog();
+    clearWorkbenchConfig();
   } else {
     battery[editingIndex].params = { ...currentValues };
     editingIndex = null;
@@ -2808,17 +2959,128 @@ function hideItemPreview(){
 }
 
 function showView(id){
-  ['view-home', 'view-catalog', 'view-customize', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
+  ['view-home', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
-  document.body.classList.toggle('catalog-sidebar-open', id === 'view-catalog');
+  document.body.classList.toggle('workbench-open', id === 'view-catalog');
 }
 
 function goToHome(){
   showView('view-home');
+  renderHomeDashboard();
 }
 
+// Populates the Home dashboard: who's logged in, how many studies are
+// running/piloting, participants across active (run) studies, quick links
+// into Projects, and a rollup of each running study's data-quality squares
+// (see computeProjectQuality()) so collection health is visible without
+// opening every project individually.
+async function renderHomeDashboard(){
+  const wrap = document.getElementById('home-dashboard');
+  wrap.innerHTML = `<div class="dash-panel">Loading your dashboard…</div>`;
+
+  const user = await requireUser();
+  if (!user) return;
+
+  let profile = { name: '', institution: '' };
+  if (DEV_MODE){
+    profile = devProfile;
+  } else {
+    const { data } = await supabaseClient
+      .from('researchers')
+      .select('name, institution')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (data) profile = { name: data.name || '', institution: data.institution || '' };
+  }
+
+  let rows;
+  try {
+    rows = await fetchResearcherBatteries();
+  } catch (e){
+    wrap.innerHTML = `<div class="dash-panel">Couldn't load your dashboard: ${escapeHtml(e.message)}</div>`;
+    return;
+  }
+  if (rows === null) return;
+
+  const running = rows.filter(r => r.status === 'run');
+  const piloting = rows.filter(r => r.status === 'pilot');
+  const activeParticipants = running.reduce((sum, r) => sum + (r.participantCount || 0), 0);
+
+  const displayName = profile.name || user.email;
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'U';
+
+  wrap.innerHTML = `
+    <div class="dash-panel">
+      <div class="dash-profile-row">
+        <div class="dash-avatar">${escapeHtml(initials)}</div>
+        <div>
+          <div class="dash-profile-name">${escapeHtml(displayName)}</div>
+          ${profile.institution ? `<div class="dash-profile-inst">${escapeHtml(profile.institution)}</div>` : ''}
+        </div>
+        <button class="dash-profile-edit" onclick="openProfile()">Edit profile</button>
+      </div>
+
+      <div class="dash-tile-row">
+        <div class="dash-tile gold"><div class="dash-tnum">${running.length}</div><div class="dash-tlabel">studies running</div></div>
+        <div class="dash-tile blue"><div class="dash-tnum">${piloting.length}</div><div class="dash-tlabel">studies piloting</div></div>
+        <div class="dash-tile green"><div class="dash-tnum">${activeParticipants}</div><div class="dash-tlabel">participants across active studies</div></div>
+      </div>
+
+      <div class="dash-cta-row">
+        <button class="dash-cta primary" onclick="goToDatasets()">Go to your projects <span>&rarr;</span></button>
+        <button class="dash-cta secondary" onclick="goToDatasets()">Export data <span>&darr;</span></button>
+      </div>
+
+      ${running.length > 0 ? `
+        <div class="dash-diag-head">Data-quality diagnostics — running studies</div>
+        <div id="dash-diag-list">${running.map(r => `
+          <div class="dash-study-row" id="dash-diag-${r.id}">
+            <div class="dash-study-name">${escapeHtml(r.name || 'Untitled battery')}</div>
+            <div class="dash-study-meta">loading…</div>
+          </div>
+        `).join('')}</div>
+      ` : ''}
+    </div>
+  `;
+
+  running.forEach(loadDashboardDiagnostic);
+}
+
+// Loads one running study's data-quality squares into the dashboard —
+// one fetch per study rather than a single Promise.all, so a slow or
+// failing study doesn't hold up the others from showing.
+async function loadDashboardDiagnostic(row){
+  const target = document.getElementById(`dash-diag-${row.id}`);
+  if (!target) return;
+
+  if (!row.participantCount){
+    target.querySelector('.dash-study-meta').textContent = 'No participants yet';
+    return;
+  }
+  try {
+    const trials = await fetchBatteryTrials(row.id);
+    const testIds = row.items.map(i => i.testId);
+    const quality = computeProjectQuality(trials, testIds);
+    const failCount = quality.participants.filter(p => p.status === 'fail').length;
+    const meanLine = quality.mean !== null ? ` · mean score ${quality.mean.toFixed(0)}%` : '';
+    const failLine = failCount > 0 ? ` · ${failCount} failed a quality check` : '';
+    const squares = quality.participants.map(p => `<div class="quality-square ${p.status}"></div>`).join('');
+    target.innerHTML = `
+      <div class="dash-study-name">${escapeHtml(row.name || 'Untitled battery')}</div>
+      <div class="dash-study-meta">${quality.total} participant${quality.total === 1 ? '' : 's'}${meanLine}${failLine}</div>
+      <div class="quality-grid">${squares}</div>
+    `;
+  } catch (e){
+    target.querySelector('.dash-study-meta').textContent = `${row.participantCount} participants (couldn't load quality detail)`;
+  }
+}
+
+// Entry point into the workbench. Always resets the config panel to its
+// empty state first — editBatteryItem() re-opens it right after if it
+// needs to, so an edit-in-progress never gets wiped by its own navigation.
 function goToCatalog(){
+  clearWorkbenchConfig();
   renderCatalogBatterySidebar();
   showView('view-catalog');
 }
@@ -3159,46 +3421,58 @@ function duplicateCurrentBattery(){
   goToBattery();
 }
 
+// Every battery this researcher owns, with a participant count per battery.
+// Shared by the Projects view and the Home dashboard so both agree on what
+// "your studies" means. Throws on a real fetch error; returns null if the
+// session was lost (requireUser() has already redirected to the login
+// screen in that case, so the caller should just stop).
+async function fetchResearcherBatteries(){
+  if (DEV_MODE) return localDatasets;
+
+  const user = await requireUser();
+  if (!user) return null;
+
+  const { data, error } = await supabaseClient
+    .from('batteries')
+    .select('id, name, status, items, break_message, break_message_counter, created_at')
+    .eq('researcher_id', user.id)
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const rows = data.map(r => ({
+    id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at),
+    items: r.items, participantCount: null,
+    breakMessage: r.break_message || '', breakMessageCounter: r.break_message_counter || ''
+  }));
+
+  const ids = rows.map(r => r.id);
+  if (ids.length > 0){
+    const { data: resultRows, error: countError } = await supabaseClient
+      .from('psychojs_results')
+      .select('session_id')
+      .in('session_id', ids);
+    if (!countError && resultRows){
+      const counts = {};
+      resultRows.forEach(r => { counts[r.session_id] = (counts[r.session_id] || 0) + 1; });
+      rows.forEach(r => { r.participantCount = counts[r.id] || 0; });
+    }
+  }
+  return rows;
+}
+
 async function goToDatasets(){
   showView('view-datasets');
   const wrap = document.getElementById('dataset-list-wrap');
   wrap.innerHTML = `<div class="dataset-empty">Loading…</div>`;
 
-  let rows = [];
-  if (DEV_MODE){
-    rows = localDatasets;
-  } else {
-    const user = await requireUser();
-    if (!user) return;
-    const { data, error } = await supabaseClient
-      .from('batteries')
-      .select('id, name, status, items, break_message, break_message_counter, created_at')
-      .eq('researcher_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error){
-      wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${error.message}</div>`;
-      return;
-    }
-    rows = data.map(r => ({
-      id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at),
-      items: r.items, participantCount: null,
-      breakMessage: r.break_message || '', breakMessageCounter: r.break_message_counter || ''
-    }));
-
-    const ids = rows.map(r => r.id);
-    if (ids.length > 0){
-      const { data: resultRows, error: countError } = await supabaseClient
-        .from('psychojs_results')
-        .select('session_id')
-        .in('session_id', ids);
-      if (!countError && resultRows){
-        const counts = {};
-        resultRows.forEach(r => { counts[r.session_id] = (counts[r.session_id] || 0) + 1; });
-        rows.forEach(r => { r.participantCount = counts[r.id] || 0; });
-      }
-    }
+  let rows;
+  try {
+    rows = await fetchResearcherBatteries();
+  } catch (e){
+    wrap.innerHTML = `<div class="dataset-empty">Couldn't load datasets: ${e.message}</div>`;
+    return;
   }
+  if (rows === null) return;
 
   currentDatasetRows = rows;
   renderDatasets(rows);
@@ -3352,24 +3626,35 @@ async function downloadCombinedCSV(mode){
   downloadCsv(rowsToCsv(combinedTrial), `all_labs_trial_clean_${Date.now()}.csv`);
 }
 
-// Max per-item time across the battery, plus a rough total-duration
-// estimate (effective item count × midpoint of min/max time per test,
-// capped at that test's total_time_limit if one is set). An estimate, not
-// a guarantee — different participants move at different speeds.
+// One test's estimated duration in seconds (effective item count × midpoint
+// of min/max time, capped at its total_time_limit if one is set). An
+// estimate, not a guarantee — different participants move at different
+// speeds. Shared by estimateBatteryTiming() and the per-item time shown in
+// the workbench's battery list, so both always agree.
+function estimateItemSeconds(item){
+  const p = item.params || {};
+  const timeMin = Number(p.timeMin) || 0;
+  const timeMax = Number(p.timeMax) || 0;
+  const effectiveCount = (Array.isArray(p.selectedItems) && p.selectedItems.length > 0)
+    ? p.selectedItems.length
+    : (Number(p.itemCount) || 0);
+  let seconds = effectiveCount * ((timeMin + timeMax) / 2);
+  if (p.totalTimeLimit > 0) seconds = Math.min(seconds, p.totalTimeLimit);
+  return seconds;
+}
+
+function estimateItemMinutes(item){
+  return Math.max(1, Math.round(estimateItemSeconds(item) / 60));
+}
+
+// Max per-item time across the battery, plus a rough total-duration estimate.
 function estimateBatteryTiming(items){
   let maxPerItem = 0;
   let totalSeconds = 0;
   items.forEach(item => {
-    const p = item.params || {};
-    const timeMin = Number(p.timeMin) || 0;
-    const timeMax = Number(p.timeMax) || 0;
+    const timeMax = Number((item.params || {}).timeMax) || 0;
     if (timeMax > maxPerItem) maxPerItem = timeMax;
-    const effectiveCount = (Array.isArray(p.selectedItems) && p.selectedItems.length > 0)
-      ? p.selectedItems.length
-      : (Number(p.itemCount) || 0);
-    let testSeconds = effectiveCount * ((timeMin + timeMax) / 2);
-    if (p.totalTimeLimit > 0) testSeconds = Math.min(testSeconds, p.totalTimeLimit);
-    totalSeconds += testSeconds;
+    totalSeconds += estimateItemSeconds(item);
   });
   return { maxPerItem, estimatedMinutes: Math.max(1, Math.round(totalSeconds / 60)) };
 }
