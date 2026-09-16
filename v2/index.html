@@ -2062,7 +2062,6 @@ const TEST_ITEMS = {
   AC1: ['AC_1.png'],
   AC2: ['AC_1.png'], // AC2 has no stimuli file of its own — reuses AC1's item (different instructions/expected answer). Confirm with Mitch.
   ACF: ['ACF_Final2.png'],
-  AO: ['AO_1.png','AO_2.png','AO_3.png','AO_4.png','AO_5.png','AO_6.png','AO_7.png','AO_8.png','AO_9.png','AO_10.png','AO_11.png','AO_12.png','AO_13.png','AO_14.png','AO_15.png','AO_16.png','AO_17.png','AO_18.png','AO_19.png','AO_20.png','AO_21.png','AO_22.png','AO_23.png','AO_24.png','AO_25.png'],
   DAT: ['DAT_6.png','DAT_10.png','DAT_13.png','DAT_16.png','DAT_23.png','DAT_37.png','DAT_39.png','DAT_42.png','DAT_43.png','DAT_44.png','DAT_46.png','DAT_49.png'],
   Demos: ['D_age.png','D_sex.png','D_race.png','D_ethnicity.png','D_GPA.png','D_math.png','D_physics.png','D_parents_ed.png','D_language.png','D_vision.png'],
   Flags: ['F_1.png','F_2.png','F_6.png','F_13.png','F_15.png','F_16.png','F_17.png','F_18.png','F_19.png','F_20.png'],
@@ -2072,7 +2071,6 @@ const TEST_ITEMS = {
   SBST: ['SBST_1.png','SBST_4.png','SBST_5.png','SBST_6.png','SBST_7.png','SBST_10.png','SBST_12.png','SBST_13.png','SBST_17.png','SBST_19.png','SBST_21.png','SBST_22.png','SBST_24.png','SBST_25.png','SBST_27.png'],
   SD: ['SD_1.png','SD_2.png','SD_3.png','SD_5.png','SD_7.png','SD_8.png','SD_9.png','SD_10.png','SD_11.png','SD_12.png'],
   VK: ['VK_1.png','VK_2.png','VK_5.png','VK_6.png','VK_9.png','VK_10.png','VK_13.png','VK_14.png','VK_17.png','VK_18.png'],
-  WS: ['WS_1.png','WS_2.png','WS_3.png','WS_4.png','WS_5.png','WS_6.png','WS_7.png','WS_8.png','WS_9.png','WS_10.png','WS_11.png','WS_12.png','WS_13.png','WS_14.png'],
 };
 
 // IRT parameters from the standard unidimensional 2PL calibration.
@@ -2212,7 +2210,6 @@ const PSYCHOPY_TEST_DEFS = {
   AC1:   { stim_folder: 'AC1_Stimuli',   stim_file: 'AC1_Stimuli.csv',   type_of_test: 'fill in the blank',   instructions_file: 'AC1_Instructions.csv',   selector_box_image: '',               choices: 0 },
   AC2:   { stim_folder: 'AC1_Stimuli',   stim_file: 'AC1_Stimuli.csv',   type_of_test: 'fill in the blank',   instructions_file: 'AC2_Instructions.csv',   selector_box_image: '',               choices: 0 },
   ACF:   { stim_folder: 'ACF_Stimuli',   stim_file: 'ACF_Stimuli.csv',   type_of_test: 'multiple choice',     instructions_file: 'ACF_Instructions.csv',   selector_box_image: 'selector.png',   choices: 2 },
-  AO:    { stim_folder: 'AO_Stimuli',    stim_file: 'AO_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'AO_Instructions.csv',    selector_box_image: 'selector.png',   choices: 4 },
   DAT:   { stim_folder: 'DAT_Stimuli',   stim_file: 'DAT_Stimuli.csv',   type_of_test: 'multiple choice',     instructions_file: 'DAT_Instructions.csv',   selector_box_image: 'selector.png',   choices: 4 },
   Demos: { stim_folder: 'Demos_Stimuli', stim_file: 'Demos_Stimuli.csv', type_of_test: 'multiple choice',     instructions_file: 'Demos_Instructions.csv', selector_box_image: 'selector.png',   choices: 0 },
   Flags: { stim_folder: 'Flags_Stimuli', stim_file: 'Flags_Stimuli.csv', type_of_test: 'same different',      instructions_file: 'Flags_Instructions.csv', selector_box_image: 'o_selector.png', choices: 6 },
@@ -2222,7 +2219,6 @@ const PSYCHOPY_TEST_DEFS = {
   SBST:  { stim_folder: 'SBST_Stimuli',  stim_file: 'SBST_Stimuli.csv',  type_of_test: 'multiple choice',     instructions_file: 'SBST_Instructions.csv',  selector_box_image: 'selector.png',   choices: 4 },
   SD:    { stim_folder: 'SD_Stimuli',    stim_file: 'SD_Stimuli.csv',    type_of_test: 'fill in the blank',   instructions_file: 'SD_Instructions.csv',    selector_box_image: '',               choices: 0 },
   VK:    { stim_folder: 'VK_Stimuli',    stim_file: 'VK_Stimuli.csv',    type_of_test: 'multiple selections', instructions_file: 'VK_Instructions.csv',    selector_box_image: 'x_selector.png', choices: 4 },
-  WS:    { stim_folder: 'WS_Stimuli',    stim_file: 'WS_Stimuli.csv',    type_of_test: 'multiple choice',     instructions_file: 'WS_Instructions.csv',    selector_box_image: 'selector.png',   choices: 5 },
 };
 
 // Bare custom_tests.id -> the full fetched row (used by the PsychoPy-export
@@ -2358,15 +2354,6 @@ const TESTS = [
     fields: standardFields('SBST', 15)
   },
   {
-    id: 'AO',
-    name: 'Assembling Objects',
-    shortName: 'AO',
-    description: 'Multiple-choice task selecting how disassembled parts fit together when connected.',
-    iconSpeed: 'speed-3',
-    stats: { items: TEST_ITEMS.AO.length, timeLabel: '' },
-    fields: standardFields('AO', 20)
-  },
-  {
     id: 'SD',
     name: 'Surface Development Test',
     shortName: 'SD',
@@ -2392,15 +2379,6 @@ const TESTS = [
     iconSpeed: 'speed-3',
     stats: { items: TEST_ITEMS.MC.length, timeLabel: '' },
     fields: standardFields('MC', 15)
-  },
-  {
-    id: 'WS',
-    name: 'Wordsum+',
-    shortName: 'WS (Wordsum+)',
-    description: 'Vocabulary knowledge task (Cor et al., 2012), typically included as a verbal control measure alongside spatial tasks.',
-    iconSpeed: '',
-    stats: { items: TEST_ITEMS.WS.length, timeLabel: '' },
-    fields: standardFields('WS', 14)
   },
   {
     id: 'AC1',
@@ -2553,14 +2531,6 @@ const ICONS = {
     <div class="bf" style="width:36px;height:36px;left:-18px;top:0px;transform:rotateX(-90deg) translateZ(23px)"></div>
     <div class="bf accent" style="width:58px;height:36px;left:-29px;top:-1px;transform:rotateX(90deg);opacity:0.8"></div>
   `,
-  // Two blocks joined by a bidirectional arrow — assembling disassembled parts
-  AO: () => `
-    ${box3d(22, 22, 22, { x: -20, y: 12, z: -6 })}
-    ${box3d(22, 22, 22, { x: 20, y: -12, z: 6 })}
-    <div class="flat accent" style="width:30px;height:7px;left:-15px;top:-3.5px;"></div>
-    <div class="tri accent" style="width:13px;height:20px;left:-27px;top:-10px;clip-path:polygon(100% 0%,100% 100%,0% 50%);"></div>
-    <div class="tri accent" style="width:13px;height:20px;left:15px;top:-10px;clip-path:polygon(0% 0%,0% 100%,100% 50%);"></div>
-  `,
   // Flattened, labelled net — surface development / labelled-edge matching
   SD: () => `
     ${plane(20, 32, -20, 0, 0, 0, 0, '<span class="lbl">A</span>')}
@@ -2580,16 +2550,6 @@ const ICONS = {
   MC: () => `
     ${box3d(44, 44, 44, {})}
     <div class="bf accent" style="width:76px;height:60px;left:-38px;top:-30px;transform:rotateY(35deg);opacity:0.8"></div>
-  `,
-  // Thick closed dictionary — spine band + page-edge striations
-  WS: () => `
-    ${box3d(34, 46, 16, {})}
-    <div class="bf accent" style="width:6px;height:46px;left:-17px;top:-23px;transform:translateZ(8.3px)"></div>
-    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-15px;transform:rotateY(90deg) translateZ(17.2px)"></div>
-    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-8px;transform:rotateY(90deg) translateZ(17.2px)"></div>
-    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:-1px;transform:rotateY(90deg) translateZ(17.2px)"></div>
-    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:6px;transform:rotateY(90deg) translateZ(17.2px)"></div>
-    <div class="rule" style="width:16px;height:1.4px;left:-8px;top:13px;transform:rotateY(90deg) translateZ(17.2px)"></div>
   `,
   // Clipboard sheet with field lines — demographic questionnaire
   Demos: () => `
@@ -4222,13 +4182,12 @@ async function downloadDatasetCSV(sessionId){
 // The test-name patterns, attention-check filenames, and demographic
 // answer-code tables below are ported directly from that script; they're
 // safe to hardcode (not per-battery config) because AC1/AC2/ACF/Demos
-// and the 10 real tests are fixed, shared test definitions across every
+// and the 8 real tests are fixed, shared test definitions across every
 // battery in this app, not something a researcher can redefine.
 // ---------------------------------------------------------------------
 const CLEAN_TEST_PATTERNS = [
   ['SBST', /SBST/], ['MC', /MC|PR/], ['VK', /VK/], ['Flags', /^F/],
   ['PSVT', /PSVT/], ['PFT', /PFT/], ['DAT', /DAT/], ['SD', /SD/],
-  ['AO', /AO/], ['WS', /WS/],
 ];
 // [filename, sourceTestId] — each is an attention-check item embedded in
 // that test's own instructions loop, so it's only relevant if the battery
@@ -4236,7 +4195,7 @@ const CLEAN_TEST_PATTERNS = [
 const CLEAN_ATTENTION_ITEMS = [
   ['MC_Instructions1.png', 'MC'], ['SBST_Instructions4.png', 'SBST'], ['DAT_Instructions1.png', 'DAT'],
   ['SD_Instructions1.png', 'SD'], ['PFT_Instructions1.png', 'PFT'], ['VK_Instructions2.png', 'VK'],
-  ['PSVT_Instructions1.png', 'PSVT'], ['Flags_Instructions2.png', 'Flags'], ['AO_Instructions1.png', 'AO'],
+  ['PSVT_Instructions1.png', 'PSVT'], ['Flags_Instructions2.png', 'Flags'],
 ];
 const CLEAN_RACE_CHOICES = {
   ans_box_A: 'White', ans_box_B: 'Black/African American', ans_box_C: 'Asian/Asian American',
