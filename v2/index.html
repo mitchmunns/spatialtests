@@ -1136,6 +1136,59 @@
   }
   .project-actions button:hover:not(:disabled){color:var(--ink); border-color:var(--ink-soft);}
   .project-actions button.remove:hover{color:#A32D2D; border-color:#A32D2D;}
+  .project-share{
+    display:flex;
+    gap:6px;
+    margin-top:10px;
+  }
+  .project-share input{
+    flex:1;
+    min-width:0;
+    font-size:11.5px;
+    padding:6px 8px;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    background:var(--card);
+    color:var(--ink);
+  }
+  .project-share button{
+    background:none;
+    border:1px solid var(--line-strong);
+    border-radius:3px;
+    font-size:11.5px;
+    padding:6px 10px;
+    color:var(--ink-soft);
+    white-space:nowrap;
+  }
+  .project-share button:hover{color:var(--ink); border-color:var(--ink-soft);}
+  .share-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:8px;
+  }
+  .share-chip{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:3px 4px 3px 8px;
+  }
+  .share-chip button{
+    background:none;
+    border:none;
+    color:var(--ink-faint);
+    font-size:13px;
+    line-height:1;
+    cursor:pointer;
+    padding:0 2px;
+  }
+  .share-chip button:hover{color:#A32D2D;}
   .project-stats-line{
     font-size:13.5px;
     color:var(--ink);
@@ -1782,6 +1835,7 @@
     <h1 class="view-title">Your projects</h1>
     <p class="view-sub">Every battery you've saved, piloted, or run, with its tests, timing, and participant data in one place. Draft and pilot batteries can be edited or deleted; run batteries are locked — duplicate one to make a similar battery.</p>
     <div id="dataset-list-wrap"></div>
+    <div id="shared-list-wrap"></div>
   </div>
 
   <!-- ADMIN VIEW (visible only to admin accounts — see ADMIN_EMAILS) -->
@@ -3420,10 +3474,153 @@ async function fetchResearcherBatteries(){
   return rows;
 }
 
+// Every battery someone else has shared with this researcher's email (see
+// battery_shares / shared_user_select_battery in battery_sharing_setup.sql).
+// Read-only — these rows never appear in currentDatasetRows, so edit/delete
+// actions (which assume ownership) can't be reached from them.
+async function fetchSharedBatteries(){
+  if (DEV_MODE) return [];
+
+  const user = await requireUser();
+  if (!user) return null;
+
+  const { data: shares, error: shareError } = await supabaseClient
+    .from('battery_shares')
+    .select('battery_id')
+    .eq('shared_with_email', (user.email || '').toLowerCase());
+  if (shareError) throw new Error(shareError.message);
+  if (!shares || shares.length === 0) return [];
+
+  const ids = [...new Set(shares.map(s => s.battery_id))];
+  const { data, error } = await supabaseClient
+    .from('batteries')
+    .select('id, name, status, items, created_at')
+    .in('id', ids);
+  if (error) throw new Error(error.message);
+
+  const rows = data.map(r => ({
+    id: r.id, name: r.name || '', status: r.status || 'draft', createdAt: new Date(r.created_at),
+    items: r.items, participantCount: null
+  }));
+
+  if (rows.length > 0){
+    const { data: resultRows, error: countError } = await supabaseClient
+      .from('psychojs_results')
+      .select('session_id')
+      .in('session_id', rows.map(r => r.id));
+    if (!countError && resultRows){
+      const counts = {};
+      resultRows.forEach(r => { counts[r.session_id] = (counts[r.session_id] || 0) + 1; });
+      rows.forEach(r => { r.participantCount = counts[r.id] || 0; });
+    }
+  }
+  return rows;
+}
+
+// Fills in each owned battery's share chips (who it's shared with) after
+// the cards are already on screen — same lazy pattern as loadProjectStats.
+async function loadBatteryShares(rows){
+  if (DEV_MODE) return;
+  const ids = rows.map(r => r.id);
+  if (ids.length === 0) return;
+
+  const { data, error } = await supabaseClient
+    .from('battery_shares')
+    .select('battery_id, shared_with_email')
+    .in('battery_id', ids);
+  if (error || !data) return;
+
+  const byBattery = {};
+  data.forEach(s => { (byBattery[s.battery_id] = byBattery[s.battery_id] || []).push(s.shared_with_email); });
+
+  rows.forEach(row => {
+    const wrap = document.getElementById(`share-chips-${row.id}`);
+    if (!wrap) return;
+    const emails = byBattery[row.id] || [];
+    wrap.innerHTML = emails.map(email => `
+      <span class="share-chip">${escapeHtml(email)}<button class="revoke-share-btn" data-battery-id="${row.id}" data-email="${escapeHtml(email)}" title="Remove access">&times;</button></span>
+    `).join('');
+    wrap.querySelectorAll('.revoke-share-btn').forEach(btn => {
+      btn.onclick = () => revokeShare(btn.dataset.batteryId, btn.dataset.email);
+    });
+  });
+}
+
+async function shareBattery(id){
+  if (DEV_MODE){ await appAlert('Sharing needs a real Supabase session — not available in dev mode.'); return; }
+  const input = document.getElementById(`share-input-${id}`);
+  const email = (input.value || '').trim().toLowerCase();
+  if (!email || !email.includes('@')){
+    await appAlert('Enter a valid email address first.');
+    return;
+  }
+  const { error } = await supabaseClient.from('battery_shares').insert({ battery_id: id, shared_with_email: email });
+  if (error){
+    await appAlert('Could not share: ' + error.message);
+    return;
+  }
+  input.value = '';
+  loadBatteryShares(currentDatasetRows);
+}
+
+async function revokeShare(batteryId, email){
+  if (!await appConfirm(`Remove ${email}'s access to this battery?`)) return;
+  const { error } = await supabaseClient.from('battery_shares').delete().eq('battery_id', batteryId).eq('shared_with_email', email);
+  if (error){
+    await appAlert('Could not remove access: ' + error.message);
+    return;
+  }
+  loadBatteryShares(currentDatasetRows);
+}
+
+// Read-only cards for batteries someone else shared with this researcher —
+// reuses the same card markup/classes as renderDatasets() for visual
+// consistency, minus any action that assumes ownership.
+function renderSharedBatteries(rows){
+  const wrap = document.getElementById('shared-list-wrap');
+  if (!rows || rows.length === 0){ wrap.innerHTML = ''; return; }
+
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const statusLabel = { draft: 'Draft', pilot: 'Pilot', run: 'Run' };
+
+  wrap.innerHTML = `
+    <p class="eyebrow" style="margin-top:36px;">Shared with you</p>
+    <div class="dataset-list">${rows.map(row => {
+      const testNames = row.items.map(i => (TESTS.find(t => t.id === i.testId) || {}).shortName || i.testId).join(', ');
+      const tiles = row.items.map(renderProjectTestTile).join('');
+      const { maxPerItem, estimatedMinutes } = estimateBatteryTiming(row.items);
+      const countDisplay = row.participantCount === null ? '—' : row.participantCount;
+      return `
+        <div class="project-card">
+          <div class="project-columns">
+            <div class="project-info">
+              <div class="project-col-label">Info</div>
+              <div class="dataset-name"><span class="status-badge status-${row.status}">${statusLabel[row.status] || row.status}</span>${row.name ? escapeHtml(row.name) : '<em>Untitled battery</em>'}</div>
+              <div class="project-tests-summary"><strong>${row.items.length}</strong> test${row.items.length === 1 ? '' : 's'}: ${escapeHtml(testNames)}</div>
+              <div class="project-tests-row">${tiles}</div>
+              <div class="project-timing">${maxPerItem}s max per item · ~${estimatedMinutes} min estimated</div>
+              <div class="project-meta">created ${dateFmt.format(row.createdAt)} · shared with you</div>
+            </div>
+            <div class="project-data">
+              <div class="project-col-label">Data</div>
+              <div class="project-stats-line">Participants: ${countDisplay}</div>
+              <div class="project-data-actions">
+                <button onclick="downloadDatasetCSV('${row.id}')">Export raw CSV</button>
+                <button onclick="downloadCleanCSV('${row.id}')" title="Deduplicated, rescored, and filtered to completed participants only.">Export clean CSV</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('')}</div>
+  `;
+}
+
 async function goToDatasets(){
   showView('view-datasets');
   const wrap = document.getElementById('dataset-list-wrap');
   wrap.innerHTML = `<div class="dataset-empty">Loading…</div>`;
+  document.getElementById('shared-list-wrap').innerHTML = '';
 
   let rows;
   try {
@@ -3436,6 +3633,14 @@ async function goToDatasets(){
 
   currentDatasetRows = rows;
   renderDatasets(rows);
+
+  try {
+    const shared = await fetchSharedBatteries();
+    if (shared) renderSharedBatteries(shared);
+  } catch (e){
+    // Non-critical section — fail quietly rather than blocking the page
+    // the researcher actually owns.
+  }
 }
 
 function escapeHtml(str){
@@ -3674,6 +3879,11 @@ function renderDatasets(rows){
               <button onclick="copyDatasetLink('${row.id}')">Copy link</button>
               ${deleteAction}
             </div>
+            <div class="project-share">
+              <input type="email" id="share-input-${row.id}" placeholder="Share with email…">
+              <button onclick="shareBattery('${row.id}')">Share</button>
+            </div>
+            <div class="share-chips" id="share-chips-${row.id}"></div>
           </div>
           <div class="project-data">
             <div class="project-col-label">Data</div>
@@ -3691,6 +3901,7 @@ function renderDatasets(rows){
   }).join('')}</div>`;
 
   loadProjectStats(rows);
+  loadBatteryShares(rows);
 }
 
 // Fills in the completed/incomplete participant breakdown per project,
