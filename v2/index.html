@@ -3603,7 +3603,9 @@ function renderSharedBatteries(rows){
             </div>
             <div class="project-data">
               <div class="project-col-label">Data</div>
-              <div class="project-stats-line">Participants: ${countDisplay}</div>
+              <div class="project-stats-line" id="project-stats-${row.id}">Participants: ${countDisplay}${row.participantCount ? ', incomplete: <span class="stats-loading">loading…</span>' : ''}</div>
+              <div class="project-progress" id="project-progress-${row.id}" style="display:none;"></div>
+              <div class="project-quality" id="project-quality-${row.id}"></div>
               <div class="project-data-actions">
                 <button onclick="downloadDatasetCSV('${row.id}')">Export raw CSV</button>
                 <button onclick="downloadCleanCSV('${row.id}')" title="Deduplicated, rescored, and filtered to completed participants only.">Export clean CSV</button>
@@ -3614,6 +3616,8 @@ function renderSharedBatteries(rows){
       `;
     }).join('')}</div>
   `;
+
+  loadProjectStats(rows);
 }
 
 async function goToDatasets(){
