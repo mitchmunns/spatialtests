@@ -1067,6 +1067,18 @@
   }
 
   /* ---------- Datasets ---------- */
+  .admin-totals{background:var(--card); border:1px solid var(--line); border-radius:6px; padding:16px 20px 12px; margin:0 0 24px;}
+  .admin-totals-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:8px;}
+  .admin-totals-head h2{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:16px; margin:0;}
+  .admin-totals-head span{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint);}
+  .admin-totals table{width:100%; border-collapse:collapse; font-size:13px;}
+  .admin-totals th{font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:500; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-faint); text-align:right; padding:6px 8px; border-bottom:1px solid var(--line);}
+  .admin-totals th:first-child, .admin-totals td:first-child{text-align:left; padding-left:0;}
+  .admin-totals td{padding:7px 8px; border-bottom:1px solid var(--line);}
+  .admin-totals tr:last-child td{border-bottom:none;}
+  .admin-totals td.num{text-align:right; font-family:'IBM Plex Mono', monospace; color:var(--ink-soft);}
+  .admin-totals td.num.strong{color:var(--ink); font-weight:600;}
+  .admin-totals-note{font-size:11.5px; color:var(--ink-faint); margin:8px 0 0;}
   .dataset-list{
     display:flex;
     flex-direction:column;
@@ -2015,6 +2027,7 @@
     <p class="eyebrow">Admin</p>
     <h1 class="view-title">All datasets — every lab</h1>
     <p class="view-sub">Every battery saved across every researcher account, for oversight and combined export. Only visible to your account.</p>
+    <div id="admin-test-totals"></div>
     <div style="display:flex; gap:8px; margin-bottom:20px;">
       <button class="btn secondary" onclick="downloadCombinedCSV('raw')">Download combined raw CSV</button>
       <button class="btn secondary" onclick="downloadCombinedCSV('clean')">Download combined clean CSV</button>
@@ -4310,6 +4323,7 @@ async function goToAdmin(){
   }
 
   currentAdminRows = rows;
+  renderAdminTestTotals(rows);
   renderAdminDatasets(rows);
   loadAdminCustomTests(researcherById);
 }
@@ -4360,6 +4374,55 @@ async function setCustomTestPublished(id, published){
   }
   goToAdmin();
   fetchAndMergeCustomTests();
+}
+
+// Overview across every lab: how many participants have finished each
+// test. Each saved result is one participant who finished a battery, so a
+// test's total is the sum of participants over every battery that includes
+// it, split by the battery's status.
+function renderAdminTestTotals(rows){
+  const wrap = document.getElementById('admin-test-totals');
+  const totals = {};
+  rows.forEach(row => {
+    const n = row.participantCount || 0;
+    const ids = new Set((row.items || []).map(i => i.testId));
+    ids.forEach(id => {
+      const t = totals[id] || (totals[id] = { all: 0, run: 0, pilot: 0, batteries: 0 });
+      t.all += n;
+      if (row.status === 'run') t.run += n;
+      if (row.status === 'pilot') t.pilot += n;
+      t.batteries += 1;
+    });
+  });
+
+  const order = id => {
+    const i = TESTS.findIndex(t => t.id === id);
+    return i === -1 ? TESTS.length : i;
+  };
+  const ids = Object.keys(totals).sort((a, b) => order(a) - order(b) || a.localeCompare(b));
+  if (ids.length === 0){
+    wrap.innerHTML = '';
+    return;
+  }
+  const grand = rows.reduce((sum, r) => sum + (r.participantCount || 0), 0);
+
+  wrap.innerHTML = `
+    <div class="admin-totals">
+      <div class="admin-totals-head">
+        <h2>Participants per test, all labs</h2>
+        <span>${grand} participants in total across ${rows.length} batteries</span>
+      </div>
+      <table>
+        <thead><tr><th>Test</th><th>Total</th><th>Running</th><th>Pilot</th><th>Batteries</th></tr></thead>
+        <tbody>${ids.map(id => {
+          const test = TESTS.find(t => t.id === id);
+          const t = totals[id];
+          return `<tr><td>${escapeHtml(test ? test.name : id)}</td><td class="num strong">${t.all}</td><td class="num">${t.run}</td><td class="num">${t.pilot}</td><td class="num">${t.batteries}</td></tr>`;
+        }).join('')}</tbody>
+      </table>
+      <p class="admin-totals-note">A participant counts toward every test in the battery they finished. Draft batteries count toward Total only.</p>
+    </div>
+  `;
 }
 
 function renderAdminDatasets(rows){
