@@ -1425,6 +1425,15 @@
     background:#fff;
     color:var(--ink);
   }
+  .pw-wrap{position:relative;}
+  .pw-wrap input{padding-right:62px;}
+  .pw-toggle{
+    position:absolute; right:6px; top:50%; transform:translateY(-50%);
+    background:none; border:none; cursor:pointer;
+    font-family:'IBM Plex Mono', monospace; font-size:11px;
+    color:var(--accent-dark); padding:4px 6px; border-radius:3px;
+  }
+  .pw-toggle:hover{background:var(--accent-soft);}
   .field-block input:focus{
     outline:2px solid var(--accent-soft);
     border-color:var(--accent);
@@ -1663,7 +1672,7 @@
     </div>
     <div class="field-block">
       <label>Password</label>
-      <input id="auth-password" type="password" placeholder="••••••••">
+      <div class="pw-wrap"><input id="auth-password" type="password" placeholder="••••••••"><button type="button" class="pw-toggle" onclick="togglePasswordVisible(this)" aria-label="Show password" aria-pressed="false">Show</button></div>
     </div>
     <button class="btn accent" id="auth-submit" onclick="submitAuth()">Log in</button>
     <div class="auth-msg" id="auth-msg"></div>
@@ -1943,11 +1952,11 @@
     <h3>Set a new password</h3>
     <div class="field-block">
       <label for="new-password">New password</label>
-      <input id="new-password" type="password" autocomplete="new-password">
+      <div class="pw-wrap"><input id="new-password" type="password" autocomplete="new-password"><button type="button" class="pw-toggle" onclick="togglePasswordVisible(this)" aria-label="Show password" aria-pressed="false">Show</button></div>
     </div>
     <div class="field-block">
       <label for="new-password-confirm">Confirm new password</label>
-      <input id="new-password-confirm" type="password" autocomplete="new-password">
+      <div class="pw-wrap"><input id="new-password-confirm" type="password" autocomplete="new-password"><button type="button" class="pw-toggle" onclick="togglePasswordVisible(this)" aria-label="Show password" aria-pressed="false">Show</button></div>
     </div>
     <div class="auth-msg" id="new-password-msg"></div>
     <div class="modal-footer">
@@ -2220,6 +2229,10 @@ async function sendPasswordReset(){
 }
 
 function openNewPassword(){
+  document.querySelectorAll('#new-password-modal .pw-wrap').forEach(w => {
+    w.querySelector('input').type = 'password';
+    w.querySelector('.pw-toggle').textContent = 'Show';
+  });
   document.getElementById('new-password').value = '';
   document.getElementById('new-password-confirm').value = '';
   const msg = document.getElementById('new-password-msg');
@@ -5585,6 +5598,17 @@ tcEl('tc-testType').addEventListener('change', () => {
   tcNextLetter = 0;
   tcRenderLayout();
 });
+
+// Show / hide the typed password in a .pw-wrap field.
+function togglePasswordVisible(btn){
+  const input = btn.parentElement.querySelector('input');
+  const show = input.type === 'password';
+  input.type = show ? 'text' : 'password';
+  btn.textContent = show ? 'Hide' : 'Show';
+  btn.setAttribute('aria-pressed', String(show));
+  btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+  input.focus();
+}
 
 renderCatalog();
 </script>
