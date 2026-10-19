@@ -1959,6 +1959,7 @@ async function signOut(){
 }
 
 function showApp(session){
+  appShown = true;
   document.getElementById('view-auth').classList.add('hidden');
   document.getElementById('app-shell').classList.remove('hidden');
   document.getElementById('user-email').textContent = DEV_MODE
@@ -1989,10 +1990,16 @@ function showAuth(){
   document.getElementById('auth-msg').textContent = '';
 }
 
+// Supabase re-sends SIGNED_IN whenever the tab regains focus (e.g. coming
+// back from a link opened in a new tab). Only treat the first one as a
+// login, so returning to the tab doesn't throw you back to the Home page.
+let appShown = false;
 supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session){
+    if (appShown) return;
     showApp(session);
   } else if (event === 'SIGNED_OUT'){
+    appShown = false;
     showAuth();
   }
 });
@@ -2391,7 +2398,7 @@ const TESTS = [
     id: 'PSVT',
     name: 'Purdue Spatial Visualization Test: Rotations',
     shortName: 'PSVT:R',
-    description: 'A measure of mental rotation with 3D solids, widely used in engineering education. Participants see how an example object turns, then pick the answer showing a second object turned the same way. This version has 15 items, each with five answer choices and one correct.',
+    description: 'A measure of mental rotation with 3D solids, widely used in engineering education. Participants see how an example object turns, then pick the answer showing a second object turned the same way. This is the 15-item set selected by Munns & Hegarty (2026). Each item has five answer choices with one correct.',
     citation: 'Guay (1976)',
     scholarQuery: 'Guay 1976 Purdue spatial visualization test rotations',
     iconSpeed: 'speed-2',
@@ -2402,7 +2409,7 @@ const TESTS = [
     id: 'Flags',
     name: 'Flags Test',
     shortName: 'Flags (Thurstone)',
-    description: 'A measure of 2D mental rotation speed. Participants judge whether each flag is the target flag turned in the plane or its mirror image. This version has 10 items, each with six flags to judge.',
+    description: 'A measure of 2D mental rotation speed. Participants judge whether each flag is the target flag turned in the plane or its mirror image. This is the 10-item set selected by Munns & Hegarty (2026). Each item has six flags to judge.',
     citation: 'Thurstone & Jeffrey Flags (1956)',
     citationOnly: true,
     scholarQuery: 'Thurstone Jeffrey 1956 Flags a test of space thinking',
