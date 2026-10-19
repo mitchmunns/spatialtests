@@ -208,6 +208,12 @@
     font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:17px;
     margin:12px 0 -6px; scroll-margin-top:16px;
   }
+  .catalog-back-top{grid-column:1 / -1; display:flex; justify-content:flex-end; margin:-8px 0 4px;}
+  .catalog-back-top button{
+    background:none; border:none; cursor:pointer; padding:4px 2px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-faint);
+  }
+  .catalog-back-top button:hover{color:var(--compass-blue);}
   .catalog-group-head::after{content:''; flex:1; height:1px; background:var(--line-strong);}
   .test-card{
     background:var(--card);
@@ -3308,6 +3314,7 @@ function renderCatalog(){
     ${groups.map(g => `
       <h2 class="catalog-group-head" id="catalog-group-${g.key}">${g.title}</h2>
       ${g.tests.map(card).join('')}
+      <div class="catalog-back-top"><button type="button" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">↑ Back to top</button></div>
     `).join('')}
   `;
 }
