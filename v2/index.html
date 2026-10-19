@@ -2401,6 +2401,8 @@ const TESTS = [
     description: 'A measure of mental rotation with 3D solids, widely used in engineering education. Participants see how an example object turns, then pick the answer showing a second object turned the same way. This is the 15-item set selected by Munns & Hegarty (2026). Each item has five answer choices with one correct.',
     citation: 'Guay (1976)',
     scholarQuery: 'Guay 1976 Purdue spatial visualization test rotations',
+    citation2: 'Yoon (2011)',
+    scholarQuery2: 'Yoon 2011 Psychometric properties of the revised Purdue spatial visualization tests visualization of rotations',
     iconSpeed: 'speed-2',
     stats: { items: TEST_ITEMS.PSVT.length, timeLabel: '' },
     fields: standardFields('PSVT', 15)
@@ -2666,7 +2668,7 @@ function renderCatalog(){
       </div>
       <h3>${escapeHtml(t.name)}</h3>
       <p class="subname">${t.citation
-        ? `${t.citationOnly ? '' : escapeHtml(t.shortName) + ' · '}<a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(t.scholarQuery)}" target="_blank" rel="noopener">${escapeHtml(t.citation)}</a>`
+        ? `${t.citationOnly ? '' : escapeHtml(t.shortName) + ' · '}<a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(t.scholarQuery)}" target="_blank" rel="noopener">${escapeHtml(t.citation)}</a>${t.citation2 ? `; <a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(t.scholarQuery2)}" target="_blank" rel="noopener">${escapeHtml(t.citation2)}</a>` : ''}`
         : escapeHtml(t.shortName)}${t.privateToMe ? ' <span class="private-badge">Only you</span>' : ''}</p>
       <p class="desc">${escapeHtml(t.description)}</p>
       <div class="stat-row">
