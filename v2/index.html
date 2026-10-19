@@ -51,7 +51,7 @@
   .shell{
     max-width:880px;
     margin:0 auto;
-    padding:48px 24px 96px;
+    padding:32px 24px 64px;
   }
 
   .compass-watermark{
@@ -129,14 +129,16 @@
   }
 
   /* ---------- Home / overview ---------- */
-  #view-home p.view-sub, #view-home .home-steps, #view-home .dash-tile-row{max-width:none;}
+  #view-home p.view-sub, #view-home .home-steps{max-width:none;}
   .home-panel{
     background:var(--card);
     border:1px solid var(--line);
     border-radius:8px;
     box-shadow:0 2px 10px rgba(20,40,63,0.06);
-    padding:32px 36px 36px;
+    padding:24px 30px 26px;
   }
+  #view-home p.view-sub{margin-bottom:18px;}
+  #view-home .home-steps{gap:10px; margin:0;}
   @media (max-width:640px){ .home-panel{padding:22px 18px 24px;} }
   .home-steps{
     display:grid;
@@ -1324,22 +1326,27 @@
   .quality-square.incomplete{background:var(--line-strong);}
 
   /* ---------- Home dashboard ---------- */
-  .dash-profile-row{display:flex; align-items:center; gap:12px; margin:32px 0 12px;}
+  .dash-strip{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--card); border:1px solid var(--line); border-radius:6px;
+    padding:6px 12px; min-height:38px;
+  }
+  .dash-strip:empty{display:none;}
   .dash-avatar{
-    width:36px; height:36px; border-radius:50%;
+    width:24px; height:24px; border-radius:50%;
     background:var(--compass-purple); color:#fff;
     display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:13px; flex-shrink:0;
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:10.5px; flex-shrink:0;
   }
-  .dash-profile-name{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px;}
-  .dash-profile-inst{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace;}
-  .dash-tile-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:56ch;}
-  .dash-tile{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:12px 14px;}
-  .dash-tile .dash-tnum{font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:22px; line-height:1;}
-  .dash-tile .dash-tlabel{font-size:11px; color:var(--ink-soft); margin-top:5px; line-height:1.35;}
-  .dash-tile.blue .dash-tnum{color:var(--compass-blue);}
-  .dash-tile.gold .dash-tnum{color:var(--compass-gold);}
-  .dash-tile.green .dash-tnum{color:var(--compass-green);}
+  .dash-who{display:flex; align-items:baseline; gap:8px; min-width:0;}
+  .dash-profile-name{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:13.5px; white-space:nowrap;}
+  .dash-profile-inst{font-size:11.5px; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .dash-stats{display:flex; gap:18px; margin-left:auto; flex-wrap:wrap;}
+  .dash-stat{font-size:12px; color:var(--ink-soft); white-space:nowrap;}
+  .dash-stat b{font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:14px; margin-right:3px;}
+  .dash-stat.blue b{color:var(--compass-blue);}
+  .dash-stat.gold b{color:var(--compass-gold);}
+  .dash-stat.green b{color:var(--compass-green);}
 
   .project-data-actions{
     display:flex;
@@ -1677,13 +1684,14 @@
       <button onclick="openProfile()">Profile</button>
       <button class="quiet" onclick="signOut()">Log out</button>
     </div>
+    <div id="home-dashboard" class="dash-strip"></div>
   </header>
 
   <!-- HOME / OVERVIEW VIEW -->
   <div id="view-home">
    <div class="home-panel">
-    <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository" style="height:88px; width:auto; margin-bottom:20px;">
-    <h1 class="view-title" style="font-size:36px; line-height:1.2; text-wrap:balance;">Welcome to the Online Spatial Tests and Assessments Repository (OSTAR)</h1>
+    <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository" style="height:56px; width:auto; margin-bottom:12px;">
+    <h1 class="view-title" style="font-size:24px; line-height:1.25; text-wrap:balance; margin-bottom:8px;">Welcome to the Online Spatial Tests and Assessments Repository (OSTAR)</h1>
     <p class="view-sub">This platform allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><strong>Projects</strong><p>View all of your current test batteries, how many participants have completed them, and download your data.</p></div></div>
@@ -1693,7 +1701,6 @@
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><strong>Profile</strong><p>View and edit your profile information.</p></div></div>
     </div>
 
-    <div id="home-dashboard"></div>
    </div>
   </div>
 
@@ -3328,17 +3335,15 @@ async function renderHomeDashboard(){
   const activeParticipants = running.reduce((sum, r) => sum + (r.participantCount || 0), 0);
 
   wrap.innerHTML = `
-    <div class="dash-profile-row">
-      <div class="dash-avatar">${escapeHtml(initials)}</div>
-      <div>
-        <div class="dash-profile-name">${escapeHtml(displayName)}</div>
-        ${profile.institution ? `<div class="dash-profile-inst">${escapeHtml(profile.institution)}</div>` : ''}
-      </div>
+    <div class="dash-avatar">${escapeHtml(initials)}</div>
+    <div class="dash-who">
+      <span class="dash-profile-name">${escapeHtml(displayName)}</span>
+      ${profile.institution ? `<span class="dash-profile-inst">${escapeHtml(profile.institution)}</span>` : ''}
     </div>
-    <div class="dash-tile-row">
-      <div class="dash-tile gold"><div class="dash-tnum">${running.length}</div><div class="dash-tlabel">studies running</div></div>
-      <div class="dash-tile blue"><div class="dash-tnum">${piloting.length}</div><div class="dash-tlabel">studies piloting</div></div>
-      <div class="dash-tile green"><div class="dash-tnum">${activeParticipants}</div><div class="dash-tlabel">participants in running studies</div></div>
+    <div class="dash-stats">
+      <span class="dash-stat gold"><b>${running.length}</b> studies running</span>
+      <span class="dash-stat blue"><b>${piloting.length}</b> piloting</span>
+      <span class="dash-stat green"><b>${activeParticipants}</b> participants in running studies</span>
     </div>
   `;
 }
