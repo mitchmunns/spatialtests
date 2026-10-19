@@ -187,6 +187,26 @@
     grid-template-columns:repeat(auto-fit, minmax(240px, 1fr));
     gap:20px;
   }
+  .catalog-toc{
+    grid-column:1 / -1;
+    display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px;
+  }
+  .catalog-toc-label{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-right:4px;
+  }
+  .catalog-toc button{
+    background:var(--card); border:1px solid var(--line); border-radius:999px;
+    padding:4px 12px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;
+  }
+  .catalog-toc button:hover{border-color:var(--compass-blue); color:var(--compass-blue);}
+  .catalog-group-head{
+    grid-column:1 / -1;
+    display:flex; align-items:center; gap:12px;
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:17px;
+    margin:12px 0 -6px; scroll-margin-top:16px;
+  }
+  .catalog-group-head::after{content:''; flex:1; height:1px; background:var(--line-strong);}
   .test-card{
     background:var(--card);
     border:1px solid var(--line);
@@ -3107,7 +3127,7 @@ const PSYCHOMETRIC_SOURCES = {
   ],
   folding: [
     { cite: 'Munns & Hegarty (2026, in prep)', note: 'Item response theory analysis of three paper-folding measures (PFT, DAT and SD); the best items form a hybrid test checked on a new sample.' },
-    { cite: 'Burte, Gardony, Hutton & Taylor (2019)', note: 'Problem features and solution strategies in the Paper Folding Test.', url: 'https://doi.org/10.1016/j.paid.2018.08.009' },
+    { cite: 'Burte, Gardony, Hutton & Taylor (2019)', tests: ['PFT'], note: 'Problem features and solution strategies in the Paper Folding Test.', url: 'https://doi.org/10.1016/j.paid.2018.08.009' },
   ],
 };
 const PSYCHOMETRICS_BY_TEST = {
@@ -3118,7 +3138,9 @@ const PSYCHOMETRICS_BY_TEST = {
 
 function openPsychometrics(testId){
   const test = TESTS.find(t => t.id === testId);
-  const sources = PSYCHOMETRIC_SOURCES[PSYCHOMETRICS_BY_TEST[testId]] || [];
+  // A source limited to certain tests (tests: [...]) shows only for those.
+  const sources = (PSYCHOMETRIC_SOURCES[PSYCHOMETRICS_BY_TEST[testId]] || [])
+    .filter(src => !src.tests || src.tests.includes(testId));
   document.getElementById('psych-title').textContent = test ? test.name : '';
   document.getElementById('psych-sources').innerHTML = sources.map(src => `
     <div class="psych-source">
@@ -3167,13 +3189,20 @@ function renderLiterature(){
   `;
 }
 
+// Catalog sections, in the order shown. Tests keep their TESTS order within one.
+const CATALOG_GROUPS = [
+  { key: 'rotation',   title: 'Mental rotation',   ids: ['VK', 'PSVT', 'Flags'] },
+  { key: 'folding',    title: 'Mental folding',    ids: ['DAT', 'SD', 'PFT'] },
+  { key: 'sectioning', title: 'Mental sectioning', ids: ['SBST', 'MC'] },
+];
+
 function renderCatalog(){
   const grid = document.getElementById('catalog-grid');
   // Attention checks aren't full tests to configure — they're offered as a
   // quick add-on toggle from the battery view instead (see renderAttentionChecks()).
   // Custom-test names and descriptions are typed by researchers and now show
   // to other labs once in the catalog, so they're escaped here.
-  grid.innerHTML = TESTS.filter(t => !t.attentionCheck && !t.hiddenFromCatalog).map(t => `
+  const card = t => `
     <div class="test-card" data-test-id="${t.id}">
       <div class="cube-stage">
         ${ICON_SHAPES[t.id] ? shapeIcon(t.id, 96, t.iconSpeed) : `<div class="icon-rotor ${t.iconSpeed}">${ICONS[t.id] ? ICONS[t.id]() : ''}</div>`}
@@ -3190,7 +3219,32 @@ function renderCatalog(){
       <button class="btn" onclick="openCustomize('${t.id}')">Configure &amp; add</button>
       ${PSYCHOMETRICS_BY_TEST[t.id] ? `<button class="btn secondary psych-btn" onclick="openPsychometrics('${t.id}')">Psychometrics</button>` : ''}
     </div>
-  `).join('');
+  `;
+
+  // Grouped by what the tests measure, with a row of jump links on top.
+  // Anything not in a group (demographics, custom tests) goes under Other.
+  const shown = TESTS.filter(t => !t.attentionCheck && !t.hiddenFromCatalog);
+  const grouped = new Set(CATALOG_GROUPS.flatMap(g => g.ids));
+  const groups = CATALOG_GROUPS
+    .map(g => ({ ...g, tests: shown.filter(t => g.ids.includes(t.id)) }))
+    .concat([{ key: 'other', title: 'Other', tests: shown.filter(t => !grouped.has(t.id)) }])
+    .filter(g => g.tests.length);
+
+  grid.innerHTML = `
+    <nav class="catalog-toc" aria-label="Catalog sections">
+      <span class="catalog-toc-label">Jump to</span>
+      ${groups.map(g => `<button type="button" onclick="scrollToCatalogGroup('${g.key}')">${g.title}</button>`).join('')}
+    </nav>
+    ${groups.map(g => `
+      <h2 class="catalog-group-head" id="catalog-group-${g.key}">${g.title}</h2>
+      ${g.tests.map(card).join('')}
+    `).join('')}
+  `;
+}
+
+function scrollToCatalogGroup(key){
+  const el = document.getElementById('catalog-group-' + key);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function updateBatteryBadge(){
