@@ -3066,6 +3066,31 @@ function drawShapeIcon(svg, angle){
   if (still) setInterval(() => frame(performance.now() + 100), 1000);
 })();
 
+// Turns every "Author & Author (year)" in a piece of text into a link:
+// to the paper itself where we have its address, otherwise a Google
+// Scholar search. Unpublished ("in prep") work searches the authors.
+const CITATION_URLS = {
+  'Munns & Hegarty (2026)': 'https://www.sciencedirect.com/science/article/pii/S0160289626000395',
+  'Munns, He, Topete & Hegarty (2023)': 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10672093/',
+};
+const CITATION_RE = /([A-Z][A-Za-z'’-]+(?:(?:, | &amp; | & | and )[A-Z][A-Za-z'’-]+)*(?: et al\.)?) \(((?:19|20)\d\d(?:, in prep)?|in prep)\)/g;
+function scholarUrl(query){
+  return 'https://scholar.google.com/scholar?q=' + encodeURIComponent(query);
+}
+function citationUrl(cite){
+  if (CITATION_URLS[cite]) return CITATION_URLS[cite];
+  const m = cite.match(/^(.*?) \(((?:19|20)\d\d)?[^)]*\)/);
+  const authors = (m ? m[1] : cite).replace(/,| &| and| et al\./g, ' ').replace(/\s+/g, ' ').trim();
+  if (/in prep/.test(cite)) return scholarUrl(authors + ' spatial');
+  return scholarUrl(authors + (m && m[2] ? ' ' + m[2] : ''));
+}
+function linkCitations(text){
+  return escapeHtml(text).replace(CITATION_RE, (whole) => {
+    const plain = whole.replace(/&amp;/g, '&');
+    return `<a class="cite-link" href="${citationUrl(plain)}" target="_blank" rel="noopener">${whole}</a>`;
+  });
+}
+
 // Sources reporting psychometrics, grouped by the skill each test measures.
 // A source without a url is shown as a plain citation (not yet published).
 const PSYCHOMETRIC_SOURCES = {
@@ -3093,9 +3118,7 @@ function openPsychometrics(testId){
   document.getElementById('psych-title').textContent = test ? test.name : '';
   document.getElementById('psych-sources').innerHTML = sources.map(src => `
     <div class="psych-source">
-      <div class="psych-cite">${src.url
-        ? `<a class="cite-link" href="${src.url}" target="_blank" rel="noopener">${escapeHtml(src.cite)}</a>`
-        : escapeHtml(src.cite)}</div>
+      <div class="psych-cite"><a class="cite-link" href="${src.url || citationUrl(src.cite)}" target="_blank" rel="noopener">${escapeHtml(src.cite)}</a></div>
       <div class="psych-src-note">${escapeHtml(src.note)}</div>
     </div>
   `).join('');
@@ -3126,9 +3149,7 @@ function renderLiterature(){
     <h3 class="lit-group">${PSYCHOMETRIC_GROUP_LABELS[group] || group}</h3>
     ${sources.map(src => `
       <div class="lit-row">
-        <div class="lit-test">${src.url
-          ? `<a class="cite-link" href="${src.url}" target="_blank" rel="noopener">${escapeHtml(src.cite)}</a>`
-          : escapeHtml(src.cite)}</div>
+        <div class="lit-test"><a class="cite-link" href="${src.url || citationUrl(src.cite)}" target="_blank" rel="noopener">${escapeHtml(src.cite)}</a></div>
         <div class="lit-cites">${escapeHtml(src.note)}</div>
       </div>
     `).join('')}
@@ -3157,7 +3178,7 @@ function renderCatalog(){
       <p class="subname">${t.citation
         ? `${t.citationOnly ? '' : escapeHtml(t.shortName) + ' · '}<a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(t.scholarQuery)}" target="_blank" rel="noopener">${escapeHtml(t.citation)}</a>${t.citation2 ? `; <a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(t.scholarQuery2)}" target="_blank" rel="noopener">${escapeHtml(t.citation2)}</a>` : ''}`
         : escapeHtml(t.shortName)}${t.privateToMe ? ' <span class="private-badge">Only you</span>' : ''}</p>
-      <p class="desc">${escapeHtml(t.description)}</p>
+      <p class="desc">${linkCitations(t.description)}</p>
       <div class="stat-row">
         <span><strong>${t.stats.items}</strong> items</span>
         ${t.stats.timeLabel ? `<span><strong>${t.stats.timeLabel}</strong></span>` : ''}
@@ -4207,7 +4228,7 @@ async function loadAdminCustomTests(researcherById){
         <div class="admin-test-info">
           <div class="admin-test-name">${escapeHtml(t.name)} ${t.published ? '<span class="pill-live">In catalog</span>' : '<span class="private-badge">Private</span>'}</div>
           <div class="admin-test-meta">${escapeHtml(who)} · ${(t.items || []).length} items · ${dateFmt.format(new Date(t.created_at))}</div>
-          ${t.description ? `<div class="admin-test-desc">${escapeHtml(t.description)}</div>` : ''}
+          ${t.description ? `<div class="admin-test-desc">${linkCitations(t.description)}</div>` : ''}
         </div>
         <button class="btn ${t.published ? 'secondary' : 'accent'}" style="width:auto;" onclick="setCustomTestPublished('${t.id}', ${!t.published})">${t.published ? 'Remove from catalog' : 'Add to catalog'}</button>
       </div>
