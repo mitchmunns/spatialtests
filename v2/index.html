@@ -252,6 +252,30 @@
   }
   .cite-link{color:var(--compass-blue); text-decoration:none; border-bottom:1px solid currentColor;}
   .cite-link:hover{color:var(--ink);}
+  .psych-btn{margin-top:8px;}
+  .psych-panel{
+    position:fixed;
+    top:0; right:0; bottom:0;
+    width:min(380px, 92vw);
+    overflow-y:auto;
+    background:var(--card);
+    border-left:1px solid var(--line);
+    box-shadow:-8px 0 28px rgba(10,20,35,0.12);
+    padding:32px 26px;
+    z-index:40;
+  }
+  .psych-close{
+    position:absolute; top:14px; right:16px;
+    background:none; border:none;
+    font-size:22px; line-height:1;
+    color:var(--ink-faint); cursor:pointer;
+  }
+  .psych-close:hover{color:var(--ink);}
+  .psych-title{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:20px; margin:0 0 10px; text-wrap:balance;}
+  .psych-note{font-size:13px; color:var(--ink-soft); line-height:1.55; margin:0 0 20px;}
+  .psych-source{padding:12px 0; border-top:1px solid var(--line);}
+  .psych-cite{font-size:13.5px; font-weight:500; margin-bottom:3px;}
+  .psych-src-note{font-size:12.5px; color:var(--ink-soft); line-height:1.5;}
   .private-badge{
     display:inline-block;
     margin-left:6px;
@@ -1280,7 +1304,16 @@
   .quality-square.incomplete{background:var(--line-strong);}
 
   /* ---------- Home dashboard ---------- */
-  .dash-tile-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:56ch; margin-top:32px;}
+  .dash-profile-row{display:flex; align-items:center; gap:12px; margin:32px 0 12px;}
+  .dash-avatar{
+    width:36px; height:36px; border-radius:50%;
+    background:var(--compass-purple); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:13px; flex-shrink:0;
+  }
+  .dash-profile-name{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px;}
+  .dash-profile-inst{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace;}
+  .dash-tile-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:56ch;}
   .dash-tile{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:12px 14px;}
   .dash-tile .dash-tnum{font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:22px; line-height:1;}
   .dash-tile .dash-tlabel{font-size:11px; color:var(--ink-soft); margin-top:5px; line-height:1.35;}
@@ -1875,6 +1908,15 @@
   </div>
 </div>
 
+<!-- Psychometrics side panel — opened from a catalog card. -->
+<aside class="psych-panel hidden" id="psych-panel" aria-labelledby="psych-title">
+  <button class="psych-close" onclick="closePsychometrics()" aria-label="Close">&times;</button>
+  <p class="eyebrow">Psychometrics</p>
+  <h2 class="psych-title" id="psych-title"></h2>
+  <p class="psych-note">A full psychometric overview is coming. For now, these sources report reliability, item difficulty, or validity for this kind of test.</p>
+  <div id="psych-sources"></div>
+</aside>
+
 <!-- Floating preview for item-picker thumbnails, positioned near the cursor on hover -->
 <div class="item-preview" id="item-preview">
   <img id="item-preview-img" src="" alt="">
@@ -2386,7 +2428,7 @@ const TESTS = [
     id: 'VK',
     name: 'Mental Rotations Test',
     shortName: 'Vandenberg & Kuse MRT',
-    description: 'A widely used measure of mental rotation. Created by Vandenberg and Kuse, based on the Shepard and Metzler (1971) stimuli. This is the 10-item set selected by Munns & Hegarty (2026). Each item has four answer choices with two correct.',
+    description: 'A widely used measure of mental rotation. Created by Vandenberg and Kuse, based on the Shepard and Metzler (1971) stimuli. This is the 10-item set selected by Munns & Hegarty (2026). Each item has four answer choices with two correct. The original version was administered with a time limit of 3 minutes per 10-item part. We recommend 1 minute per item to reduce time pressure.',
     citation: 'Vandenberg & Kuse MRT (1978)',
     citationOnly: true,
     scholarQuery: 'Vandenberg Kuse 1978 Mental rotations, a group test of three-dimensional spatial visualization',
@@ -2398,7 +2440,7 @@ const TESTS = [
     id: 'PSVT',
     name: 'Purdue Spatial Visualization Test: Rotations',
     shortName: 'PSVT:R',
-    description: 'A measure of mental rotation with 3D solids, widely used in engineering education. Participants see how an example object turns, then pick the answer showing a second object turned the same way. This is the 15-item set selected by Munns & Hegarty (2026). Each item has five answer choices with one correct.',
+    description: 'A measure of mental rotation with 3D solids, widely used in engineering education. Participants see how an example object turns, then pick the answer showing a second object turned the same way. This is the 15-item set selected by Munns & Hegarty (2026). Each item has five answer choices with one correct. The original version was administered with a time limit of 20 minutes for 30 items. We recommend 1 minute per item to reduce time pressure.',
     citation: 'Guay (1976)',
     scholarQuery: 'Guay 1976 Purdue spatial visualization test rotations',
     citation2: 'Yoon (2011)',
@@ -2411,7 +2453,7 @@ const TESTS = [
     id: 'Flags',
     name: 'Flags Test',
     shortName: 'Flags (Thurstone)',
-    description: 'A measure of mental rotation with 2D stimuli. Participants judge whether each flag is the target flag turned in the plane or its mirror image. This is the 10-item set selected by Munns & Hegarty (2026). Each item has six flags to judge.',
+    description: 'A measure of mental rotation with 2D stimuli. Participants judge whether each flag is the target flag turned in the plane or its mirror image. This is the 10-item set selected by Munns & Hegarty (2026). Each item has six flags to judge. The original version was administered with a time limit of 5 minutes for 21 items. We recommend 1 minute per item to reduce time pressure.',
     citation: 'Thurstone & Jeffrey Flags (1956)',
     citationOnly: true,
     scholarQuery: 'Thurstone Jeffrey 1956 Flags a test of space thinking',
@@ -2423,7 +2465,7 @@ const TESTS = [
     id: 'DAT',
     name: 'Differential Aptitude Test: Space Relations',
     shortName: 'DAT:SR',
-    description: 'A measure of spatial visualization. Participants pick which 3D object a flat pattern would fold into. From the Differential Aptitude Tests. This is the 12-item set selected by Munns & Hegarty (2026, in prep). Each item has four answer choices with one correct.',
+    description: 'A measure of spatial visualization. Participants pick which 3D object a flat pattern would fold into. From the Differential Aptitude Tests. This is the 12-item set selected by Munns & Hegarty (2026, in prep). Each item has four answer choices with one correct. The original version was administered with a time limit of 25 minutes for 50 items. We recommend 1 minute per item to reduce time pressure.',
     citation: 'Bennett, Seashore & Wesman (1947)',
     scholarQuery: 'Bennett Seashore Wesman Differential Aptitude Tests space relations',
     iconSpeed: '',
@@ -2434,7 +2476,7 @@ const TESTS = [
     id: 'SBST',
     name: 'Santa Barbara Solids Test',
     shortName: 'SBST',
-    description: 'A measure of imagining cross-sections. Participants pick the 2D shape made where a plane cuts through a 3D solid. This version has 15 items, each with four answer choices and one correct.',
+    description: 'A measure of imagining cross-sections. Participants pick the 2D shape made where a plane cuts through a 3D solid. This version has 15 items, each with four answer choices and one correct. We recommend 1 minute per item to reduce time pressure.',
     citation: 'Cohen & Hegarty (2012)',
     scholarQuery: 'Cohen Hegarty 2012 Inferring cross sections of 3D objects a new spatial thinking test',
     iconSpeed: 'speed-2',
@@ -2445,7 +2487,7 @@ const TESTS = [
     id: 'SD',
     name: 'Surface Development Test',
     shortName: 'SD',
-    description: 'A measure of spatial visualization. Participants imagine a flat pattern folded into a 3D object and type which edges of the pattern match marked edges of the object. From the ETS Kit of Factor-Referenced Cognitive Tests. This is the 10-item set selected by Munns & Hegarty (2026, in prep).',
+    description: 'A measure of spatial visualization. Participants imagine a flat pattern folded into a 3D object and type which edges of the pattern match marked edges of the object. From the ETS Kit of Factor-Referenced Cognitive Tests. This is the 10-item set selected by Munns & Hegarty (2026, in prep). The original version was administered with a time limit of 6 minutes per part. We recommend 1 minute per item to reduce time pressure.',
     citation: 'Ekstrom, French, Harman & Dermen (1976)',
     scholarQuery: 'Ekstrom French Harman Dermen 1976 Manual for kit of factor-referenced cognitive tests',
     iconSpeed: '',
@@ -2456,7 +2498,7 @@ const TESTS = [
     id: 'PFT',
     name: 'Paper Folding Test',
     shortName: 'PFT',
-    description: 'A measure of spatial visualization. Participants imagine a sheet of paper folded and punched, then pick where the holes appear once it is unfolded. From the ETS Kit of Factor-Referenced Cognitive Tests. This is the 10-item set selected by Munns & Hegarty (2026, in prep). Each item has five answer choices with one correct.',
+    description: 'A measure of spatial visualization. Participants imagine a sheet of paper folded and punched, then pick where the holes appear once it is unfolded. From the ETS Kit of Factor-Referenced Cognitive Tests. This is the 10-item set selected by Munns & Hegarty (2026, in prep). Each item has five answer choices with one correct. The original version was administered with a time limit of 3 minutes per 10-item part. We recommend 1 minute per item to reduce time pressure.',
     citation: 'Ekstrom, French, Harman & Dermen (1976)',
     scholarQuery: 'Ekstrom French Harman Dermen 1976 Manual for kit of factor-referenced cognitive tests',
     iconSpeed: 'speed-2',
@@ -2467,7 +2509,7 @@ const TESTS = [
     id: 'MC',
     name: 'Mental Cutting Test',
     shortName: 'MC',
-    description: 'A measure of imagining cross-sections. Participants pick the shape made where a cutting plane slices a 3D object. Originally part of the College Entrance Examination Board\'s Special Aptitude Test in Spatial Relations. This version has 15 items, each with five answer choices and one correct.',
+    description: 'A measure of imagining cross-sections. Participants pick the shape made where a cutting plane slices a 3D object. Originally part of the College Entrance Examination Board\'s Special Aptitude Test in Spatial Relations. This version has 15 items, each with five answer choices and one correct. The original version was administered with a time limit of 20 minutes for 25 items. We recommend 1 minute per item to reduce time pressure.',
     citation: 'CEEB (1939)',
     scholarQuery: 'College Entrance Examination Board 1939 Special Aptitude Test in Spatial Relations mental cutting',
     iconSpeed: 'speed-3',
@@ -2655,6 +2697,46 @@ const ICONS = {
   `,
 };
 
+// Sources reporting psychometrics, grouped by the skill each test measures.
+// A source without a url is shown as a plain citation (not yet published).
+const PSYCHOMETRIC_SOURCES = {
+  rotation: [
+    { cite: 'Munns & Hegarty (2026)', note: 'Item selection and psychometrics for the rotation tests used here.' },
+    { cite: 'Rajeb, Krist, Shi, Oyeniran, Wind & Lakin (2024)', note: 'Which item features make mental rotation items harder.', url: 'https://doi.org/10.3390/jintelligence13010002' },
+  ],
+  sectioning: [
+    { cite: 'Munns, He, Topete & Hegarty (2023)', note: 'Item response theory analysis of cross-section tests; refined short forms.', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10672093/' },
+  ],
+  folding: [
+    { cite: 'Munns & Hegarty (2026, in prep)', note: 'Item selection for the folding tests used here.' },
+    { cite: 'Burte, Gardony, Hutton & Taylor (2019)', note: 'Problem features and solution strategies in the Paper Folding Test.', url: 'https://doi.org/10.1016/j.paid.2018.08.009' },
+  ],
+};
+const PSYCHOMETRICS_BY_TEST = {
+  VK: 'rotation', PSVT: 'rotation', Flags: 'rotation',
+  SBST: 'sectioning', MC: 'sectioning',
+  PFT: 'folding', SD: 'folding', DAT: 'folding',
+};
+
+function openPsychometrics(testId){
+  const test = TESTS.find(t => t.id === testId);
+  const sources = PSYCHOMETRIC_SOURCES[PSYCHOMETRICS_BY_TEST[testId]] || [];
+  document.getElementById('psych-title').textContent = test ? test.name : '';
+  document.getElementById('psych-sources').innerHTML = sources.map(src => `
+    <div class="psych-source">
+      <div class="psych-cite">${src.url
+        ? `<a class="cite-link" href="${src.url}" target="_blank" rel="noopener">${escapeHtml(src.cite)}</a>`
+        : escapeHtml(src.cite)}</div>
+      <div class="psych-src-note">${escapeHtml(src.note)}</div>
+    </div>
+  `).join('');
+  document.getElementById('psych-panel').classList.remove('hidden');
+}
+
+function closePsychometrics(){
+  document.getElementById('psych-panel').classList.add('hidden');
+}
+
 function renderCatalog(){
   const grid = document.getElementById('catalog-grid');
   // Attention checks aren't full tests to configure — they're offered as a
@@ -2675,7 +2757,8 @@ function renderCatalog(){
         <span><strong>${t.stats.items}</strong> items</span>
         ${t.stats.timeLabel ? `<span><strong>${t.stats.timeLabel}</strong></span>` : ''}
       </div>
-      <button class="btn" onclick="openCustomize('${t.id}')">Configure</button>
+      <button class="btn" onclick="openCustomize('${t.id}')">Configure &amp; add</button>
+      ${PSYCHOMETRICS_BY_TEST[t.id] ? `<button class="btn secondary psych-btn" onclick="openPsychometrics('${t.id}')">Psychometrics</button>` : ''}
     </div>
   `).join('');
 }
@@ -3032,6 +3115,23 @@ function goToHome(){
 // and how many participants the running ones have.
 async function renderHomeDashboard(){
   const wrap = document.getElementById('home-dashboard');
+  const user = await requireUser();
+  if (!user) return;
+
+  let profile = { name: '', institution: '' };
+  if (DEV_MODE){
+    profile = devProfile;
+  } else {
+    const { data } = await supabaseClient
+      .from('researchers')
+      .select('name, institution')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (data) profile = { name: data.name || '', institution: data.institution || '' };
+  }
+  const displayName = profile.name || user.email;
+  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'U';
+
   let rows;
   try {
     rows = await fetchResearcherBatteries();
@@ -3046,6 +3146,13 @@ async function renderHomeDashboard(){
   const activeParticipants = running.reduce((sum, r) => sum + (r.participantCount || 0), 0);
 
   wrap.innerHTML = `
+    <div class="dash-profile-row">
+      <div class="dash-avatar">${escapeHtml(initials)}</div>
+      <div>
+        <div class="dash-profile-name">${escapeHtml(displayName)}</div>
+        ${profile.institution ? `<div class="dash-profile-inst">${escapeHtml(profile.institution)}</div>` : ''}
+      </div>
+    </div>
     <div class="dash-tile-row">
       <div class="dash-tile gold"><div class="dash-tnum">${running.length}</div><div class="dash-tlabel">studies running</div></div>
       <div class="dash-tile blue"><div class="dash-tnum">${piloting.length}</div><div class="dash-tlabel">studies piloting</div></div>
