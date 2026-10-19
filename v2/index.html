@@ -129,6 +129,7 @@
   }
 
   /* ---------- Home / overview ---------- */
+  #view-home p.view-sub, #view-home .home-steps, #view-home .dash-tile-row{max-width:none;}
   .home-steps{
     display:grid;
     gap:18px;
@@ -253,6 +254,14 @@
   .cite-link{color:var(--compass-blue); text-decoration:none; border-bottom:1px solid currentColor;}
   .cite-link:hover{color:var(--ink);}
   .psych-btn{margin-top:8px;}
+  .lit-heading{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:19px; margin:8px 0 12px;}
+  .lit-list{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:4px 20px; margin-bottom:32px;}
+  .lit-group{font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin:16px 0 4px;}
+  .lit-row{display:grid; grid-template-columns:minmax(180px, 1fr) 2fr; gap:16px; padding:11px 0; border-bottom:1px solid var(--line);}
+  .lit-row:last-child{border-bottom:none;}
+  .lit-test{font-size:13.5px; font-weight:500;}
+  .lit-cites{font-size:13px; color:var(--ink-soft); line-height:1.5;}
+  @media (max-width:640px){ .lit-row{grid-template-columns:1fr; gap:4px;} }
   .psych-panel{
     position:fixed;
     top:0; right:0; bottom:0;
@@ -1450,15 +1459,30 @@
     color:var(--ink-soft);
   }
   .user-bar button{
-    background:none;
-    border:1px solid var(--line-strong);
-    border-radius:3px;
-    font-size:12px;
-    padding:6px 11px;
-    color:var(--ink-soft);
+    background:linear-gradient(180deg, #3277C9 0%, var(--compass-blue-dark) 100%);
+    border:1px solid #173E70;
+    border-radius:5px;
+    font-size:12.5px;
+    font-weight:500;
+    padding:7px 13px;
+    color:#fff;
     white-space:nowrap;
+    cursor:pointer;
+    box-shadow:0 2px 0 #13345F, 0 4px 8px rgba(20,40,63,0.18), inset 0 1px 0 rgba(255,255,255,0.28);
+    transition:transform .08s ease, box-shadow .08s ease, filter .12s ease;
   }
-  .user-bar button:hover{color:var(--ink); border-color:var(--ink-soft);}
+  .user-bar button:hover{filter:brightness(1.1);}
+  .user-bar button:active{
+    transform:translateY(2px);
+    box-shadow:0 0 0 #13345F, inset 0 2px 3px rgba(0,0,0,0.25);
+  }
+  .user-bar button:focus-visible{outline:2px solid var(--compass-gold); outline-offset:2px;}
+  .user-bar button.quiet{
+    background:linear-gradient(180deg, #FFFFFF 0%, #E3EAF1 100%);
+    border-color:var(--line-strong);
+    color:var(--ink-soft);
+    box-shadow:0 2px 0 var(--line-strong), inset 0 1px 0 #fff;
+  }
   .battery-btn{
     position:relative;
     display:flex;
@@ -1636,21 +1660,23 @@
       <button id="nav-admin" class="hidden" onclick="goToAdmin()">All labs</button>
       <button class="battery-btn" onclick="goToBattery()">Battery <span class="battery-count" id="battery-count">0</span></button>
       <button onclick="goToCatalog()">Catalog</button>
+      <button onclick="goToLiterature()">Literature</button>
       <span class="user-email" id="user-email"></span>
       <button onclick="openProfile()">Profile</button>
-      <button onclick="signOut()">Log out</button>
+      <button class="quiet" onclick="signOut()">Log out</button>
     </div>
   </header>
 
   <!-- HOME / OVERVIEW VIEW -->
   <div id="view-home">
     <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository" style="height:88px; width:auto; margin-bottom:20px;">
-    <h1 class="view-title" style="font-size:36px; line-height:1.2; text-wrap:balance; max-width:22ch;">Welcome to the Online Spatial Tests and Assessments Repository (OSTAR)</h1>
+    <h1 class="view-title" style="font-size:36px; line-height:1.2; text-wrap:balance;">Welcome to the Online Spatial Tests and Assessments Repository (OSTAR)</h1>
     <p class="view-sub">This platform allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><strong>Projects</strong><p>View all of your current test batteries, how many participants have completed them, and download your data.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><strong>Battery</strong><p>Create a new testing battery. Choose from existing spatial tests or create/adapt your own.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-gold);">●</span><div><strong>Catalog</strong><p>Browse our catalog of spatial tests that have been adapted for online administration.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><strong>Literature</strong><p>The original source for each test, and papers reporting their psychometrics.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><strong>Profile</strong><p>View and edit your profile information.</p></div></div>
     </div>
 
@@ -1828,6 +1854,14 @@
       </div>
       <div class="summary-table" id="link-summary"></div>
     </div>
+  </div>
+
+  <!-- LITERATURE VIEW -->
+  <div id="view-literature" class="hidden">
+    <p class="eyebrow">Literature</p>
+    <h1 class="view-title">Literature</h1>
+    <p class="view-sub">The original source for each test in the catalog, and papers reporting psychometrics for these kinds of tests.</p>
+    <div id="literature-wrap"></div>
   </div>
 
   <!-- PROJECTS VIEW -->
@@ -2737,6 +2771,42 @@ function closePsychometrics(){
   document.getElementById('psych-panel').classList.add('hidden');
 }
 
+const PSYCHOMETRIC_GROUP_LABELS = { rotation: 'Mental rotation', sectioning: 'Cross-sections', folding: 'Folding' };
+
+function goToLiterature(){
+  renderLiterature();
+  showView('view-literature');
+}
+
+function renderLiterature(){
+  const link = (text, query) => `<a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(query)}" target="_blank" rel="noopener">${escapeHtml(text)}</a>`;
+  const original = TESTS.filter(t => t.citation).map(t => `
+    <div class="lit-row">
+      <div class="lit-test">${escapeHtml(t.name)}</div>
+      <div class="lit-cites">${link(t.citation, t.scholarQuery)}${t.citation2 ? `; ${link(t.citation2, t.scholarQuery2)}` : ''}</div>
+    </div>
+  `).join('');
+
+  const psych = Object.entries(PSYCHOMETRIC_SOURCES).map(([group, sources]) => `
+    <h3 class="lit-group">${PSYCHOMETRIC_GROUP_LABELS[group] || group}</h3>
+    ${sources.map(src => `
+      <div class="lit-row">
+        <div class="lit-test">${src.url
+          ? `<a class="cite-link" href="${src.url}" target="_blank" rel="noopener">${escapeHtml(src.cite)}</a>`
+          : escapeHtml(src.cite)}</div>
+        <div class="lit-cites">${escapeHtml(src.note)}</div>
+      </div>
+    `).join('')}
+  `).join('');
+
+  document.getElementById('literature-wrap').innerHTML = `
+    <h2 class="lit-heading">Original tests</h2>
+    <div class="lit-list">${original}</div>
+    <h2 class="lit-heading">Psychometrics</h2>
+    <div class="lit-list">${psych}</div>
+  `;
+}
+
 function renderCatalog(){
   const grid = document.getElementById('catalog-grid');
   // Attention checks aren't full tests to configure — they're offered as a
@@ -3100,7 +3170,7 @@ function hideItemPreview(){
 }
 
 function showView(id){
-  ['view-home', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
+  ['view-home', 'view-literature', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
   document.body.classList.toggle('workbench-open', id === 'view-catalog');
