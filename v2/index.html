@@ -250,6 +250,40 @@
     color:var(--ink-faint);
     margin:0 0 12px;
   }
+  .private-badge{
+    display:inline-block;
+    margin-left:6px;
+    padding:1px 6px;
+    border-radius:8px;
+    background:var(--accent-soft);
+    color:var(--accent-dark);
+    font-size:10px;
+  }
+  .pill-live{
+    display:inline-block;
+    margin-left:6px;
+    padding:1px 6px;
+    border-radius:8px;
+    background:rgba(60,163,90,0.15);
+    color:#2E7D46;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10px;
+  }
+  .admin-tests{display:flex; flex-direction:column; gap:10px;}
+  .admin-test-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:14px 16px;
+  }
+  .admin-test-info{min-width:0;}
+  .admin-test-name{font-size:14px; font-weight:500; margin-bottom:3px;}
+  .admin-test-meta{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--ink-faint);}
+  .admin-test-desc{font-size:12.5px; color:var(--ink-soft); margin-top:5px;}
   .test-card p.desc{
     font-size:13.5px;
     color:var(--ink-soft);
@@ -1704,7 +1738,7 @@
     <button class="back-link" onclick="goToCatalog()">&larr; back to catalog</button>
     <p class="eyebrow">Custom test</p>
     <h1 class="view-title">Create a custom test</h1>
-    <p class="view-sub">Upload a stimulus image, mark the answer boxes, then upload the rest of the item bank and tag the correct answer for each one. This test won't appear in the catalog yet — see note below.</p>
+    <p class="view-sub">Upload a stimulus image, mark the answer boxes, then upload the rest of the item bank and tag the correct answer for each one. Only you can see and use it until an administrator adds it to the shared catalog.</p>
 
     <div id="tc-layoutToolbar" style="display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap;">
       <select id="tc-testType">
@@ -1848,6 +1882,10 @@
       <button class="btn secondary" onclick="downloadCombinedCSV('clean')">Download combined clean CSV</button>
     </div>
     <div id="admin-list-wrap"></div>
+
+    <p class="eyebrow" style="margin-top:40px;">Custom tests</p>
+    <p class="view-sub" style="margin-bottom:18px;">Every researcher's custom tests. Private ones are only visible to their author; adding one to the catalog makes it available to every account.</p>
+    <div id="admin-tests-wrap"></div>
   </div>
 </div>
 
@@ -1996,6 +2034,17 @@ function showApp(session){
   document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
   goToHome();
   fetchAndMergeCustomTests();
+  refreshAdminStatus();
+}
+
+// The database's app_admins list (see custom_test_review_setup.sql) is the
+// real source of truth; ADMIN_EMAILS above only shows the nav instantly.
+async function refreshAdminStatus(){
+  if (DEV_MODE) return;
+  const { data, error } = await supabaseClient.rpc('is_admin');
+  if (error) return;
+  isAdmin = isAdmin || data === true;
+  document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
 }
 
 function showAuth(){
@@ -2301,10 +2350,38 @@ async function fetchAndMergeCustomTests(){
   const user = await requireUser();
   if (!user) return;
 
-  const { data, error } = await supabaseClient.from('custom_tests').select('*').eq('researcher_id', user.id);
+  // Your own tests (private until an admin adds them) plus every test an
+  // admin has added to the catalog.
+  let { data, error } = await supabaseClient
+    .from('custom_tests')
+    .select('*')
+    .or(`researcher_id.eq.${user.id},published.eq.true`);
+  if (error){
+    // `published` column not added yet (custom_test_review_setup.sql not run) — own tests only.
+    ({ data, error } = await supabaseClient.from('custom_tests').select('*').eq('researcher_id', user.id));
+  }
   if (error){ console.error('Failed to fetch custom tests:', error); return; }
+  const rows = data || [];
 
-  (data || []).forEach(row => {
+  // Tests your saved batteries still use but that are no longer in the
+  // catalog (an admin removed them) — loaded so those batteries keep
+  // working, but kept off the catalog grid.
+  const loaded = new Set(rows.map(r => r.id));
+  const { data: myBatteries } = await supabaseClient.from('batteries').select('items').eq('researcher_id', user.id);
+  const missing = [...new Set((myBatteries || []).flatMap(b => (b.items || [])
+    .map(i => i.testId)
+    .filter(id => typeof id === 'string' && id.startsWith('custom:'))
+    .map(id => id.slice('custom:'.length))
+  ))].filter(id => !loaded.has(id));
+  if (missing.length > 0){
+    const { data: extra } = await supabaseClient.from('custom_tests').select('*').in('id', missing);
+    (extra || []).forEach(r => { r._hiddenFromCatalog = true; rows.push(r); });
+  }
+
+  // Start fresh so a test an admin just removed from the catalog drops out.
+  for (let i = TESTS.length - 1; i >= 0; i--) if (TESTS[i].isCustom) TESTS.splice(i, 1);
+
+  rows.forEach(row => {
     const testId = 'custom:' + row.id;
     CUSTOM_TESTS_BY_ID[row.id] = row;
     TEST_ITEMS[testId] = row.items.map(it => it.standard_stim);
@@ -2319,6 +2396,8 @@ async function fetchAndMergeCustomTests(){
       stats: { items: row.items.length, timeLabel: '' },
       fields: standardFields(testId, Math.min(10, row.items.length)),
       isCustom: true,
+      privateToMe: row.researcher_id === user.id && !row.published,
+      hiddenFromCatalog: !!row._hiddenFromCatalog,
     };
     const idx = TESTS.findIndex(t => t.id === testId);
     if (idx > -1) TESTS[idx] = def; else TESTS.push(def);
@@ -2619,14 +2698,16 @@ function renderCatalog(){
   const grid = document.getElementById('catalog-grid');
   // Attention checks aren't full tests to configure — they're offered as a
   // quick add-on toggle from the battery view instead (see renderAttentionChecks()).
-  grid.innerHTML = TESTS.filter(t => !t.attentionCheck).map(t => `
+  // Custom-test names and descriptions are typed by researchers and now show
+  // to other labs once in the catalog, so they're escaped here.
+  grid.innerHTML = TESTS.filter(t => !t.attentionCheck && !t.hiddenFromCatalog).map(t => `
     <div class="test-card" data-test-id="${t.id}">
       <div class="cube-stage">
         <div class="icon-rotor ${t.iconSpeed}">${ICONS[t.id] ? ICONS[t.id]() : ''}</div>
       </div>
-      <h3>${t.name}</h3>
-      <p class="subname">${t.shortName}</p>
-      <p class="desc">${t.description}</p>
+      <h3>${escapeHtml(t.name)}</h3>
+      <p class="subname">${escapeHtml(t.shortName)}${t.privateToMe ? ' <span class="private-badge">Only you</span>' : ''}</p>
+      <p class="desc">${escapeHtml(t.description)}</p>
       <div class="stat-row">
         <span><strong>${t.stats.items}</strong> items</span>
         ${t.stats.timeLabel ? `<span><strong>${t.stats.timeLabel}</strong></span>` : ''}
@@ -3195,7 +3276,7 @@ function renderAttentionChecks(){
         return `
           <div class="attention-row">
             <div class="attention-label">
-              <strong>${test.name}</strong>
+              <strong>${escapeHtml(test.name)}</strong>
               <span>${test.description}</span>
             </div>
             <label class="toggle">
@@ -3265,7 +3346,7 @@ function renderBatteryList(){
           <button class="reorder-btn" onclick="moveBatteryItem(${i}, 1)" ${i === battery.length - 1 ? 'disabled' : ''}>▼</button>
         </div>
         <div>
-          <h4>${test.name}</h4>
+          <h4>${escapeHtml(test.name)}</h4>
           <div class="param-summary">${paramSummary(test, item.params)}</div>
         </div>
         <div class="battery-item-actions">
@@ -3410,7 +3491,7 @@ function showLinkView(status){
   const summary = document.getElementById('link-summary');
   summary.innerHTML = battery.map((item, i) => {
     const test = TESTS.find(t => t.id === item.testId);
-    return `<div><span>${i + 1}. ${test.shortName}</span><span>${paramSummary(test, item.params)}</span></div>`;
+    return `<div><span>${i + 1}. ${escapeHtml(test.shortName)}</span><span>${paramSummary(test, item.params)}</span></div>`;
   }).join('');
 
   const copyBtn = document.getElementById('copy-btn');
@@ -3702,6 +3783,55 @@ async function goToAdmin(){
 
   currentAdminRows = rows;
   renderAdminDatasets(rows);
+  loadAdminCustomTests(researcherById);
+}
+
+// Admin review list for custom tests — the only place a test gets added to
+// (or removed from) the shared catalog. The database only lets admins
+// change `published` (see custom_test_review_setup.sql).
+async function loadAdminCustomTests(researcherById){
+  const wrap = document.getElementById('admin-tests-wrap');
+  wrap.innerHTML = `<div class="dataset-empty">Loading…</div>`;
+
+  const { data, error } = await supabaseClient
+    .from('custom_tests')
+    .select('id, name, description, researcher_id, published, items, created_at')
+    .order('created_at', { ascending: false });
+  if (error){
+    wrap.innerHTML = `<div class="dataset-empty">Couldn't load custom tests: ${escapeHtml(error.message)}</div>`;
+    return;
+  }
+  if (!data || data.length === 0){
+    wrap.innerHTML = `<div class="dataset-empty">No custom tests yet.</div>`;
+    return;
+  }
+
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  wrap.innerHTML = `<div class="admin-tests">${data.map(t => {
+    const author = researcherById[t.researcher_id] || {};
+    const who = [author.name, author.institution].filter(Boolean).join(', ') || 'Unknown researcher';
+    return `
+      <div class="admin-test-row">
+        <div class="admin-test-info">
+          <div class="admin-test-name">${escapeHtml(t.name)} ${t.published ? '<span class="pill-live">In catalog</span>' : '<span class="private-badge">Private</span>'}</div>
+          <div class="admin-test-meta">${escapeHtml(who)} · ${(t.items || []).length} items · ${dateFmt.format(new Date(t.created_at))}</div>
+          ${t.description ? `<div class="admin-test-desc">${escapeHtml(t.description)}</div>` : ''}
+        </div>
+        <button class="btn ${t.published ? 'secondary' : 'accent'}" style="width:auto;" onclick="setCustomTestPublished('${t.id}', ${!t.published})">${t.published ? 'Remove from catalog' : 'Add to catalog'}</button>
+      </div>
+    `;
+  }).join('')}</div>`;
+}
+
+async function setCustomTestPublished(id, published){
+  if (!published && !await appConfirm("Remove this test from the catalog? Batteries already using it keep working; other researchers just can't add it to new ones.")) return;
+  const { error } = await supabaseClient.from('custom_tests').update({ published }).eq('id', id);
+  if (error){
+    await appAlert('Could not update this test: ' + error.message);
+    return;
+  }
+  goToAdmin();
+  fetchAndMergeCustomTests();
 }
 
 function renderAdminDatasets(rows){
