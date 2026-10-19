@@ -130,6 +130,14 @@
 
   /* ---------- Home / overview ---------- */
   #view-home p.view-sub, #view-home .home-steps, #view-home .dash-tile-row{max-width:none;}
+  .home-panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:8px;
+    box-shadow:0 2px 10px rgba(20,40,63,0.06);
+    padding:32px 36px 36px;
+  }
+  @media (max-width:640px){ .home-panel{padding:22px 18px 24px;} }
   .home-steps{
     display:grid;
     gap:18px;
@@ -285,6 +293,9 @@
   .psych-source{padding:12px 0; border-top:1px solid var(--line);}
   .psych-cite{font-size:13.5px; font-weight:500; margin-bottom:3px;}
   .psych-src-note{font-size:12.5px; color:var(--ink-soft); line-height:1.5;}
+  .profile-password{border-top:1px solid var(--line); margin-top:6px; padding-top:16px;}
+  .profile-password-label{font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-bottom:4px;}
+  .profile-password-note{font-size:12.5px; color:var(--ink-soft); margin:0 0 10px;}
   .private-badge{
     display:inline-block;
     margin-left:6px;
@@ -1449,10 +1460,11 @@
   .user-bar{
     display:flex;
     align-items:center;
-    justify-content:flex-end;
+    justify-content:flex-start;
     flex-wrap:wrap;
-    gap:14px;
+    gap:8px;
   }
+  .user-bar .user-email{margin-left:auto; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
   .user-email{
     font-family:'IBM Plex Mono', monospace;
     font-size:12px;
@@ -1464,7 +1476,7 @@
     border-radius:5px;
     font-size:12.5px;
     font-weight:500;
-    padding:7px 13px;
+    padding:7px 11px;
     color:#fff;
     white-space:nowrap;
     cursor:pointer;
@@ -1658,7 +1670,7 @@
       <button onclick="goToHome()">Home</button>
       <button onclick="goToDatasets()">Projects</button>
       <button id="nav-admin" class="hidden" onclick="goToAdmin()">All labs</button>
-      <button class="battery-btn" onclick="goToBattery()">Battery <span class="battery-count" id="battery-count">0</span></button>
+      <button onclick="goToBattery()">Battery</button>
       <button onclick="goToCatalog()">Catalog</button>
       <button onclick="goToLiterature()">Literature</button>
       <span class="user-email" id="user-email"></span>
@@ -1669,6 +1681,7 @@
 
   <!-- HOME / OVERVIEW VIEW -->
   <div id="view-home">
+   <div class="home-panel">
     <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository" style="height:88px; width:auto; margin-bottom:20px;">
     <h1 class="view-title" style="font-size:36px; line-height:1.2; text-wrap:balance;">Welcome to the Online Spatial Tests and Assessments Repository (OSTAR)</h1>
     <p class="view-sub">This platform allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
@@ -1681,6 +1694,7 @@
     </div>
 
     <div id="home-dashboard"></div>
+   </div>
   </div>
 
   <!-- WORKBENCH VIEW — configure on the left, browse the catalog in the
@@ -1903,9 +1917,35 @@
       <input id="profile-institution" type="text">
     </div>
     <div class="auth-msg" id="profile-msg"></div>
+    <div class="profile-password">
+      <div class="profile-password-label">Password</div>
+      <p class="profile-password-note">We'll email you a link to set a new password.</p>
+      <button class="btn secondary" style="width:auto;" id="reset-pw-btn" onclick="sendPasswordReset()">Email me a reset link</button>
+      <div class="auth-msg" id="reset-pw-msg"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn secondary" onclick="closeProfile()">Cancel</button>
       <button class="btn accent" onclick="saveProfile()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW PASSWORD MODAL — shown after following the emailed reset link. -->
+<div class="modal-overlay hidden" id="new-password-modal">
+  <div class="modal-card">
+    <h3>Set a new password</h3>
+    <div class="field-block">
+      <label for="new-password">New password</label>
+      <input id="new-password" type="password" autocomplete="new-password">
+    </div>
+    <div class="field-block">
+      <label for="new-password-confirm">Confirm new password</label>
+      <input id="new-password-confirm" type="password" autocomplete="new-password">
+    </div>
+    <div class="auth-msg" id="new-password-msg"></div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeNewPassword()">Cancel</button>
+      <button class="btn accent" id="new-password-save" onclick="saveNewPassword()">Save password</button>
     </div>
   </div>
 </div>
@@ -2074,6 +2114,9 @@ supabaseClient.auth.onAuthStateChange((event, session) => {
   if (event === 'SIGNED_IN' && session){
     if (appShown) return;
     showApp(session);
+  } else if (event === 'PASSWORD_RECOVERY'){
+    if (!appShown && session) showApp(session);
+    openNewPassword();
   } else if (event === 'SIGNED_OUT'){
     appShown = false;
     showAuth();
@@ -2140,6 +2183,74 @@ async function openProfile(){
     msg.textContent = 'Could not load existing profile — you can still fill it in.';
   }
   modal.classList.remove('hidden');
+}
+
+// Emails a password-reset link to the logged-in researcher. The link brings
+// them back to this same page, where Supabase fires PASSWORD_RECOVERY and
+// the new-password modal opens. This page's address must be listed under
+// Supabase > Authentication > URL Configuration > Redirect URLs.
+async function sendPasswordReset(){
+  const msg = document.getElementById('reset-pw-msg');
+  const btn = document.getElementById('reset-pw-btn');
+  msg.classList.remove('error');
+  if (DEV_MODE){
+    msg.textContent = 'Password reset needs a real account — not available in dev mode.';
+    return;
+  }
+  const user = await requireUser();
+  if (!user) return;
+
+  btn.disabled = true;
+  const redirectTo = window.location.origin + window.location.pathname;
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(user.email, { redirectTo });
+  btn.disabled = false;
+  if (error){
+    msg.textContent = 'Could not send the email: ' + error.message;
+    msg.classList.add('error');
+    return;
+  }
+  msg.textContent = `Sent. Check ${user.email} for a link to set a new password.`;
+}
+
+function openNewPassword(){
+  document.getElementById('new-password').value = '';
+  document.getElementById('new-password-confirm').value = '';
+  const msg = document.getElementById('new-password-msg');
+  msg.textContent = '';
+  msg.classList.remove('error');
+  document.getElementById('new-password-modal').classList.remove('hidden');
+}
+
+function closeNewPassword(){
+  document.getElementById('new-password-modal').classList.add('hidden');
+}
+
+async function saveNewPassword(){
+  const pw = document.getElementById('new-password').value;
+  const confirmPw = document.getElementById('new-password-confirm').value;
+  const msg = document.getElementById('new-password-msg');
+  msg.classList.add('error');
+  if (pw.length < 8){
+    msg.textContent = 'Use at least 8 characters.';
+    return;
+  }
+  if (pw !== confirmPw){
+    msg.textContent = "The two passwords don't match.";
+    return;
+  }
+  const btn = document.getElementById('new-password-save');
+  btn.disabled = true;
+  const { error } = await supabaseClient.auth.updateUser({ password: pw });
+  btn.disabled = false;
+  if (error){
+    msg.textContent = 'Could not save: ' + error.message;
+    return;
+  }
+  msg.classList.remove('error');
+  msg.textContent = 'Password updated.';
+  // Clear the reset token out of the address bar.
+  history.replaceState(null, '', window.location.pathname);
+  setTimeout(closeNewPassword, 900);
 }
 
 function closeProfile(){
@@ -2546,6 +2657,8 @@ const TESTS = [
     description: 'A measure of imagining cross-sections. Participants pick the shape made where a cutting plane slices a 3D object. Originally part of the College Entrance Examination Board\'s Special Aptitude Test in Spatial Relations. This version has 15 items, each with five answer choices and one correct. The original version was administered with a time limit of 20 minutes for 25 items. We recommend 1 minute per item to reduce time pressure.',
     citation: 'CEEB (1939)',
     scholarQuery: 'College Entrance Examination Board 1939 Special Aptitude Test in Spatial Relations mental cutting',
+    citation2: 'Titus & Horsman (2009), Planes of Reference',
+    scholarQuery2: 'Titus Horsman 2009 Characterizing and improving spatial visualization skills',
     iconSpeed: 'speed-3',
     stats: { items: TEST_ITEMS.MC.length, timeLabel: '' },
     fields: standardFields('MC', 15)
@@ -2735,7 +2848,7 @@ const ICONS = {
 // A source without a url is shown as a plain citation (not yet published).
 const PSYCHOMETRIC_SOURCES = {
   rotation: [
-    { cite: 'Munns & Hegarty (2026)', note: 'Item selection and psychometrics for the rotation tests used here.' },
+    { cite: 'Munns & Hegarty (2026)', note: 'Reevaluating and revising measures of mental rotation (Intelligence): item selection and psychometrics for the rotation tests used here.', url: 'https://www.sciencedirect.com/science/article/pii/S0160289626000395' },
     { cite: 'Rajeb, Krist, Shi, Oyeniran, Wind & Lakin (2024)', note: 'Which item features make mental rotation items harder.', url: 'https://doi.org/10.3390/jintelligence13010002' },
   ],
   sectioning: [
@@ -2834,7 +2947,6 @@ function renderCatalog(){
 }
 
 function updateBatteryBadge(){
-  document.getElementById('battery-count').textContent = battery.length;
   renderCatalogBatterySidebar();
 }
 
