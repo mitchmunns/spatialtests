@@ -1067,6 +1067,9 @@
   }
 
   /* ---------- Datasets ---------- */
+  .admin-test-actions{display:flex; flex-direction:column; gap:6px; align-items:stretch; flex-shrink:0;}
+  .btn.danger-btn{color:#A32D2D; border-color:#E2B4B4;}
+  .btn.danger-btn:hover{background:#FBEDED; border-color:#A32D2D;}
   .admin-totals{background:var(--card); border:1px solid var(--line); border-radius:6px; padding:16px 20px 12px; margin:0 0 24px;}
   .admin-totals-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:8px;}
   .admin-totals-head h2{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:16px; margin:0;}
@@ -4359,7 +4362,10 @@ async function loadAdminCustomTests(researcherById){
           <div class="admin-test-meta">${escapeHtml(who)} · ${(t.items || []).length} items · ${dateFmt.format(new Date(t.created_at))}</div>
           ${t.description ? `<div class="admin-test-desc">${linkCitations(t.description)}</div>` : ''}
         </div>
-        <button class="btn ${t.published ? 'secondary' : 'accent'}" style="width:auto;" onclick="setCustomTestPublished('${t.id}', ${!t.published})">${t.published ? 'Remove from catalog' : 'Add to catalog'}</button>
+        <div class="admin-test-actions">
+          <button class="btn ${t.published ? 'secondary' : 'accent'}" style="width:auto;" onclick="setCustomTestPublished('${t.id}', ${!t.published})">${t.published ? 'Remove from catalog' : 'Add to catalog'}</button>
+          <button class="btn secondary danger-btn" style="width:auto;" onclick="deleteCustomTest('${t.id}')">Delete</button>
+        </div>
       </div>
     `;
   }).join('')}</div>`;
@@ -4370,6 +4376,34 @@ async function setCustomTestPublished(id, published){
   const { error } = await supabaseClient.from('custom_tests').update({ published }).eq('id', id);
   if (error){
     await appAlert('Could not update this test: ' + error.message);
+    return;
+  }
+  goToAdmin();
+  fetchAndMergeCustomTests();
+}
+
+// Admin only: deletes a custom test for good. Batteries that include it
+// can no longer run that test, so the confirm message says how many there
+// are. Needs the delete rule in custom_test_admin_delete.sql; without it
+// the database quietly deletes nothing, which is reported here.
+async function deleteCustomTest(id){
+  if (!isAdmin) return;
+  const testId = 'custom:' + id;
+  const using = currentAdminRows.filter(r => (r.items || []).some(i => i.testId === testId));
+  const people = using.reduce((sum, r) => sum + (r.participantCount || 0), 0);
+  const name = (CUSTOM_TESTS_BY_ID[id] && CUSTOM_TESTS_BY_ID[id].name) || 'this test';
+  const warning = using.length
+    ? ` ${using.length} ${using.length === 1 ? 'battery uses' : 'batteries use'} it (${people} participants so far); ${using.length === 1 ? 'it' : 'they'} will no longer be able to run it. Data already collected is kept.`
+    : ' No battery uses it.';
+  if (!await appConfirm(`Delete "${name}" permanently?${warning} This cannot be undone.`)) return;
+
+  const { data, error } = await supabaseClient.from('custom_tests').delete().eq('id', id).select('id');
+  if (error){
+    await appAlert('Could not delete this test: ' + error.message);
+    return;
+  }
+  if (!data || data.length === 0){
+    await appAlert('Nothing was deleted. The database needs the admin delete rule: run custom_test_admin_delete.sql in the Supabase SQL editor, then try again.');
     return;
   }
   goToAdmin();
