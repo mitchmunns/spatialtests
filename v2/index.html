@@ -1668,14 +1668,30 @@
     padding:26px 26px 20px;
     width:340px;
   }
-  .modal-card.clean-card{width:min(940px, 94vw); max-height:92vh; overflow:auto;}
-  .clean-previews{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0;}
+  .modal-card.clean-card{width:min(980px, 95vw); max-height:94vh; overflow:auto;}
+  .clean-previews{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0 4px; align-items:start;}
   .clean-previews figure{margin:0;}
   .clean-previews figcaption{font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin-bottom:4px;}
-  .clean-previews canvas{width:100%; height:auto; max-height:46vh; object-fit:contain; border:1px solid var(--line); border-radius:3px; background:#fff; display:block;}
-  .clean-controls{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px 18px; margin-bottom:6px;}
-  .clean-controls label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-soft);}
-  .clean-controls label.clean-check{flex-direction:row; align-items:center; gap:8px;}
+  .clean-previews canvas{width:100%; height:auto; border:1px solid var(--line); border-radius:3px; background:#fff; display:block;}
+  .clean-before-wrap{position:relative;}
+  .clean-quad{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; display:none;}
+  .clean-quad polygon{fill:rgba(42,103,180,0.08); stroke:#2A67B4; stroke-width:1.5; vector-effect:non-scaling-stroke;}
+  .clean-handle{position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; border-radius:50%; background:#fff; border:2px solid #2A67B4; cursor:grab; display:none; touch-action:none; box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .clean-before-wrap.perspective .clean-quad, .clean-before-wrap.perspective .clean-handle{display:block;}
+  .clean-after-wrap{position:relative; overflow:hidden;}
+  .clean-crop{position:absolute; border:2px dashed #2A67B4; box-shadow:0 0 0 9999px rgba(20,40,63,0.35); pointer-events:none; display:none;}
+  .crop-handle{position:absolute; width:14px; height:14px; margin:-7px 0 0 -7px; background:#fff; border:2px solid #2A67B4; cursor:nwse-resize; display:none; touch-action:none;}
+  .crop-handle[data-c="1"], .crop-handle[data-c="3"]{cursor:nesw-resize;}
+  .clean-after-wrap.cropping .clean-crop, .clean-after-wrap.cropping .crop-handle{display:block;}
+  .clean-status{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft); min-height:16px; margin:0 0 6px;}
+  .clean-section{border-top:1px solid var(--line); padding:12px 0 10px;}
+  .clean-section-title{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:14px; margin-bottom:8px;}
+  .clean-note{font-size:11.5px; color:var(--ink-faint); margin:6px 0 0;}
+  .clean-controls{display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px 18px; margin-top:6px;}
+  .clean-section > label.clean-check{margin-bottom:6px;}
+  .clean-controls label, .clean-section > label{display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-soft);}
+  .clean-controls label.clean-check, .clean-section > label.clean-check{flex-direction:row; align-items:flex-start; gap:8px;}
+  .clean-check input{margin-top:2px; flex-shrink:0;}
   .clean-controls input[type=range]{width:100%;}
   @media (max-width:640px){ .clean-previews{grid-template-columns:1fr;} }
   .modal-card.wide{
@@ -2064,20 +2080,66 @@
 <div class="modal-overlay hidden" id="clean-modal">
   <div class="modal-card clean-card">
     <h3>Clean up a scanned or photocopied image</h3>
-    <p class="modal-sub">Evens out grey or blotchy paper, darkens faded lines and removes stray specks. The same settings are used for the item images you upload next. Images keep their size, so answer boxes stay in place.</p>
+    <p class="modal-sub">Straightens tilted or keystoned scans, evens out grey or blotchy paper, removes specks, and can redraw faint or broken lines as solid straight ones. The same settings, including any crop, are used for every item image you upload next, so the answer boxes line up on all of them.</p>
     <div class="clean-previews">
-      <figure><figcaption>Original</figcaption><canvas id="clean-before"></canvas></figure>
-      <figure><figcaption>Cleaned</figcaption><canvas id="clean-after"></canvas></figure>
+      <figure><figcaption>Original</figcaption>
+        <div class="clean-before-wrap" id="clean-before-wrap">
+          <canvas id="clean-before"></canvas>
+          <svg class="clean-quad" viewBox="0 0 1 1" preserveAspectRatio="none"><polygon id="clean-quad-poly"/></svg>
+          <span class="clean-handle" data-i="0"></span><span class="clean-handle" data-i="1"></span>
+          <span class="clean-handle" data-i="2"></span><span class="clean-handle" data-i="3"></span>
+        </div>
+      </figure>
+      <figure><figcaption>Cleaned</figcaption>
+        <div class="clean-after-wrap" id="clean-after-wrap">
+          <canvas id="clean-after"></canvas>
+          <div class="clean-crop" id="clean-crop"></div>
+          <span class="crop-handle" data-c="0"></span><span class="crop-handle" data-c="1"></span>
+          <span class="crop-handle" data-c="2"></span><span class="crop-handle" data-c="3"></span>
+        </div>
+      </figure>
     </div>
-    <div class="clean-controls">
-      <label>Even out background<input type="range" id="clean-flatten" min="0" max="100"></label>
-      <label>Whiten paper<input type="range" id="clean-white" min="0" max="100"></label>
-      <label>Darken lines<input type="range" id="clean-black" min="0" max="150"></label>
-      <label>Remove specks<input type="range" id="clean-speck" min="0" max="150"></label>
-      <label class="clean-check"><input type="checkbox" id="clean-bw"> Pure black &amp; white</label>
-      <label id="clean-threshold-wrap">Black/white cut-off<input type="range" id="clean-threshold" min="40" max="230"></label>
-      <label class="clean-check"><input type="checkbox" id="clean-colour"> Keep colour</label>
+    <p class="clean-status" id="clean-status"></p>
+
+    <div class="clean-section">
+      <div class="clean-section-title">Straighten</div>
+      <label class="clean-check"><input type="checkbox" id="clean-straighten"> Straighten tilted scans (found separately for each image)</label>
+      <label class="clean-check"><input type="checkbox" id="clean-perspective"> Fix perspective: drag the four corners on the original onto the corners of the page</label>
+      <p class="clean-note">Perspective is applied the same way to every item image, so use it when they were all photographed or scanned the same way.</p>
     </div>
+
+    <div class="clean-section">
+      <div class="clean-section-title">Crop</div>
+      <label class="clean-check"><input type="checkbox" id="clean-crop-on"> Crop: drag the corners of the box on the cleaned image</label>
+      <button class="btn secondary" style="width:auto; padding:6px 12px; font-size:12px;" type="button" onclick="tcCropToDrawing()">Fit to the drawing</button>
+      <p class="clean-note">The same crop is used for every item image. Clean up and crop before drawing the answer boxes.</p>
+    </div>
+
+    <div class="clean-section">
+      <div class="clean-section-title">Clean</div>
+      <div class="clean-controls">
+        <label>Even out background<input type="range" id="clean-flatten" min="0" max="100"></label>
+        <label>Whiten paper<input type="range" id="clean-white" min="0" max="100"></label>
+        <label>Darken lines<input type="range" id="clean-black" min="0" max="150"></label>
+        <label>Remove specks<input type="range" id="clean-speck" min="0" max="150"></label>
+        <label class="clean-check"><input type="checkbox" id="clean-bw"> Pure black &amp; white</label>
+        <label id="clean-threshold-wrap">Black/white cut-off<input type="range" id="clean-threshold" min="40" max="230"></label>
+        <label class="clean-check"><input type="checkbox" id="clean-colour"> Keep colour</label>
+      </div>
+    </div>
+
+    <div class="clean-section">
+      <div class="clean-section-title">Rebuild lines</div>
+      <label class="clean-check"><input type="checkbox" id="clean-rebuild"> Rebuild straight lines: faint, broken or wobbly lines are redrawn solid and straight, and ends that nearly meet are joined. Curves and text are left as they are.</label>
+      <div class="clean-controls" id="clean-rebuild-controls">
+        <label>Shortest line (% of image)<input type="range" id="clean-minlen" min="1" max="15"></label>
+        <label>Join gaps up to (pixels)<input type="range" id="clean-gap" min="0" max="60"></label>
+        <label>Line thickness (0 = match drawing)<input type="range" id="clean-thick" min="0" max="10"></label>
+        <label class="clean-check"><input type="checkbox" id="clean-showlines"> Show the lines found</label>
+      </div>
+      <p class="clean-note">Check the preview: a line the tool adds or moves could change what an item shows.</p>
+    </div>
+
     <div class="modal-footer">
       <button class="btn secondary" onclick="tcCleanOff()">Use original</button>
       <button class="btn secondary" onclick="closeCleanModal()">Cancel</button>
@@ -5607,20 +5669,53 @@ tcEl('tc-itemImagesInput').addEventListener('change', async (e) => {
 // ---------------------------------------------------------------------
 // Image clean-up for stimuli scanned from worn paper or photocopies. All
 // of it runs in the browser on a canvas; nothing is sent anywhere. The
-// image keeps its size so the answer boxes drawn on it stay in place.
-//   1. Even out the background: the paper's brightness is estimated on a
-//      coarse grid (the brightest pixel in each block, smoothed), and each
-//      pixel is divided by it, so grey toner, shadows and blotches go white.
-//      Blocks much darker than the page (large filled shapes) are left alone.
-//   2. Levels: "darken lines" sets the black point, "whiten paper" the
-//      white point.
-//   3. Optional pure black & white at a chosen cut-off.
-//   4. Remove specks: dark spots smaller than the chosen area are erased.
+// template and every item image get the same settings (tilt is found per
+// image), so the answer boxes drawn on the template line up on all of them.
+// An optional crop, the same fractions for every image, is applied last.
+// Steps, in order:
+//   1. Perspective (optional): the four points the researcher drags onto
+//      the page's corners are stretched back out to the image's corners.
+//   2. Straighten: the tilt is the angle at which the image's ink lines up
+//      most sharply into rows and columns (its near-horizontal and
+//      near-vertical lines); it is found and undone for each image.
+//   3. Even out the background: the paper's brightness is estimated on a
+//      coarse grid (brightest pixel per block, smoothed) and each pixel is
+//      divided by it, so grey toner, shadows and blotches go white. Blocks
+//      much darker than the page (large filled shapes) are left alone.
+//   4. Levels ("darken lines" = black point, "whiten paper" = white point),
+//      then optional pure black & white.
+//   5. Remove specks: marks smaller than the chosen area are erased.
+//   6. Rebuild lines (optional): straight lines are found with a Hough
+//      transform on the ink, the method used to read the Mental Cutting
+//      drawings (peaks in the transform, each split into runs along its
+//      line). Each run is refitted to its own pixels, ends that nearly
+//      meet are joined where the lines cross, and the old ink is replaced
+//      by a solid straight line. Curves and text are too short or not
+//      straight enough to be found, so they stay as they were.
 // ---------------------------------------------------------------------
 let tcTemplateOriginal = null;   // the template as uploaded, before clean-up
 let tcCleanSettings = null;      // settings used for the template and items, or null
 let tcCleanPreview = null;       // { data: ImageData, scale } of the original, for the dialog
-const TC_CLEAN_DEFAULTS = { flatten: 100, white: 30, black: 40, speck: 20, bw: false, threshold: 150, colour: false };
+let tcCleanCorners = null;       // perspective corners being edited: [[x, y] x4] as fractions, TL TR BR BL
+let tcCleanCrop = null;          // crop box being edited: [x0, y0, x1, y1] as fractions
+let tcCleanLastOut = null;       // the last cleaned preview, for "Fit to the drawing"
+const TC_CLEAN_DEFAULTS = {
+  flatten: 100, white: 30, black: 40, speck: 20, bw: false, threshold: 150, colour: false,
+  straighten: true, perspective: null,
+  rebuild: false, minLen: 4, gap: 20, thick: 0, showLines: false,
+  crop: null,
+};
+
+function tcCropImageData(src, crop){
+  const w = src.width, h = src.height;
+  const x0 = Math.round(crop[0] * w), y0 = Math.round(crop[1] * h);
+  const cw = Math.max(1, Math.round(crop[2] * w) - x0), ch = Math.max(1, Math.round(crop[3] * h) - y0);
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.putImageData(src, 0, 0);
+  return ctx.getImageData(x0, y0, cw, ch);
+}
 
 function tcLoadImage(file){
   return new Promise((resolve, reject) => {
@@ -5645,6 +5740,19 @@ function tcImageData(img, maxSide){
   return { data: ctx.getImageData(0, 0, w, h), scale };
 }
 
+function tcDownscale(imageData, maxSide){
+  const k = Math.min(1, maxSide / Math.max(imageData.width, imageData.height));
+  if (k >= 1) return imageData;
+  const a = document.createElement('canvas');
+  a.width = imageData.width; a.height = imageData.height;
+  a.getContext('2d').putImageData(imageData, 0, 0);
+  const b = document.createElement('canvas');
+  b.width = Math.max(1, Math.round(imageData.width * k)); b.height = Math.max(1, Math.round(imageData.height * k));
+  const ctx = b.getContext('2d');
+  ctx.drawImage(a, 0, 0, b.width, b.height);
+  return ctx.getImageData(0, 0, b.width, b.height);
+}
+
 function tcLooksColourful(imageData){
   const d = imageData.data;
   let sum = 0, n = 0;
@@ -5655,6 +5763,125 @@ function tcLooksColourful(imageData){
   return n > 0 && sum / n > 22;
 }
 
+// ---- 1-2. Geometry: perspective and tilt ----
+
+function tcSolve(A, b){
+  const n = b.length;
+  const M = A.map((row, i) => [...row, b[i]]);
+  for (let col = 0; col < n; col++){
+    let piv = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+    if (Math.abs(M[piv][col]) < 1e-12) return null;
+    [M[col], M[piv]] = [M[piv], M[col]];
+    for (let r = 0; r < n; r++){
+      if (r === col) continue;
+      const f = M[r][col] / M[col][col];
+      if (f) for (let k = col; k <= n; k++) M[r][k] -= f * M[col][k];
+    }
+  }
+  return M.map((row, i) => row[n] / row[i]);
+}
+
+// Output pixel (x, y) -> the source point it comes from, for a perspective
+// that stretches quad (source points TL, TR, BR, BL) to the whole w x h image.
+function tcPerspectiveMap(quad, w, h){
+  const dst = [[0, 0], [w, 0], [w, h], [0, h]];
+  const A = [], b = [];
+  for (let i = 0; i < 4; i++){
+    const [x, y] = dst[i], [u, v] = quad[i];
+    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.push(u);
+    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]); b.push(v);
+  }
+  const H = tcSolve(A, b);
+  if (!H) return null;
+  const [a, bb, c, d, e, f, g, hh] = H;
+  return (x, y) => {
+    const z = g * x + hh * y + 1;
+    return [(a * x + bb * y + c) / z, (d * x + e * y + f) / z];
+  };
+}
+
+function tcRotateMap(deg, w, h){
+  const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r), cx = w / 2, cy = h / 2;
+  return (x, y) => {
+    const dx = x - cx, dy = y - cy;
+    return [cx + dx * c - dy * s, cy + dx * s + dy * c];
+  };
+}
+
+// Resamples src through map (output pixel centre -> source point), bilinear.
+// Outside the source the paper colour at the nearest edge carries on (the
+// brightest of a few edge pixels, so a speck on the edge is not smeared into
+// a streak), and turning a page leaves no white wedges in the corners.
+function tcWarp(src, map){
+  const w = src.width, h = src.height, d = src.data;
+  const out = new ImageData(w, h);
+  const o = out.data;
+  const at = (x, y, ch) => {
+    if (x >= 0 && y >= 0 && x < w && y < h) return d[4 * (y * w + x) + ch];
+    const cx = Math.min(w - 1, Math.max(0, x)), cy = Math.min(h - 1, Math.max(0, y));
+    let best = 0;
+    for (let k = -3; k <= 3; k++){
+      const ex = Math.min(w - 1, Math.max(0, cx + (cy === y ? 0 : k)));
+      const ey = Math.min(h - 1, Math.max(0, cy + (cy === y ? k : 0)));
+      const v = d[4 * (ey * w + ex) + ch];
+      if (v > best) best = v;
+    }
+    return best;
+  };
+  for (let y = 0; y < h; y++){
+    for (let x = 0; x < w; x++){
+      const [sx, sy] = map(x + 0.5, y + 0.5);
+      const fx = sx - 0.5, fy = sy - 0.5;
+      const x0 = Math.floor(fx), y0 = Math.floor(fy), tx = fx - x0, ty = fy - y0;
+      const k = 4 * (y * w + x);
+      o[k + 3] = 255;
+      for (let ch = 0; ch < 3; ch++){
+        o[k + ch] = at(x0, y0, ch) * (1 - tx) * (1 - ty) + at(x0 + 1, y0, ch) * tx * (1 - ty)
+                  + at(x0, y0 + 1, ch) * (1 - tx) * ty + at(x0 + 1, y0 + 1, ch) * tx * ty;
+      }
+    }
+  }
+  return out;
+}
+
+// The tilt (degrees) at which the image's ink lines up most sharply into
+// rows and columns. 0 if no tilt stands out.
+function tcEstimateSkew(src){
+  const w = src.width, h = src.height, d = src.data, n = w * h;
+  const L = new Float32Array(n);
+  const hist = new Uint32Array(256);
+  for (let i = 0; i < n; i++){
+    L[i] = 0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2];
+    hist[L[i] | 0]++;
+  }
+  let acc = 0, page = 255;
+  for (let v = 0; v < 256; v++){ acc += hist[v]; if (acc >= n * 0.9){ page = v; break; } }
+  const xs = [], ys = [];
+  for (let i = 0; i < n; i++) if (L[i] < page * 0.65){ xs.push(i % w); ys.push((i / w) | 0); }
+  const step = Math.max(1, Math.ceil(xs.length / 30000));
+  const diag = Math.ceil(Math.hypot(w, h));
+  const bins = new Int32Array(2 * diag + 2);
+  let best = 0, bestScore = -1, zeroScore = 0;
+  for (let ai = -50; ai <= 50; ai++){
+    const a = ai * 0.2;
+    let score = 0;
+    for (const base of [0, 90]){
+      const t = (base + a) * Math.PI / 180, c = Math.cos(t), s = Math.sin(t);
+      bins.fill(0);
+      for (let i = 0; i < xs.length; i += step) bins[Math.round(xs[i] * c + ys[i] * s) + diag]++;
+      for (let k = 0; k < bins.length; k++) score += bins[k] * bins[k];
+    }
+    if (ai === 0) zeroScore = score;
+    if (score > bestScore){ bestScore = score; best = a; }
+  }
+  return bestScore > zeroScore * 1.03 ? best : 0;
+}
+
+// ---- 3-5. Background, levels, specks ----
+
+// Returns { out, gray }: gray is the levelled image before specks are
+// removed, so the line finder still sees the short dashes of broken lines.
 function tcCleanImageData(src, st, scale = 1){
   const w = src.width, h = src.height, n = w * h, d = src.data;
   const out = new ImageData(w, h);
@@ -5662,7 +5889,6 @@ function tcCleanImageData(src, st, scale = 1){
   const L = new Float32Array(n);
   for (let i = 0; i < n; i++) L[i] = 0.299 * d[4 * i] + 0.587 * d[4 * i + 1] + 0.114 * d[4 * i + 2];
 
-  // 1. Paper brightness on a coarse grid.
   const flatten = st.flatten / 100;
   let gain = null;
   if (flatten > 0){
@@ -5706,7 +5932,6 @@ function tcCleanImageData(src, st, scale = 1){
     }
   }
 
-  // 2-3. Levels, then optional black & white.
   const black = st.black, white = Math.max(black + 10, 255 - st.white);
   const level = v => Math.min(255, Math.max(0, (v - black) / (white - black) * 255));
   const gray = new Uint8ClampedArray(n);
@@ -5725,8 +5950,8 @@ function tcCleanImageData(src, st, scale = 1){
     o[4 * i + 3] = 255;
   }
 
-  // 4. Erase specks (anything noticeably darker than paper) smaller than the
-  //    chosen area, in full-size pixels. Lines and letters are much larger.
+  // Erase specks (anything noticeably darker than paper) smaller than the
+  // chosen area, in full-size pixels. Lines and letters are much larger.
   const minArea = st.speck * scale * scale;
   if (minArea >= 1){
     const seen = new Uint8Array(n);
@@ -5753,10 +5978,248 @@ function tcCleanImageData(src, st, scale = 1){
       }
     }
   }
-  return out;
+  return { out, gray };
+}
+
+// ---- 6. Rebuild lines ----
+
+// Straight segments in the ink (anything clearly darker than the cleaned
+// white paper, gray < 235, so faint lines count): Hough transform (1 degree,
+// 2-pixel bins), local peaks strongest first, each peak's unclaimed ink
+// within `band` of its line split into runs wherever it breaks by more than
+// `gap`; runs at least minLen long are refitted to their own pixels.
+function tcFindSegments(gray, w, h, minLen, band, gap){
+  const xs = [], ys = [];
+  for (let i = 0; i < w * h; i++) if (gray[i] < 235){ xs.push(i % w); ys.push((i / w) | 0); }
+  const N = xs.length;
+  if (N === 0) return { segs: [], xs, ys };
+  const T = 180, ct = new Float32Array(T), st = new Float32Array(T);
+  for (let t = 0; t < T; t++){ ct[t] = Math.cos(t * Math.PI / 180); st[t] = Math.sin(t * Math.PI / 180); }
+  const rmax = Math.ceil(Math.hypot(w, h)) + 2, half = Math.ceil(rmax / 2), rows = 2 * half + 1;
+  const acc = new Int32Array(rows * T);
+  for (let i = 0; i < N; i++){
+    const x = xs[i], y = ys[i];
+    for (let t = 0; t < T; t++) acc[(Math.round((x * ct[t] + y * st[t]) / 2) + half) * T + t]++;
+  }
+  const thr = minLen * 0.6, peaks = [];
+  for (let r = 0; r < rows; r++){
+    for (let t = 0; t < T; t++){
+      const v = acc[r * T + t];
+      if (v < thr) continue;
+      let isMax = true;
+      for (let dr = -3; dr <= 3 && isMax; dr++){
+        const rr = r + dr;
+        if (rr < 0 || rr >= rows) continue;
+        for (let dt = -4; dt <= 4; dt++){
+          if (acc[rr * T + (t + dt + T) % T] > v){ isMax = false; break; }
+        }
+      }
+      if (isMax) peaks.push([v, r, t]);
+    }
+  }
+  peaks.sort((a, b) => b[0] - a[0]);
+  if (peaks.length > 400) peaks.length = 400;
+
+  const used = new Uint8Array(N), segs = [];
+  for (const [, r, t] of peaks){
+    const rv = (r - half) * 2, c = ct[t], s = st[t];
+    const sel = [];
+    for (let i = 0; i < N; i++) if (!used[i] && Math.abs(xs[i] * c + ys[i] * s - rv) <= band) sel.push(i);
+    if (sel.length < minLen) continue;
+    const u = sel.map(i => -xs[i] * s + ys[i] * c);
+    const order = sel.map((_, k) => k).sort((a, b) => u[a] - u[b]);
+    let start = 0;
+    for (let k = 1; k <= order.length; k++){
+      if (k === order.length || u[order[k]] - u[order[k - 1]] > gap){
+        // Trim each end back to where the ink is continuous: within the
+        // outermost few pixels at least 60% of the 1-pixel steps must have ink
+        // (stray specks just past a line's end are not part of it).
+        const win = Math.max(8, 4 * band);
+        const filledSteps = (from, dir) => {
+          const u0 = u[order[from]], seen = new Set();
+          for (let q = from; q >= start && q < k; q += dir){
+            if (Math.abs(u[order[q]] - u0) >= win) break;
+            seen.add(Math.floor(u[order[q]]));
+          }
+          return seen.size;
+        };
+        let a = start, b = k - 1;
+        while (a < b && filledSteps(a, 1) < win * 0.6) a++;
+        while (b > a && filledSteps(b, -1) < win * 0.6) b--;
+        if (u[order[b]] - u[order[a]] >= minLen){
+          const ids = order.slice(a, b + 1).map(j => sel[j]);
+          const seg = tcFitSegment(ids, xs, ys);
+          // Keep real lines only. A clearly bowed run is part of a curve
+          // (gentle bowing over a long line, from a warped page, is fine).
+          // A run with ink along under 60% of its length, or thinner than
+          // about a pixel, is scattered specks that happen to line up.
+          // A line through a letter or a filled area has ink beside it too.
+          if (seg && !(seg.bow > 0.5 && seg.bow > 0.012 * seg.len) && seg.coverage >= 0.6 && seg.thick >= 0.8
+              && tcPaperBeside(seg, gray, w, h, band + 2) >= 0.6){
+            seg.ids = ids; segs.push(seg); ids.forEach(i => { used[i] = 1; });
+          }
+        }
+        start = k;
+      }
+    }
+  }
+  return { segs, xs, ys };
+}
+
+// Share of points along a segment that have paper (not ink) on both sides
+// at distance off.
+function tcPaperBeside(sg, gray, w, h, off){
+  const len = Math.hypot(sg.x1 - sg.x0, sg.y1 - sg.y0);
+  const ux = (sg.x1 - sg.x0) / len, uy = (sg.y1 - sg.y0) / len;
+  const paper = (x, y) => {
+    x = Math.round(x); y = Math.round(y);
+    return x < 0 || y < 0 || x >= w || y >= h || gray[y * w + x] >= 235;
+  };
+  let clear = 0, total = 0;
+  for (let t = 0; t <= len; t += 1){
+    const px = sg.x0 + ux * t, py = sg.y0 + uy * t;
+    total++;
+    if (paper(px - uy * off, py + ux * off) && paper(px + uy * off, py - ux * off)) clear++;
+  }
+  return total ? clear / total : 0;
+}
+
+// Least-squares line through a run's pixels, ends at its outermost pixels.
+function tcFitSegment(ids, xs, ys){
+  let mx = 0, my = 0;
+  for (const i of ids){ mx += xs[i]; my += ys[i]; }
+  mx /= ids.length; my /= ids.length;
+  let sxx = 0, syy = 0, sxy = 0;
+  for (const i of ids){ const dx = xs[i] - mx, dy = ys[i] - my; sxx += dx * dx; syy += dy * dy; sxy += dx * dy; }
+  const ang = 0.5 * Math.atan2(2 * sxy, sxx - syy), dx = Math.cos(ang), dy = Math.sin(ang);
+  let lo = Infinity, hi = -Infinity;
+  for (const i of ids){
+    const q = (xs[i] - mx) * dx + (ys[i] - my) * dy;
+    if (q < lo) lo = q;
+    if (q > hi) hi = q;
+  }
+  const len = hi - lo;
+  if (!(len > 0)) return null;
+  // How much the run bows away from straight: fit the pixels' sideways
+  // offset as a parabola along the run; its height is the bow.
+  const mid = (lo + hi) / 2;
+  let st2 = 0, st4 = 0, sr = 0, srt2 = 0;
+  for (const i of ids){
+    const t = ((xs[i] - mx) * dx + (ys[i] - my) * dy - mid) / (len / 2);
+    const r = -(xs[i] - mx) * dy + (ys[i] - my) * dx;
+    st2 += t * t; st4 += t * t * t * t; sr += r; srt2 += r * t * t;
+  }
+  const k = ids.length, varT2 = st4 / k - (st2 / k) ** 2;
+  const bow = varT2 > 1e-9 ? Math.abs((srt2 / k - (sr / k) * (st2 / k)) / varT2) : 0;
+  // How much of its length actually has ink (1-pixel steps along the run).
+  const filled = new Uint8Array(Math.ceil(len) + 1);
+  for (const i of ids) filled[Math.round((xs[i] - mx) * dx + (ys[i] - my) * dy - lo)] = 1;
+  let covered = 0;
+  for (const f of filled) covered += f;
+  return { x0: mx + dx * lo, y0: my + dy * lo, x1: mx + dx * hi, y1: my + dy * hi, len, thick: ids.length / len, bow, coverage: covered / filled.length };
+}
+
+// Moves each segment end that stops just short of (or just past) another
+// segment onto the point where the two lines cross, so corners and
+// T-junctions close cleanly.
+function tcJoinSegments(segs, reach){
+  const cross = (ax, ay, bx, by) => ax * by - ay * bx;
+  segs.forEach((sg, k) => {
+    for (const end of [0, 1]){
+      const dx = sg.x1 - sg.x0, dy = sg.y1 - sg.y0, dl = Math.hypot(dx, dy);
+      if (!dl) continue;
+      const px = end ? sg.x1 : sg.x0, py = end ? sg.y1 : sg.y0;
+      let best = null, bestMove = reach;
+      segs.forEach((q, j) => {
+        if (j === k) return;
+        const ex = q.x1 - q.x0, ey = q.y1 - q.y0, el = Math.hypot(ex, ey);
+        const den = cross(dx, dy, ex, ey);
+        if (!el || Math.abs(den) < Math.sin(10 * Math.PI / 180) * dl * el) return;
+        const wx = q.x0 - sg.x0, wy = q.y0 - sg.y0;
+        const a = cross(wx, wy, ex, ey) / den, b = cross(wx, wy, dx, dy) / den;
+        const move = Math.abs(a - end) * dl;
+        if (move > bestMove || b < -reach / el || b > 1 + reach / el) return;
+        bestMove = move;
+        best = [sg.x0 + a * dx, sg.y0 + a * dy];
+      });
+      if (best){
+        if (end){ sg.x1 = best[0]; sg.y1 = best[1]; } else { sg.x0 = best[0]; sg.y0 = best[1]; }
+      }
+    }
+  });
+}
+
+function tcRebuildLines(out, gray, st, scale){
+  const w = out.width, h = out.height, o = out.data;
+  const minLen = Math.max(8, st.minLen / 100 * Math.max(w, h));
+  const band = Math.max(2, Math.round(Math.max(w, h) / 300));
+  const gap = Math.max(2, st.gap * scale);
+  const { segs, xs, ys } = tcFindSegments(gray, w, h, minLen, band, gap);
+  if (segs.length === 0) return { out, segs };
+  tcJoinSegments(segs, 3 * band + 6);
+
+  // Take out the old ink of each line found: everything within the band
+  // along its length (including short broken pieces too small to be found
+  // on their own), and the faint edge just outside it.
+  for (const sg of segs){
+    const len = Math.hypot(sg.x1 - sg.x0, sg.y1 - sg.y0);
+    const ux = (sg.x1 - sg.x0) / len, uy = (sg.y1 - sg.y0) / len;
+    for (let t = 0; t <= len; t++){
+      for (let off = -band - 1; off <= band + 1; off++){
+        const x = Math.round(sg.x0 + ux * t - uy * off), y = Math.round(sg.y0 + uy * t + ux * off);
+        if (x < 0 || y < 0 || x >= w || y >= h) continue;
+        const k = 4 * (y * w + x);
+        if (Math.abs(off) <= band || gray[y * w + x] >= 200) o[k] = o[k + 1] = o[k + 2] = 255;
+      }
+    }
+  }
+
+  const thick = segs.map(sg => sg.thick).sort((a, b) => a - b);
+  const lineWidth = st.thick > 0 ? Math.max(1, st.thick * scale) : Math.min(8, Math.max(1.2, thick[thick.length >> 1]));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.putImageData(out, 0, 0);
+  ctx.strokeStyle = '#141414';
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (const sg of segs){ ctx.moveTo(sg.x0 + 0.5, sg.y0 + 0.5); ctx.lineTo(sg.x1 + 0.5, sg.y1 + 0.5); }
+  ctx.stroke();
+  return { out: ctx.getImageData(0, 0, w, h), segs };
+}
+
+// ---- The whole pipeline ----
+
+function tcProcessImageData(src, st, scale){
+  let img = src, skew = 0;
+  if (st.perspective){
+    const w = img.width, h = img.height;
+    const map = tcPerspectiveMap(st.perspective.map(([fx, fy]) => [fx * w, fy * h]), w, h);
+    if (map) img = tcWarp(img, map);
+  }
+  if (st.straighten){
+    skew = tcEstimateSkew(tcDownscale(img, 900));
+    if (skew) img = tcWarp(img, tcRotateMap(skew, img.width, img.height));
+  }
+  let { out, gray } = tcCleanImageData(img, st, scale), segs = [];
+  if (st.rebuild) ({ out, segs } = tcRebuildLines(out, gray, st, scale));
+  return { out, segs, skew };
+}
+
+// ---- The dialog ----
+
+const TC_CLEAN_CONTROL_IDS = ['clean-flatten', 'clean-white', 'clean-black', 'clean-speck', 'clean-bw', 'clean-threshold',
+  'clean-colour', 'clean-straighten', 'clean-perspective', 'clean-rebuild', 'clean-minlen', 'clean-gap', 'clean-thick', 'clean-showlines',
+  'clean-crop-on'];
+
+function tcCornersAreIdentity(c){
+  const id = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  return c.every((p, i) => Math.abs(p[0] - id[i][0]) < 0.002 && Math.abs(p[1] - id[i][1]) < 0.002);
 }
 
 function tcCleanReadControls(){
+  const usePerspective = tcEl('clean-perspective').checked && tcCleanCorners && !tcCornersAreIdentity(tcCleanCorners);
   return {
     flatten: +tcEl('clean-flatten').value,
     white: +tcEl('clean-white').value,
@@ -5765,7 +6228,61 @@ function tcCleanReadControls(){
     bw: tcEl('clean-bw').checked,
     threshold: +tcEl('clean-threshold').value,
     colour: tcEl('clean-colour').checked,
+    straighten: tcEl('clean-straighten').checked,
+    perspective: usePerspective ? tcCleanCorners.map(p => [...p]) : null,
+    rebuild: tcEl('clean-rebuild').checked,
+    minLen: +tcEl('clean-minlen').value,
+    gap: +tcEl('clean-gap').value,
+    thick: +tcEl('clean-thick').value,
+    showLines: tcEl('clean-showlines').checked,
+    crop: tcEl('clean-crop-on').checked && tcCleanCrop && !(tcCleanCrop[0] <= 0.001 && tcCleanCrop[1] <= 0.001 && tcCleanCrop[2] >= 0.999 && tcCleanCrop[3] >= 0.999)
+      ? [...tcCleanCrop] : null,
   };
+}
+
+function tcCleanDrawCrop(){
+  const wrap = tcEl('clean-after-wrap');
+  wrap.classList.toggle('cropping', tcEl('clean-crop-on').checked);
+  if (!tcCleanCrop) tcCleanCrop = [0, 0, 1, 1];
+  const [x0, y0, x1, y1] = tcCleanCrop;
+  const box = tcEl('clean-crop');
+  box.style.left = (x0 * 100) + '%'; box.style.top = (y0 * 100) + '%';
+  box.style.width = ((x1 - x0) * 100) + '%'; box.style.height = ((y1 - y0) * 100) + '%';
+  const corners = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+  wrap.querySelectorAll('.crop-handle').forEach((hd, i) => {
+    hd.style.left = (corners[i][0] * 100) + '%';
+    hd.style.top = (corners[i][1] * 100) + '%';
+  });
+}
+
+// Crop box around everything darker than paper in the cleaned preview, with a small margin.
+function tcCropToDrawing(){
+  const img = tcCleanLastOut;
+  if (!img) return;
+  const w = img.width, h = img.height, d = img.data;
+  let x0 = w, y0 = h, x1 = -1, y1 = -1;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++){
+    const k = 4 * (y * w + x);
+    if (0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2] < 200){
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+  }
+  if (x1 < 0) return;
+  const m = 0.02;
+  tcCleanCrop = [Math.max(0, x0 / w - m), Math.max(0, y0 / h - m), Math.min(1, (x1 + 1) / w + m), Math.min(1, (y1 + 1) / h + m)];
+  tcEl('clean-crop-on').checked = true;
+  tcCleanSchedule();
+}
+
+function tcCleanDrawCorners(){
+  const wrap = tcEl('clean-before-wrap');
+  wrap.classList.toggle('perspective', tcEl('clean-perspective').checked);
+  if (!tcCleanCorners) tcCleanCorners = [[0, 0], [1, 0], [1, 1], [0, 1]];
+  wrap.querySelectorAll('.clean-handle').forEach((hd, i) => {
+    hd.style.left = (tcCleanCorners[i][0] * 100) + '%';
+    hd.style.top = (tcCleanCorners[i][1] * 100) + '%';
+  });
+  tcEl('clean-quad-poly').setAttribute('points', tcCleanCorners.map(q => q.join(',')).join(' '));
 }
 
 function tcCleanDrawAfter(){
@@ -5773,17 +6290,81 @@ function tcCleanDrawAfter(){
   const st = tcCleanReadControls();
   tcEl('clean-threshold-wrap').style.display = st.bw ? '' : 'none';
   tcEl('clean-colour').disabled = st.bw;
-  const cleaned = tcCleanImageData(tcCleanPreview.data, st, tcCleanPreview.scale);
+  tcEl('clean-rebuild-controls').style.display = st.rebuild ? '' : 'none';
+  tcCleanDrawCorners();
+  tcCleanDrawCrop();
+  const { out, segs, skew } = tcProcessImageData(tcCleanPreview.data, st, tcCleanPreview.scale);
+  tcCleanLastOut = out;
   const c = tcEl('clean-after');
-  c.width = cleaned.width; c.height = cleaned.height;
-  c.getContext('2d').putImageData(cleaned, 0, 0);
+  c.width = out.width; c.height = out.height;
+  const ctx = c.getContext('2d');
+  ctx.putImageData(out, 0, 0);
+  if (st.rebuild && st.showLines && segs.length){
+    ctx.strokeStyle = 'rgba(232,110,30,0.9)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (const sg of segs){ ctx.moveTo(sg.x0, sg.y0); ctx.lineTo(sg.x1, sg.y1); }
+    ctx.stroke();
+  }
+  const notes = [];
+  if (st.straighten) notes.push(skew ? `Straightened by ${Math.abs(skew).toFixed(1)}°` : 'No tilt found');
+  if (st.perspective) notes.push('Perspective fixed');
+  if (st.rebuild) notes.push(`${segs.length} straight line${segs.length === 1 ? '' : 's'} rebuilt`);
+  if (st.crop) notes.push(`Cropped to ${Math.round((st.crop[2] - st.crop[0]) * 100)}% × ${Math.round((st.crop[3] - st.crop[1]) * 100)}%`);
+  tcEl('clean-status').textContent = notes.join(' · ');
 }
 
 let tcCleanFrame = 0;
-['clean-flatten', 'clean-white', 'clean-black', 'clean-speck', 'clean-bw', 'clean-threshold', 'clean-colour'].forEach(id => {
-  tcEl(id).addEventListener('input', () => {
-    cancelAnimationFrame(tcCleanFrame);
-    tcCleanFrame = requestAnimationFrame(tcCleanDrawAfter);
+function tcCleanSchedule(){
+  cancelAnimationFrame(tcCleanFrame);
+  tcCleanFrame = requestAnimationFrame(tcCleanDrawAfter);
+}
+TC_CLEAN_CONTROL_IDS.forEach(id => tcEl(id).addEventListener('input', tcCleanSchedule));
+
+document.querySelectorAll('#clean-after-wrap .crop-handle').forEach(hd => {
+  hd.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    hd.setPointerCapture(e.pointerId);
+    const c = +hd.dataset.c;
+    const move = ev => {
+      const r = tcEl('clean-after').getBoundingClientRect();
+      const fx = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width));
+      const fy = Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height));
+      const b = tcCleanCrop, minSize = 0.05;
+      if (c === 0 || c === 3) b[0] = Math.min(fx, b[2] - minSize); else b[2] = Math.max(fx, b[0] + minSize);
+      if (c === 0 || c === 1) b[1] = Math.min(fy, b[3] - minSize); else b[3] = Math.max(fy, b[1] + minSize);
+      tcEl('clean-crop-on').checked = true;
+      tcCleanSchedule();
+    };
+    const up = () => {
+      hd.removeEventListener('pointermove', move);
+      hd.removeEventListener('pointerup', up);
+    };
+    hd.addEventListener('pointermove', move);
+    hd.addEventListener('pointerup', up);
+  });
+});
+
+document.querySelectorAll('#clean-before-wrap .clean-handle').forEach(hd => {
+  hd.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    hd.setPointerCapture(e.pointerId);
+    const i = +hd.dataset.i;
+    const move = ev => {
+      const r = tcEl('clean-before').getBoundingClientRect();
+      tcCleanCorners[i] = [
+        Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)),
+        Math.min(1, Math.max(0, (ev.clientY - r.top) / r.height)),
+      ];
+      tcCleanDrawCorners();
+      tcCleanSchedule();
+    };
+    const up = () => {
+      hd.removeEventListener('pointermove', move);
+      hd.removeEventListener('pointerup', up);
+    };
+    hd.addEventListener('pointermove', move);
+    hd.addEventListener('pointerup', up);
   });
 });
 
@@ -5799,11 +6380,21 @@ async function openCleanModal(){
   tcEl('clean-bw').checked = st.bw;
   tcEl('clean-threshold').value = st.threshold;
   tcEl('clean-colour').checked = st.colour;
+  tcEl('clean-straighten').checked = st.straighten;
+  tcEl('clean-perspective').checked = !!st.perspective;
+  tcCleanCorners = st.perspective ? st.perspective.map(q => [...q]) : null;
+  tcEl('clean-rebuild').checked = st.rebuild;
+  tcEl('clean-minlen').value = st.minLen;
+  tcEl('clean-gap').value = st.gap;
+  tcEl('clean-thick').value = st.thick;
+  tcEl('clean-showlines').checked = st.showLines;
+  tcEl('clean-crop-on').checked = !!st.crop;
+  tcCleanCrop = st.crop ? [...st.crop] : null;
   const before = tcEl('clean-before');
   before.width = tcCleanPreview.data.width; before.height = tcCleanPreview.data.height;
   before.getContext('2d').putImageData(tcCleanPreview.data, 0, 0);
-  tcCleanDrawAfter();
   tcEl('clean-modal').classList.remove('hidden');
+  tcCleanDrawAfter();
 }
 
 function closeCleanModal(){
@@ -5814,10 +6405,11 @@ function closeCleanModal(){
 async function tcCleanFile(file, st){
   const img = await tcLoadImage(file);
   const { data } = tcImageData(img, 0);
-  const cleaned = tcCleanImageData(data, st, 1);
+  let { out } = tcProcessImageData(data, st, 1);
+  if (st.crop) out = tcCropImageData(out, st.crop);
   const c = document.createElement('canvas');
-  c.width = cleaned.width; c.height = cleaned.height;
-  c.getContext('2d').putImageData(cleaned, 0, 0);
+  c.width = out.width; c.height = out.height;
+  c.getContext('2d').putImageData(out, 0, 0);
   const blob = await new Promise(res => c.toBlob(res, 'image/png'));
   return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.png', { type: 'image/png' });
 }
@@ -5826,8 +6418,8 @@ async function tcCleanFiles(files, onProgress){
   const out = [];
   for (let i = 0; i < files.length; i++){
     if (onProgress) onProgress(i + 1, files.length);
+    await new Promise(r => setTimeout(r, 0));   // let the page show progress between images
     out.push(await tcCleanFile(files[i], tcCleanSettings));
-    await new Promise(r => setTimeout(r, 0));   // let the page repaint between images
   }
   return out;
 }
@@ -5838,12 +6430,21 @@ function tcShowTemplate(file, label){
   tcTemplateImageUrl = url;
   tcEl('tc-stimImg').src = url;
   tcEl('tc-templateFileName').textContent = label;
+  const img = new Image();
+  img.onload = () => {
+    tcNativeW = img.naturalWidth;
+    tcNativeH = img.naturalHeight;
+    tcEl('tc-imageArea').style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+    tcRenderLayout();
+  };
+  img.src = url;
 }
 
 async function tcCleanApply(){
   const btn = tcEl('clean-apply-btn');
   btn.disabled = true;
   btn.textContent = 'Cleaning…';
+  await new Promise(r => setTimeout(r, 0));
   try {
     const st = tcCleanReadControls();
     const cleaned = await tcCleanFile(tcTemplateOriginal, st);
