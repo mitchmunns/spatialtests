@@ -1539,7 +1539,8 @@
   /* Nav buttons: rectangular blocks of slightly hazy acrylic, drawn as a
      box seen from the upper left. ::before is the front face, with a small
      LED to the right of the label that lights up, in one of the logo's
-     ring colours, when the pointer is over the button. ::after is the block's thickness: a
+     ring colours, when the pointer is over the button and for the page
+     you are on (.nav-current, set by showView()). ::after is the block's thickness: a
      right side and a darker bottom side meeting at the corner, cut to the
      box's outline. --d is the depth. */
   .user-bar button{
@@ -1587,10 +1588,10 @@
     filter:drop-shadow(1px 2px 3px rgba(20,40,63,0.22));
     z-index:-2;
   }
-  .user-bar button:hover::before{
+  .user-bar button:hover::before, .user-bar button.nav-current::before{
     background:
       linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 48%),
-      radial-gradient(circle closest-side, #FFFFFF 0 18%, var(--led) 34% 44%, color-mix(in srgb, var(--led) 45%, transparent) 58%, transparent 100%) no-repeat right 4px center / 20px 20px,
+      radial-gradient(circle closest-side, var(--led) 0 40%, color-mix(in srgb, var(--led) 45%, transparent) 56%, transparent 100%) no-repeat right 4px center / 20px 20px,
       radial-gradient(60% 120% at calc(100% - 14px) 50%, color-mix(in srgb, var(--led) 16%, transparent) 0%, transparent 70%),
       linear-gradient(180deg, rgba(247,250,253,0.94) 0%, rgba(232,239,246,0.92) 100%);
   }
@@ -1604,7 +1605,7 @@
   .user-bar button.nb-gold{--led:#F08A2C;}
   .user-bar button:focus-visible{outline:2px solid var(--compass-gold); outline-offset:2px;}
   .user-bar button.quiet{color:var(--ink-soft); --led:transparent; padding-right:11px;}
-  .user-bar button.quiet::before, .user-bar button.quiet:hover::before{
+  .user-bar button.quiet::before, .user-bar button.quiet:hover::before, .user-bar button.quiet.nav-current::before{
     background:
       linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 48%),
       linear-gradient(180deg, rgba(247,250,253,0.94) 0%, rgba(232,239,246,0.92) 100%);
@@ -1785,12 +1786,12 @@
   <header class="top">
     <div class="brand">Online <span>Spatial Tests</span> and Assessments Repository</div>
     <div class="user-bar">
-      <button onclick="goToHome()">Home</button>
-      <button class="nb-purple" onclick="goToDatasets()">Projects</button>
-      <button id="nav-admin" class="hidden nb-gold" onclick="goToAdmin()">All labs</button>
-      <button class="nb-green" onclick="goToBattery()">Battery</button>
-      <button class="nb-red" onclick="goToCatalog()">Catalog</button>
-      <button onclick="goToLiterature()">Literature</button>
+      <button onclick="goToHome()" data-view="view-home">Home</button>
+      <button class="nb-purple" onclick="goToDatasets()" data-view="view-datasets">Projects</button>
+      <button id="nav-admin" class="hidden nb-gold" onclick="goToAdmin()" data-view="view-admin">All labs</button>
+      <button class="nb-green" onclick="goToBattery()" data-view="view-battery">Battery</button>
+      <button class="nb-red" onclick="goToCatalog()" data-view="view-catalog">Catalog</button>
+      <button onclick="goToLiterature()" data-view="view-literature">Literature</button>
       <span class="user-email" id="user-email"></span>
       <button class="nb-purple" onclick="openProfile()">Profile</button>
       <button class="quiet" onclick="signOut()">Log out</button>
@@ -3638,6 +3639,9 @@ function hideItemPreview(){
 function showView(id){
   ['view-home', 'view-literature', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
+  });
+  document.querySelectorAll('.user-bar button[data-view]').forEach(b => {
+    b.classList.toggle('nav-current', b.dataset.view === id);
   });
   document.body.classList.toggle('workbench-open', id === 'view-catalog');
 }
