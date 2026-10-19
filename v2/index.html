@@ -250,6 +250,8 @@
     color:var(--ink-faint);
     margin:0 0 12px;
   }
+  .cite-link{color:var(--compass-blue); text-decoration:none; border-bottom:1px solid currentColor;}
+  .cite-link:hover{color:var(--ink);}
   .private-badge{
     display:inline-block;
     margin-left:6px;
@@ -1278,80 +1280,13 @@
   .quality-square.incomplete{background:var(--line-strong);}
 
   /* ---------- Home dashboard ---------- */
-  .dash-panel{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:4px;
-    padding:26px;
-    margin-bottom:36px;
-    max-width:56ch;
-  }
-  .dash-profile-row{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    padding-bottom:18px;
-    border-bottom:1px solid var(--line);
-    margin-bottom:20px;
-  }
-  .dash-avatar{
-    width:40px; height:40px;
-    border-radius:50%;
-    background:var(--compass-purple);
-    color:#fff;
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk', sans-serif;
-    font-weight:600;
-    font-size:14px;
-    flex-shrink:0;
-  }
-  .dash-profile-name{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:15px;}
-  .dash-profile-inst{font-size:12px; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace;}
-  .dash-profile-edit{
-    margin-left:auto;
-    font-size:12px;
-    color:var(--ink-soft);
-    background:none;
-    border:1px solid var(--line-strong);
-    border-radius:3px;
-    padding:6px 11px;
-    font-family:'IBM Plex Mono', monospace;
-  }
-  .dash-tile-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:20px;}
-  .dash-tile{border:1px solid var(--line); border-radius:4px; padding:12px 14px;}
+  .dash-tile-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; max-width:56ch; margin-top:32px;}
+  .dash-tile{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:12px 14px;}
   .dash-tile .dash-tnum{font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:22px; line-height:1;}
   .dash-tile .dash-tlabel{font-size:11px; color:var(--ink-soft); margin-top:5px; line-height:1.35;}
   .dash-tile.blue .dash-tnum{color:var(--compass-blue);}
   .dash-tile.gold .dash-tnum{color:var(--compass-gold);}
   .dash-tile.green .dash-tnum{color:var(--compass-green);}
-  .dash-cta-row{display:flex; gap:10px; margin-bottom:24px;}
-  .dash-cta{
-    flex:1;
-    display:flex; align-items:center; justify-content:space-between;
-    border-radius:4px;
-    padding:11px 15px;
-    font-family:'Inter', sans-serif;
-    font-size:13px;
-    font-weight:500;
-    cursor:pointer;
-    border:none;
-  }
-  .dash-cta.primary{background:linear-gradient(100deg, var(--compass-blue), var(--compass-purple)); color:#fff;}
-  .dash-cta.secondary{background:none; border:1px solid var(--line-strong); color:var(--ink);}
-  .dash-diag-head{
-    font-family:'IBM Plex Mono', monospace;
-    font-size:11px;
-    text-transform:uppercase;
-    letter-spacing:.06em;
-    color:var(--ink-faint);
-    margin-bottom:10px;
-  }
-  .dash-study-row{padding:12px 0; border-top:1px solid var(--line);}
-  .dash-study-row:first-child{border-top:none;}
-  .dash-study-name{font-size:13px; font-weight:500; margin-bottom:2px;}
-  .dash-study-meta{font-size:11px; color:var(--ink-faint); font-family:'IBM Plex Mono', monospace; margin-bottom:8px;}
-  .dash-study-row .quality-grid{gap:3px; max-width:none;}
-  .dash-study-row .quality-square{width:9px; height:9px; border-radius:1.5px;}
 
   .project-data-actions{
     display:flex;
@@ -1676,8 +1611,6 @@
 
   <!-- HOME / OVERVIEW VIEW -->
   <div id="view-home">
-    <div id="home-dashboard"></div>
-
     <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository" style="height:88px; width:auto; margin-bottom:20px;">
     <h1 class="view-title" style="font-size:36px; line-height:1.2; text-wrap:balance; max-width:22ch;">Welcome to the Online Spatial Tests and Assessments Repository (OSTAR)</h1>
     <p class="view-sub">This platform allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
@@ -1687,6 +1620,8 @@
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-gold);">●</span><div><strong>Catalog</strong><p>Browse our catalog of spatial tests that have been adapted for online administration.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><strong>Profile</strong><p>View and edit your profile information.</p></div></div>
     </div>
+
+    <div id="home-dashboard"></div>
   </div>
 
   <!-- WORKBENCH VIEW — configure on the left, browse the catalog in the
@@ -2444,7 +2379,10 @@ const TESTS = [
     id: 'VK',
     name: 'Mental Rotations Test',
     shortName: 'Vandenberg & Kuse MRT',
-    description: 'Two-of-four forced choice mental rotation task using Shepard-Metzler cube figures.',
+    description: 'A widely used measure of mental rotation. Created by Vandenberg and Kuse, based on the Shepard and Metzler (1971) stimuli. This is the 10-item set selected by Munns & Hegarty (2026). Each item has four answer choices with two correct.',
+    citation: 'Vandenberg & Kuse MRT (1978)',
+    citationOnly: true,
+    scholarQuery: 'Vandenberg Kuse 1978 Mental rotations, a group test of three-dimensional spatial visualization',
     iconSpeed: '',
     stats: { items: TEST_ITEMS.VK.length, timeLabel: '' },
     fields: standardFields('VK', 10)
@@ -2453,7 +2391,9 @@ const TESTS = [
     id: 'PSVT',
     name: 'Purdue Spatial Visualization Test: Rotations',
     shortName: 'PSVT:R',
-    description: 'Single-choice rotation-matching task using rotated solid objects, widely used in engineering education research.',
+    description: 'A measure of mental rotation with 3D solids, widely used in engineering education. Participants see how an example object turns, then pick the answer showing a second object turned the same way. This version has 15 items, each with five answer choices and one correct.',
+    citation: 'Guay (1976)',
+    scholarQuery: 'Guay 1976 Purdue spatial visualization test rotations',
     iconSpeed: 'speed-2',
     stats: { items: TEST_ITEMS.PSVT.length, timeLabel: '' },
     fields: standardFields('PSVT', 15)
@@ -2462,7 +2402,10 @@ const TESTS = [
     id: 'Flags',
     name: 'Flags Test',
     shortName: 'Flags (Thurstone)',
-    description: 'Timed multi-select judgment task on rotated and mirrored flag silhouettes, measuring spatial orientation speed.',
+    description: 'A measure of 2D mental rotation speed. Participants judge whether each flag is the target flag turned in the plane or its mirror image. This version has 10 items, each with six flags to judge.',
+    citation: 'Thurstone & Jeffrey Flags (1956)',
+    citationOnly: true,
+    scholarQuery: 'Thurstone Jeffrey 1956 Flags a test of space thinking',
     iconSpeed: 'speed-3',
     stats: { items: TEST_ITEMS.Flags.length, timeLabel: '' },
     fields: standardFields('Flags', 10)
@@ -2471,7 +2414,9 @@ const TESTS = [
     id: 'DAT',
     name: 'Differential Aptitude Test: Space Relations',
     shortName: 'DAT:SR',
-    description: 'Multiple-choice task matching 2D unfolded patterns to their corresponding 3D solid shapes.',
+    description: 'A measure of spatial visualization. Participants pick which 3D object a flat pattern would fold into. From the Differential Aptitude Tests. This is the 12-item set selected by Munns & Hegarty (2026, in prep). Each item has four answer choices with one correct.',
+    citation: 'Bennett, Seashore & Wesman (1947)',
+    scholarQuery: 'Bennett Seashore Wesman Differential Aptitude Tests space relations',
     iconSpeed: '',
     stats: { items: TEST_ITEMS.DAT.length, timeLabel: '' },
     fields: standardFields('DAT', 12)
@@ -2480,7 +2425,9 @@ const TESTS = [
     id: 'SBST',
     name: 'Santa Barbara Solids Test',
     shortName: 'SBST',
-    description: 'Cross-section identification task — select the 2D shape produced by a cutting plane through a 3D solid.',
+    description: 'A measure of imagining cross-sections. Participants pick the 2D shape made where a plane cuts through a 3D solid. This version has 15 items, each with four answer choices and one correct.',
+    citation: 'Cohen & Hegarty (2012)',
+    scholarQuery: 'Cohen Hegarty 2012 Inferring cross sections of 3D objects a new spatial thinking test',
     iconSpeed: 'speed-2',
     stats: { items: TEST_ITEMS.SBST.length, timeLabel: '' },
     fields: standardFields('SBST', 15)
@@ -2489,7 +2436,9 @@ const TESTS = [
     id: 'SD',
     name: 'Surface Development Test',
     shortName: 'SD',
-    description: 'Typed-answer task matching a folded surface pattern to the labeled edge it corresponds to on the finished solid.',
+    description: 'A measure of spatial visualization. Participants imagine a flat pattern folded into a 3D object and type which edges of the pattern match marked edges of the object. From the ETS Kit of Factor-Referenced Cognitive Tests. This is the 10-item set selected by Munns & Hegarty (2026, in prep).',
+    citation: 'Ekstrom, French, Harman & Dermen (1976)',
+    scholarQuery: 'Ekstrom French Harman Dermen 1976 Manual for kit of factor-referenced cognitive tests',
     iconSpeed: '',
     stats: { items: TEST_ITEMS.SD.length, timeLabel: '' },
     fields: standardFields('SD', 10)
@@ -2498,7 +2447,9 @@ const TESTS = [
     id: 'PFT',
     name: 'Paper Folding Test',
     shortName: 'PFT',
-    description: 'Multiple-choice task predicting hole-punch patterns after a sequence of paper folds.',
+    description: 'A measure of spatial visualization. Participants imagine a sheet of paper folded and punched, then pick where the holes appear once it is unfolded. From the ETS Kit of Factor-Referenced Cognitive Tests. This is the 10-item set selected by Munns & Hegarty (2026, in prep). Each item has five answer choices with one correct.',
+    citation: 'Ekstrom, French, Harman & Dermen (1976)',
+    scholarQuery: 'Ekstrom French Harman Dermen 1976 Manual for kit of factor-referenced cognitive tests',
     iconSpeed: 'speed-2',
     stats: { items: TEST_ITEMS.PFT.length, timeLabel: '' },
     fields: standardFields('PFT', 10)
@@ -2507,7 +2458,9 @@ const TESTS = [
     id: 'MC',
     name: 'Mental Cutting Test',
     shortName: 'MC',
-    description: 'Multiple-choice cross-section task — select the shape revealed when a cutting plane slices a 3D object.',
+    description: 'A measure of imagining cross-sections. Participants pick the shape made where a cutting plane slices a 3D object. Originally part of the College Entrance Examination Board\'s Special Aptitude Test in Spatial Relations. This version has 15 items, each with five answer choices and one correct.',
+    citation: 'CEEB (1939)',
+    scholarQuery: 'College Entrance Examination Board 1939 Special Aptitude Test in Spatial Relations mental cutting',
     iconSpeed: 'speed-3',
     stats: { items: TEST_ITEMS.MC.length, timeLabel: '' },
     fields: standardFields('MC', 15)
@@ -2705,7 +2658,9 @@ function renderCatalog(){
         <div class="icon-rotor ${t.iconSpeed}">${ICONS[t.id] ? ICONS[t.id]() : ''}</div>
       </div>
       <h3>${escapeHtml(t.name)}</h3>
-      <p class="subname">${escapeHtml(t.shortName)}${t.privateToMe ? ' <span class="private-badge">Only you</span>' : ''}</p>
+      <p class="subname">${t.citation
+        ? `${t.citationOnly ? '' : escapeHtml(t.shortName) + ' · '}<a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(t.scholarQuery)}" target="_blank" rel="noopener">${escapeHtml(t.citation)}</a>`
+        : escapeHtml(t.shortName)}${t.privateToMe ? ' <span class="private-badge">Only you</span>' : ''}</p>
       <p class="desc">${escapeHtml(t.description)}</p>
       <div class="stat-row">
         <span><strong>${t.stats.items}</strong> items</span>
@@ -3064,35 +3019,15 @@ function goToHome(){
   renderHomeDashboard();
 }
 
-// Populates the Home dashboard: who's logged in, how many studies are
-// running/piloting, participants across active (run) studies, quick links
-// into Projects, and a rollup of each running study's data-quality squares
-// (see computeProjectQuality()) so collection health is visible without
-// opening every project individually.
+// Slim Home dashboard: how many of your studies are running or piloting,
+// and how many participants the running ones have.
 async function renderHomeDashboard(){
   const wrap = document.getElementById('home-dashboard');
-  wrap.innerHTML = `<div class="dash-panel">Loading your dashboard…</div>`;
-
-  const user = await requireUser();
-  if (!user) return;
-
-  let profile = { name: '', institution: '' };
-  if (DEV_MODE){
-    profile = devProfile;
-  } else {
-    const { data } = await supabaseClient
-      .from('researchers')
-      .select('name, institution')
-      .eq('id', user.id)
-      .maybeSingle();
-    if (data) profile = { name: data.name || '', institution: data.institution || '' };
-  }
-
   let rows;
   try {
     rows = await fetchResearcherBatteries();
   } catch (e){
-    wrap.innerHTML = `<div class="dash-panel">Couldn't load your dashboard: ${escapeHtml(e.message)}</div>`;
+    wrap.innerHTML = '';
     return;
   }
   if (rows === null) return;
@@ -3101,73 +3036,13 @@ async function renderHomeDashboard(){
   const piloting = rows.filter(r => r.status === 'pilot');
   const activeParticipants = running.reduce((sum, r) => sum + (r.participantCount || 0), 0);
 
-  const displayName = profile.name || user.email;
-  const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'U';
-
   wrap.innerHTML = `
-    <div class="dash-panel">
-      <div class="dash-profile-row">
-        <div class="dash-avatar">${escapeHtml(initials)}</div>
-        <div>
-          <div class="dash-profile-name">${escapeHtml(displayName)}</div>
-          ${profile.institution ? `<div class="dash-profile-inst">${escapeHtml(profile.institution)}</div>` : ''}
-        </div>
-        <button class="dash-profile-edit" onclick="openProfile()">Edit profile</button>
-      </div>
-
-      <div class="dash-tile-row">
-        <div class="dash-tile gold"><div class="dash-tnum">${running.length}</div><div class="dash-tlabel">studies running</div></div>
-        <div class="dash-tile blue"><div class="dash-tnum">${piloting.length}</div><div class="dash-tlabel">studies piloting</div></div>
-        <div class="dash-tile green"><div class="dash-tnum">${activeParticipants}</div><div class="dash-tlabel">participants across active studies</div></div>
-      </div>
-
-      <div class="dash-cta-row">
-        <button class="dash-cta primary" onclick="goToDatasets()">Go to your projects <span>&rarr;</span></button>
-        <button class="dash-cta secondary" onclick="goToDatasets()">Export data <span>&darr;</span></button>
-      </div>
-
-      ${running.length > 0 ? `
-        <div class="dash-diag-head">Data-quality diagnostics — running studies</div>
-        <div id="dash-diag-list">${running.map(r => `
-          <div class="dash-study-row" id="dash-diag-${r.id}">
-            <div class="dash-study-name">${escapeHtml(r.name || 'Untitled battery')}</div>
-            <div class="dash-study-meta">loading…</div>
-          </div>
-        `).join('')}</div>
-      ` : ''}
+    <div class="dash-tile-row">
+      <div class="dash-tile gold"><div class="dash-tnum">${running.length}</div><div class="dash-tlabel">studies running</div></div>
+      <div class="dash-tile blue"><div class="dash-tnum">${piloting.length}</div><div class="dash-tlabel">studies piloting</div></div>
+      <div class="dash-tile green"><div class="dash-tnum">${activeParticipants}</div><div class="dash-tlabel">participants in running studies</div></div>
     </div>
   `;
-
-  running.forEach(loadDashboardDiagnostic);
-}
-
-// Loads one running study's data-quality squares into the dashboard —
-// one fetch per study rather than a single Promise.all, so a slow or
-// failing study doesn't hold up the others from showing.
-async function loadDashboardDiagnostic(row){
-  const target = document.getElementById(`dash-diag-${row.id}`);
-  if (!target) return;
-
-  if (!row.participantCount){
-    target.querySelector('.dash-study-meta').textContent = 'No participants yet';
-    return;
-  }
-  try {
-    const trials = await fetchBatteryTrials(row.id);
-    const testIds = row.items.map(i => i.testId);
-    const quality = computeProjectQuality(trials, testIds);
-    const failCount = quality.participants.filter(p => p.status === 'fail').length;
-    const meanLine = quality.mean !== null ? ` · mean score ${quality.mean.toFixed(0)}%` : '';
-    const failLine = failCount > 0 ? ` · ${failCount} failed a quality check` : '';
-    const squares = quality.participants.map(p => `<div class="quality-square ${p.status}"></div>`).join('');
-    target.innerHTML = `
-      <div class="dash-study-name">${escapeHtml(row.name || 'Untitled battery')}</div>
-      <div class="dash-study-meta">${quality.total} participant${quality.total === 1 ? '' : 's'}${meanLine}${failLine}</div>
-      <div class="quality-grid">${squares}</div>
-    `;
-  } catch (e){
-    target.querySelector('.dash-study-meta').textContent = `${row.participantCount} participants (couldn't load quality detail)`;
-  }
 }
 
 // Entry point into the workbench. Always resets the config panel to its
