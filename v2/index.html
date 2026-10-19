@@ -63,10 +63,11 @@
     fill:none;
     stroke:var(--wire);
     stroke-width:1;
-    opacity:0.05;
     pointer-events:none;
     z-index:-1;
   }
+  .compass-watermark > path:first-child{opacity:0.07; fill:var(--compass-blue); fill-opacity:0.35;}
+  .compass-watermark .cw-arc{stroke-width:10; stroke-linecap:round; opacity:0.13;}
 
   header.top{
     position:relative;
@@ -74,8 +75,8 @@
     flex-direction:column;
     gap:14px;
     border-bottom:1px solid var(--line-strong);
-    padding-bottom:20px;
-    margin-bottom:40px;
+    padding-bottom:16px;
+    margin-bottom:24px;
   }
   /* Thin compass-ring stripe, echoing the logo's five-color arc without
      recoloring the app's own single-accent UI. */
@@ -135,10 +136,17 @@
     border:1px solid var(--line);
     border-radius:8px;
     box-shadow:0 2px 10px rgba(20,40,63,0.06);
-    padding:24px 30px 26px;
+    padding:20px 30px 22px;
   }
-  #view-home p.view-sub{margin-bottom:18px;}
-  #view-home .home-steps{gap:10px; margin:0;}
+  #view-home p.view-sub{margin-bottom:14px;}
+  .home-hero{display:flex; align-items:center; gap:28px; margin-bottom:10px;}
+  .home-hero img{height:120px; width:auto; flex-shrink:0;}
+  .home-hero h1.view-title{font-size:26px; line-height:1.25; text-wrap:balance; margin:0;}
+  @media (max-width:720px){
+    .home-hero{flex-direction:column; align-items:flex-start; gap:12px;}
+    .home-hero img{height:80px;}
+  }
+  #view-home .home-steps{gap:6px; margin:0;}
   @media (max-width:640px){ .home-panel{padding:22px 18px 24px;} }
   .home-steps{
     display:grid;
@@ -243,6 +251,26 @@
     color:var(--wire);
     font-weight:500;
   }
+
+  .shape-icon{overflow:visible;}
+  .si-face{
+    fill:color-mix(in srgb, #FFFFFF calc(var(--lit) * 100%), #C9D7E6);
+    fill-opacity:0.92;
+    stroke:var(--wire);
+    stroke-width:1.1;
+    stroke-linejoin:round;
+    vector-effect:non-scaling-stroke;
+  }
+  .si-face.accent{fill:var(--accent-soft); fill-opacity:0.85; stroke:var(--accent-dark);}
+  /* Pieces of a split face: no outline of their own (each is nudged out a
+     hair to close the seams); .si-edge draws the outline. */
+  .si-tile{
+    fill:color-mix(in srgb, #FFFFFF calc(var(--lit) * 100%), #C9D7E6);
+    stroke:none;
+  }
+  .si-tile.accent{fill:var(--accent-soft);}
+  .si-edge{fill:none; stroke:var(--wire); stroke-width:1.1; stroke-linecap:butt; vector-effect:non-scaling-stroke;}
+  .si-edge.accent{stroke:var(--accent-dark);}
 
   @keyframes spin{
     from{transform:rotateX(-18deg) rotateY(0deg);}
@@ -1651,7 +1679,11 @@
      app's blueprint aesthetic instead of a pasted-in brand mark. -->
 <svg class="compass-watermark" viewBox="0 0 400 400" aria-hidden="true">
   <path d="M200,10 L226.8,135.3 L334.4,65.6 L264.7,173.2 L390,200 L264.7,226.8 L334.4,334.4 L226.8,264.7 L200,390 L173.2,264.7 L65.6,334.4 L135.3,226.8 L10,200 L135.3,173.2 L65.6,65.6 L173.2,135.3 Z"/>
-  <circle cx="200" cy="200" r="150"/>
+  <path class="cw-arc" style="stroke:var(--compass-purple)" d="M207.9,50.2 A150,150 0 0 1 340.0,146.2"/>
+  <path class="cw-arc" style="stroke:var(--compass-green)" d="M344.9,161.2 A150,150 0 0 1 294.4,316.6"/>
+  <path class="cw-arc" style="stroke:var(--compass-red)" d="M281.7,325.8 A150,150 0 0 1 118.3,325.8"/>
+  <path class="cw-arc" style="stroke:var(--compass-gold)" d="M105.6,316.6 A150,150 0 0 1 55.1,161.2"/>
+  <path class="cw-arc" style="stroke:var(--compass-blue)" d="M60.0,146.2 A150,150 0 0 1 192.1,50.2"/>
 </svg>
 
 <!-- AUTH SCREEN -->
@@ -1699,8 +1731,10 @@
   <!-- HOME / OVERVIEW VIEW -->
   <div id="view-home">
    <div class="home-panel">
-    <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository" style="height:56px; width:auto; margin-bottom:12px;">
-    <h1 class="view-title" style="font-size:24px; line-height:1.25; text-wrap:balance; margin-bottom:8px;">Welcome to the Online Spatial Tests and Assessments Repository (OSTAR)</h1>
+    <div class="home-hero">
+      <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
+      <h1 class="view-title">Welcome to the Online Spatial Tests and Assessments Repository (OSTAR)</h1>
+    </div>
     <p class="view-sub">This platform allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><strong>Projects</strong><p>View all of your current test batteries, how many participants have completed them, and download your data.</p></div></div>
@@ -2864,6 +2898,175 @@ const ICONS = {
   `,
 };
 
+// Solids from the maps model (the rotation and folding work), drawn as
+// turning wireframes in place of the box-built icons above. Each shape:
+// v = vertices (centred, largest extent 1, y up), f = faces by vertex
+// index, accent = faces drawn in the accent colour. One animation loop
+// turns every icon on screen; faces are painted far-to-near.
+const ICON_SHAPES = {
+  VK: {"v":[[-0.25,0.5,-0.5],[-0.25,0.5,-0.25],[0.5,0.5,-0.25],[0.5,0.5,-0.5],[-0.25,-0.25,-0.25],[0.0,-0.25,-0.25],[0.0,0.25,-0.25],[0.5,0.25,-0.25],[-0.25,-0.5,-0.5],[-0.25,-0.5,0.25],[-0.25,-0.25,0.25],[0.5,0.25,-0.5],[0.0,0.25,-0.5],[0.0,-0.5,-0.5],[0.0,-0.25,0.5],[0.0,-0.5,0.5],[-0.5,-0.5,0.5],[-0.5,-0.5,0.25],[-0.5,-0.25,0.25],[-0.5,-0.25,0.5]],"f":[[0,1,2,3],[1,4,5,6,7,2],[1,0,8,9,10,4],[0,3,11,12,13,8],[6,12,11,7],[3,2,7,11],[12,6,5,14,15,13],[13,15,16,17,9,8],[5,4,10,18,19,14],[15,14,19,16],[19,18,17,16],[10,9,17,18]]},
+  PSVT: {"v":[[0.25,-0.5,-0.5],[0.25,0.5,-0.5],[0.25,0.5,0.0],[0.25,0.0,0.0],[0.25,0.0,0.5],[0.25,-0.5,0.5],[-0.25,0.5,-0.5],[-0.25,-0.5,-0.5],[-0.25,-0.5,0.5],[-0.25,0.5,0.5],[-0.25,0.5,0.0]],"f":[[0,1,2,3,4,5],[6,7,8,9,10],[1,0,7,6],[3,2,10],[2,1,6,10],[0,5,8,7],[5,4,9,8],[4,3,10,9]]},
+  DAT: {"v":[[-0.274,0.0,0.274],[0.274,0.0,0.274],[0.0,0.5,0.0],[0.0,-0.5,0.0],[0.274,0.0,-0.274],[-0.274,0.0,-0.274]],"f":[[0,1,2],[1,0,3],[1,4,2],[4,1,3],[4,5,2],[5,4,3],[5,0,2],[0,5,3]]},
+  SD: {"v":[[-0.301,0.5,0.201],[0.301,0.5,0.201],[0.301,0.31,0.201],[-0.093,0.31,0.201],[-0.093,0.102,0.201],[0.104,0.102,0.201],[0.104,-0.095,0.201],[-0.093,-0.095,0.201],[-0.093,-0.5,0.201],[-0.301,-0.5,0.201],[-0.301,0.5,-0.201],[0.301,0.5,-0.201],[0.301,0.31,-0.201],[-0.093,0.31,-0.201],[-0.093,0.102,-0.201],[0.104,0.102,-0.201],[0.104,-0.095,-0.201],[-0.093,-0.095,-0.201],[-0.093,-0.5,-0.201],[-0.301,-0.5,-0.201]],"f":[[9,8,7,6,5,4,3,2,1,0],[10,11,12,13,14,15,16,17,18,19],[0,1,11,10],[1,2,12,11],[2,3,13,12],[3,4,14,13],[4,5,15,14],[5,6,16,15],[6,7,17,16],[7,8,18,17],[8,9,19,18],[9,0,10,19]]},
+  MC: {"v":[[0.357,-0.371,-0.364],[0.357,0.375,-0.364],[0.357,0.375,0.36],[0.357,0.364,0.371],[0.357,-0.371,0.371],[-0.356,0.375,-0.364],[-0.356,-0.371,-0.364],[-0.356,-0.371,0.371],[-0.356,-0.348,0.371],[-0.356,0.375,-0.353],[0.463,-0.485,-0.5],[-0.494,-0.485,-0.469],[-0.463,0.485,0.5],[0.494,0.485,0.469]],"f":[[0,1,2,3,4],[5,6,7,8,9],[1,0,6,5],[4,3,8,7],[2,1,5,9],[0,4,7,6],[8,3,2,9],[10,11,12,13]],"accent":[7]},
+  SBST: {"v":[[0.038,-0.318,-0.439],[0.161,-0.318,-0.414],[0.266,-0.318,-0.344],[0.335,-0.318,-0.24],[0.36,-0.318,-0.117],[0.335,-0.318,0.007],[0.266,-0.318,0.111],[0.161,-0.318,0.181],[0.038,-0.318,0.205],[-0.085,-0.318,0.181],[-0.19,-0.318,0.111],[-0.26,-0.318,0.007],[-0.284,-0.318,-0.117],[-0.26,-0.318,-0.24],[-0.19,-0.318,-0.344],[-0.085,-0.318,-0.414],[0.038,0.318,-0.117],[-0.5,-0.293,0.188],[0.294,-0.293,0.446],[0.5,0.187,-0.188],[-0.294,0.187,-0.446]],"f":[[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],[16,4,3],[16,3,2],[16,2,1],[16,1,0],[16,0,15],[16,15,14],[16,14,13],[16,13,12],[11,16,12],[10,16,11],[9,16,10],[8,16,9],[8,7,16],[7,6,16],[6,5,16],[5,4,16],[17,18,19,20]],"accent":[17]},
+  PFT: {"v":[[-0.5,-0.25,-0.235],[0.5,-0.25,-0.235],[0.5,0.25,-0.235],[-0.5,0.25,-0.235],[0.5,0.079,0.235],[-0.5,0.079,0.235]],"f":[[0,1,2,3],[2,4,5,3]],"accent":[1]},
+  Flags: {"v":[[-0.5,0.266,0.0],[-0.5,0.0,0.0],[-0.167,0.0,0.0],[-0.167,0.266,0.0],[0.167,0.266,0.0],[0.167,-0.266,0.0],[0.5,-0.266,0.0],[0.5,0.266,0.0],[-0.5,-0.266,0.0]],"f":[[0,1,2,3],[4,5,6,7],[3,2,1,8,5,4]],"accent":[2]}
+};
+const ICON_PERIOD = { '': 13, 'speed-2': 17, 'speed-3': 10 };   // seconds per turn
+const ICON_TILT = -18 * Math.PI / 180;
+
+function shapeIcon(id, size, speed = ''){
+  return `<svg class="shape-icon" data-shape="${id}" data-period="${ICON_PERIOD[speed] || 13}" width="${size}" height="${size}" viewBox="-0.68 -0.68 1.36 1.36" aria-hidden="true"></svg>`;
+}
+
+// A face drawn as one polygon is sorted by its centre, so a cutting plane
+// that passes through a solid ends up wholly in front of or behind it.
+// In shapes with a plane (an accent quad), every face is therefore split
+// into small pieces that are each sorted on their own: the plane into a
+// grid of tiles, the solid's (convex) faces into small triangles. Outlines
+// are drawn as short segments sorted the same way, so the pieces' seams
+// never show.
+const ICON_TILES = 12;         // plane tiles per side
+const ICON_PIECE = 0.2;        // longest edge of a solid's piece
+function iconParts(id){
+  const sh = ICON_SHAPES[id];
+  if (sh._parts) return sh._parts;
+  const accent = new Set(sh.accent || []);
+  const split = sh.f.some((f, i) => accent.has(i) && f.length === 4);
+  const parts = [];
+  const lerp = (a, b, t) => a.map((c, k) => c + (b[k] - c) * t);
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  const outline = (poly, isAccent) => poly.forEach((p0, k) => {
+    const p1 = poly[(k + 1) % poly.length];
+    const n = Math.max(1, Math.ceil(dist(p0, p1) / 0.1));
+    for (let j = 0; j < n; j++){
+      parts.push({ kind: 'edge', poly: [lerp(p0, p1, j / n), lerp(p0, p1, (j + 1) / n)], accent: isAccent, face: curFace });
+    }
+  });
+  const triangles = (tri, out) => {
+    const [a, b, c] = tri;
+    if (Math.max(dist(a, b), dist(b, c), dist(c, a)) <= ICON_PIECE){ out.push(tri); return; }
+    const ab = lerp(a, b, 0.5), bc = lerp(b, c, 0.5), ca = lerp(c, a, 0.5);
+    [[a, ab, ca], [ab, b, bc], [ca, bc, c], [ab, bc, ca]].forEach(t => triangles(t, out));
+  };
+
+  let curFace = -1;
+  sh.f.forEach((f, i) => {
+    curFace = i;
+    const poly = f.map(vi => sh.v[vi]);
+    const isAccent = accent.has(i);
+    if (!split){
+      parts.push({ kind: 'face', poly, accent: isAccent });
+      return;
+    }
+    if (isAccent && f.length === 4){
+      const [a, b, c, d] = poly, n = ICON_TILES;
+      const at = (u, w) => lerp(lerp(a, b, u), lerp(d, c, u), w);
+      for (let iu = 0; iu < n; iu++){
+        for (let iw = 0; iw < n; iw++){
+          const u0 = iu / n, u1 = (iu + 1) / n, w0 = iw / n, w1 = (iw + 1) / n;
+          parts.push({ kind: 'tile', poly: [at(u0, w0), at(u1, w0), at(u1, w1), at(u0, w1)], accent: true, face: curFace });
+        }
+      }
+    } else {
+      // Fan from the centre (faces here are convex), then halve edges
+      // until each piece is small.
+      const centre = poly.reduce((acc, q) => acc.map((c, k) => c + q[k] / poly.length), [0, 0, 0]);
+      const pieces = [];
+      poly.forEach((q, k) => triangles([centre, q, poly[(k + 1) % poly.length]], pieces));
+      pieces.forEach(t => parts.push({ kind: 'tile', poly: t, accent: isAccent, face: curFace }));
+    }
+    outline(poly, isAccent);
+  });
+  parts.forEach(e => {
+    if (e.kind !== 'edge') return;
+    const m = lerp(e.poly[0], e.poly[1], 0.5), reach = dist(e.poly[0], e.poly[1]) * 0.75 + 1e-6;
+    e.touch = [];
+    parts.forEach((t, ti) => {
+      if (t.kind === 'tile' && t.face === e.face && t.poly.some(q => dist(q, m) <= reach)) e.touch.push(ti);
+    });
+  });
+  sh._parts = parts;
+  return parts;
+}
+
+function drawShapeIcon(svg, angle){
+  if (!ICON_SHAPES[svg.dataset.shape]) return;
+  const parts = iconParts(svg.dataset.shape);
+  const cy = Math.cos(angle), sy = Math.sin(angle);
+  const cx = Math.cos(ICON_TILT), sx = Math.sin(ICON_TILT);
+  const L = [-0.4, 0.6, 0.7].map(c => c / Math.hypot(-0.4, 0.6, 0.7));
+  const view = ([x, y, z]) => {
+    const x1 = x * cy + z * sy, z1 = -x * sy + z * cy;
+    const y2 = y * cx - z1 * sx, z2 = y * sx + z1 * cx;
+    const k = 3 / (3 - z2);                       // mild perspective
+    return [x1 * k, -y2 * k, z2, x1, y2];
+  };
+  const items = parts.map(part => {
+    const pts = part.poly.map(view);
+    const z = pts.reduce((sum, q) => sum + q[2], 0) / pts.length;
+    let lit = 1;
+    if (part.kind !== 'edge'){
+      let nx = 0, ny = 0, nz = 0;
+      pts.forEach((a, j) => {
+        const b = pts[(j + 1) % pts.length];
+        nx += (a[4] - b[4]) * (a[2] + b[2]);
+        ny += (a[2] - b[2]) * (a[3] + b[3]);
+        nz += (a[3] - b[3]) * (a[4] + b[4]);
+      });
+      const n = Math.hypot(nx, ny, nz) || 1;
+      lit = 0.25 + 0.75 * Math.abs((nx * L[0] + ny * L[1] + nz * L[2]) / n);
+    }
+    return { part, pts, z, lit };
+  });
+  // Outline segments sit just in front of the nearest piece of their own face.
+  items.forEach(it => {
+    if (it.part.kind === 'edge' && it.part.touch){
+      it.part.touch.forEach(ti => { it.z = Math.max(it.z, items[ti].z); });
+      it.z += 1e-4;
+    }
+  });
+  items.sort((a, b) => a.z - b.z);
+  svg.innerHTML = items.map(({ part, pts, lit }) => {
+    let flat = pts;
+    if (part.kind === 'tile'){
+      // Nudge each tile out a hair so neighbouring tiles close their seams.
+      const mx = pts.reduce((s2, q) => s2 + q[0], 0) / pts.length;
+      const my = pts.reduce((s2, q) => s2 + q[1], 0) / pts.length;
+      flat = pts.map(q => {
+        const dx = q[0] - mx, dy = q[1] - my, r = Math.hypot(dx, dy) || 1;
+        return [q[0] + dx / r * 0.008, q[1] + dy / r * 0.008];
+      });
+    }
+    const xy = flat.map(q => q[0].toFixed(3) + ',' + q[1].toFixed(3));
+    if (part.kind === 'edge'){
+      return `<polyline class="si-edge${part.accent ? ' accent' : ''}" points="${xy.join(' ')}"/>`;
+    }
+    const cls = (part.kind === 'tile' ? 'si-tile' : 'si-face') + (part.accent ? ' accent' : '');
+    return `<polygon class="${cls}" points="${xy.join(' ')}" style="--lit:${lit.toFixed(2)}"/>`;
+  }).join('');
+}
+
+(function animateShapeIcons(){
+  const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let last = 0;
+  function frame(t){
+    if (t - last > 33){
+      last = t;
+      document.querySelectorAll('svg.shape-icon').forEach(svg => {
+        if (!svg.isConnected || svg.getClientRects().length === 0) return;
+        const period = Number(svg.dataset.period) || 13;
+        const angle = still ? 0.6 : (t / 1000 / period) * 2 * Math.PI;
+        drawShapeIcon(svg, angle);
+      });
+    }
+    if (!still) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+  if (still) setInterval(() => frame(performance.now() + 100), 1000);
+})();
+
 // Sources reporting psychometrics, grouped by the skill each test measures.
 // A source without a url is shown as a plain citation (not yet published).
 const PSYCHOMETRIC_SOURCES = {
@@ -2949,7 +3152,7 @@ function renderCatalog(){
   grid.innerHTML = TESTS.filter(t => !t.attentionCheck && !t.hiddenFromCatalog).map(t => `
     <div class="test-card" data-test-id="${t.id}">
       <div class="cube-stage">
-        <div class="icon-rotor ${t.iconSpeed}">${ICONS[t.id] ? ICONS[t.id]() : ''}</div>
+        ${ICON_SHAPES[t.id] ? shapeIcon(t.id, 96, t.iconSpeed) : `<div class="icon-rotor ${t.iconSpeed}">${ICONS[t.id] ? ICONS[t.id]() : ''}</div>`}
       </div>
       <h3>${escapeHtml(t.name)}</h3>
       <p class="subname">${t.citation
@@ -4155,7 +4358,7 @@ function renderProjectTestTile(item){
   return `
     <div class="project-test-tile">
       <div class="cube-stage">
-        <div class="icon-rotor">${ICONS[item.testId] ? ICONS[item.testId]() : ''}</div>
+        ${ICON_SHAPES[item.testId] ? shapeIcon(item.testId, 44) : `<div class="icon-rotor">${ICONS[item.testId] ? ICONS[item.testId]() : ''}</div>`}
       </div>
       <div class="project-test-tile-name">${escapeHtml(test ? test.shortName : item.testId)}</div>
       <div class="project-test-tile-count">${count} item${count === 1 ? '' : 's'}</div>
