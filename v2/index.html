@@ -1537,9 +1537,9 @@
     color:var(--ink-soft);
   }
   /* Nav buttons: rectangular blocks of slightly hazy acrylic, drawn as a
-     box seen from the upper left. ::before is the front face, with a thin
-     strip of LEDs inside it under the label, in one of the logo's ring
-     colours. ::after is the block's thickness: a
+     box seen from the upper left. ::before is the front face, with a small
+     LED to the right of the label that lights up, in one of the logo's
+     ring colours, when the pointer is over the button. ::after is the block's thickness: a
      right side and a darker bottom side meeting at the corner, cut to the
      box's outline. --d is the depth. */
   .user-bar button{
@@ -1552,7 +1552,7 @@
     border:none;
     font-size:12.5px;
     font-weight:500;
-    padding:7px 12px 9px;
+    padding:7px 24px 8px 11px;
     margin:0 var(--d) var(--d) 0;
     color:var(--ink);
     white-space:nowrap;
@@ -1567,8 +1567,7 @@
     border:1px solid var(--edge-line);
     background:
       linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 48%),
-      linear-gradient(180deg, transparent 0, color-mix(in srgb, var(--led) 70%, transparent) 50%, transparent 100%) no-repeat left 12px bottom 5px / calc(100% - 24px) 3px,
-      radial-gradient(70% 90% at 50% 100%, color-mix(in srgb, var(--led) 12%, transparent) 0%, transparent 70%),
+      radial-gradient(circle closest-side, color-mix(in srgb, var(--led) 22%, #C3CFDB) 0 62%, color-mix(in srgb, var(--led) 14%, rgba(120,140,165,0.5)) 70% 82%, transparent 100%) no-repeat right 10px center / 8px 8px,
       linear-gradient(180deg, rgba(247,250,253,0.94) 0%, rgba(232,239,246,0.92) 100%);
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.95), inset 1px 0 0 rgba(255,255,255,0.6);
     z-index:-1;
@@ -1591,8 +1590,8 @@
   .user-bar button:hover::before{
     background:
       linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 48%),
-      linear-gradient(180deg, transparent 0, color-mix(in srgb, var(--led) 90%, transparent) 50%, transparent 100%) no-repeat left 12px bottom 5px / calc(100% - 24px) 3px,
-      radial-gradient(70% 90% at 50% 100%, color-mix(in srgb, var(--led) 18%, transparent) 0%, transparent 70%),
+      radial-gradient(circle closest-side, #FFFFFF 0 18%, var(--led) 34% 44%, color-mix(in srgb, var(--led) 45%, transparent) 58%, transparent 100%) no-repeat right 4px center / 20px 20px,
+      radial-gradient(60% 120% at calc(100% - 14px) 50%, color-mix(in srgb, var(--led) 16%, transparent) 0%, transparent 70%),
       linear-gradient(180deg, rgba(247,250,253,0.94) 0%, rgba(232,239,246,0.92) 100%);
   }
   /* Pressed: the block sinks into the page by its own depth. */
@@ -1604,7 +1603,12 @@
   .user-bar button.nb-red{--led:#F2453A;}
   .user-bar button.nb-gold{--led:#F08A2C;}
   .user-bar button:focus-visible{outline:2px solid var(--compass-gold); outline-offset:2px;}
-  .user-bar button.quiet{color:var(--ink-soft); --led:transparent;}
+  .user-bar button.quiet{color:var(--ink-soft); --led:transparent; padding-right:11px;}
+  .user-bar button.quiet::before, .user-bar button.quiet:hover::before{
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 48%),
+      linear-gradient(180deg, rgba(247,250,253,0.94) 0%, rgba(232,239,246,0.92) 100%);
+  }
   .battery-btn{
     position:relative;
     display:flex;
