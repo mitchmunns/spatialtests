@@ -3068,10 +3068,14 @@ function drawShapeIcon(svg, angle){
 
 // Turns every "Author & Author (year)" in a piece of text into a link:
 // to the paper itself where we have its address, otherwise a Google
-// Scholar search. Unpublished ("in prep") work searches the authors.
+// Scholar search. Unpublished ("in prep") work we know of goes to
+// in_prep.html; any other in-prep citation searches the authors.
 const CITATION_URLS = {
   'Munns & Hegarty (2026)': 'https://www.sciencedirect.com/science/article/pii/S0160289626000395',
   'Munns, He, Topete & Hegarty (2023)': 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10672093/',
+  // Unpublished papers are described on a page next to this one.
+  'Munns & Hegarty (2026, in prep)': 'in_prep.html#folding',
+  'Munns & Hegarty (in prep)': 'in_prep.html#cross-sections',
 };
 const CITATION_RE = /([A-Z][A-Za-z'’-]+(?:(?:, | &amp; | & | and )[A-Z][A-Za-z'’-]+)*(?: et al\.)?) \(((?:19|20)\d\d(?:, in prep)?|in prep)\)/g;
 function scholarUrl(query){
@@ -3102,7 +3106,7 @@ const PSYCHOMETRIC_SOURCES = {
     { cite: 'Munns, He, Topete & Hegarty (2023)', note: 'Item response theory analysis of cross-section tests; refined short forms.', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10672093/' },
   ],
   folding: [
-    { cite: 'Munns & Hegarty (2026, in prep)', note: 'Item selection for the folding tests used here.' },
+    { cite: 'Munns & Hegarty (2026, in prep)', note: 'Item response theory analysis of three paper-folding measures (PFT, DAT and SD); the best items form a hybrid test checked on a new sample.' },
     { cite: 'Burte, Gardony, Hutton & Taylor (2019)', note: 'Problem features and solution strategies in the Paper Folding Test.', url: 'https://doi.org/10.1016/j.paid.2018.08.009' },
   ],
 };
