@@ -163,7 +163,8 @@
   #view-home p.view-sub{margin-bottom:14px;}
   .home-hero{display:flex; align-items:center; gap:28px; margin-bottom:6px;}
   .home-hero img{height:120px; width:auto; flex-shrink:0;}
-  .home-hero h1.view-title{font-size:26px; line-height:1.25; text-wrap:balance; margin:0;}
+  .home-hero h1.view-title{font-size:21px; font-weight:700; line-height:1.25; margin:0 0 4px;}
+  #view-home .home-intro p.view-sub{margin:0;}
   @media (max-width:720px){
     .home-hero{flex-direction:column; align-items:flex-start; gap:12px;}
     .home-hero img{height:80px;}
@@ -1947,9 +1948,11 @@
    <div class="home-panel">
     <div class="home-hero">
       <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
-      <h1 class="view-title">Welcome!</h1>
+      <div class="home-intro">
+        <h1 class="view-title">Welcome!</h1>
+        <p class="view-sub">This is a platform and repository for making spatial tests accessible for all researchers. It allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
+      </div>
     </div>
-    <p class="view-sub">This is a platform and repository for online spatial tests. It allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToGuide()">Guide</button><p>Step-by-step instructions for using the platform, and recommendations.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToDatasets()">Projects</button><p>Your batteries, how many participants have finished, and your data.</p></div></div>
