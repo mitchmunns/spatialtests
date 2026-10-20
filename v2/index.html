@@ -79,7 +79,7 @@
     flex-direction:column;
     gap:14px;
     padding:18px 22px 16px;
-    margin-bottom:20px;
+    margin-bottom:14px;
     border-radius:14px;
     background:linear-gradient(125deg, #1C4A86 0%, #2A67B4 52%, #4B35B0 100%);
     box-shadow:0 6px 18px rgba(20,40,63,0.18);
@@ -158,10 +158,13 @@
     border:1px solid var(--line);
     border-radius:8px;
     box-shadow:0 2px 10px rgba(20,40,63,0.06);
-    padding:20px 30px 14px;
+    padding:16px 30px 12px;
   }
   #view-home p.view-sub{margin-bottom:14px;}
-  .home-hero{display:flex; align-items:center; gap:28px; margin-bottom:6px;}
+  /* Text top-aligned with the drawn part of the logo (the image has about
+     7px of white above the compass at this size). */
+  .home-hero{display:flex; align-items:flex-start; gap:36px; margin-bottom:22px;}
+  .home-intro{padding-top:5px;}
   .home-hero img{height:120px; width:auto; flex-shrink:0;}
   .home-hero h1.view-title{font-size:21px; font-weight:700; line-height:1.25; margin:0 0 4px;}
   #view-home .home-intro p.view-sub{margin:0;}
@@ -169,8 +172,22 @@
     .home-hero{flex-direction:column; align-items:flex-start; gap:12px;}
     .home-hero img{height:80px;}
   }
-  #view-home .home-steps{gap:4px 28px; margin:0; grid-template-columns:1fr 1fr;}
-  @media (max-width:720px){ #view-home .home-steps{grid-template-columns:1fr;} }
+  /* Home links as tiles, each with a thin border in the logo's five colours
+     (the same stripe as the top edge of the page panels). */
+  #view-home .home-steps{gap:10px; margin:0; grid-template-columns:repeat(4, 1fr);}
+  #view-home .home-step{
+    border:1px solid transparent; border-radius:9px; padding:9px 12px 10px;
+    background:
+      linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(100deg,
+        color-mix(in srgb, var(--compass-blue) 55%, #fff), color-mix(in srgb, var(--compass-purple) 55%, #fff),
+        color-mix(in srgb, var(--compass-red) 55%, #fff), color-mix(in srgb, var(--compass-gold) 55%, #fff),
+        color-mix(in srgb, var(--compass-green) 55%, #fff)) border-box;
+  }
+  #view-home .home-step-num{display:none;}
+  #view-home .home-step p{font-size:12.5px; line-height:1.45;}
+  @media (max-width:900px){ #view-home .home-steps{grid-template-columns:1fr 1fr;} }
+  @media (max-width:560px){ #view-home .home-steps{grid-template-columns:1fr;} }
   @media (max-width:640px){ .home-panel{padding:22px 18px 24px;} }
   .home-steps{
     display:grid;
