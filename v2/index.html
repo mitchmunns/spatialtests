@@ -328,6 +328,31 @@
   .cite-link{color:var(--compass-blue); text-decoration:none; border-bottom:1px solid currentColor;}
   .cite-link:hover{color:var(--ink);}
   .psych-btn{margin-top:8px;}
+  .guide-title-row{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+  .guide-dock-btn{width:auto; padding:8px 14px; font-size:13px;}
+  .guide-dock{
+    position:fixed; top:0; right:0; bottom:0; width:min(420px, 92vw);
+    background:var(--bg); border-left:1px solid var(--line-strong);
+    box-shadow:-10px 0 28px rgba(20,40,63,0.14);
+    overflow-y:auto; z-index:900; padding:0 16px 32px;
+  }
+  .guide-dock-head{
+    position:sticky; top:0; z-index:1; background:var(--bg);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 0 10px; margin-bottom:10px; border-bottom:1px solid var(--line);
+  }
+  .guide-dock-head strong{font-family:'Space Grotesk', sans-serif; font-size:17px;}
+  .guide-dock-close{background:none; border:1px solid var(--line); border-radius:4px; width:30px; height:30px; font-size:18px; line-height:1; cursor:pointer; color:var(--ink-soft);}
+  .guide-dock-close:hover{border-color:var(--ink-soft); color:var(--ink);}
+  .guide-dock .guide-toc{margin:0 0 14px;}
+  .guide-dock .guide-section{padding:14px 16px 10px; margin-bottom:14px;}
+  .guide-dock .guide-section li{font-size:13.5px;}
+  .guide-dock .guide-shot img{max-width:100%;}
+  .guide-dock .guide-shot.narrow img{max-width:230px;}
+  /* Leave room for the panel so the site stays usable beside it. */
+  @media (min-width:900px){
+    body.guide-docked{padding-right:min(420px, 92vw);}
+  }
   .guide-toc{display:flex; flex-wrap:wrap; gap:6px 8px; margin:12px 0 24px;}
   .guide-toc button{background:var(--card); border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;}
   .guide-toc button:hover{border-color:var(--compass-blue); color:var(--compass-blue);}
@@ -2081,7 +2106,10 @@
   <!-- GUIDE VIEW -->
   <div id="view-guide" class="hidden">
     <p class="eyebrow">Guide</p>
-    <h1 class="view-title">How to use OSTAR</h1>
+    <div class="guide-title-row">
+      <h1 class="view-title">How to use OSTAR</h1>
+      <button class="btn secondary guide-dock-btn" type="button" onclick="openGuideDock()">&#9707; Open in a side panel</button>
+    </div>
 
     <nav class="guide-toc" aria-label="Guide sections">
       <button type="button" onclick="scrollToGuide('single')">Using a single test</button>
@@ -2263,6 +2291,16 @@
     </div>
   </div>
 </div>
+
+<!-- GUIDE SIDE PANEL — the Guide's steps docked on the right so researchers
+     can follow them while using the site. Filled from the Guide page. -->
+<aside class="guide-dock hidden" id="guide-dock" aria-label="Guide">
+  <div class="guide-dock-head">
+    <strong>Guide</strong>
+    <button type="button" class="guide-dock-close" onclick="closeGuideDock()" aria-label="Close the guide panel">&times;</button>
+  </div>
+  <div id="guide-dock-body"></div>
+</aside>
 
 <!-- PROFILE MODAL -->
 <div class="modal-overlay hidden" id="profile-modal">
@@ -3450,6 +3488,40 @@ const PSYCHOMETRIC_GROUP_LABELS = { rotation: 'Mental rotation', sectioning: 'Cr
 function goToGuide(){
   showView('view-guide');
   window.scrollTo(0, 0);
+}
+
+// Copies the Guide's sections into the side panel (with their own ids, so
+// the page and the panel don't clash), docks it on the right, and goes to
+// Home so the first step can be followed straight away.
+function openGuideDock(){
+  const body = document.getElementById('guide-dock-body');
+  const parts = [...document.querySelectorAll('#view-guide .guide-toc, #view-guide .guide-section')].map(el => el.cloneNode(true));
+  body.innerHTML = '';
+  parts.forEach(el => {
+    if (el.id) el.id = 'dock-' + el.id;
+    el.querySelectorAll('button[onclick^="scrollToGuide"]').forEach(b => {
+      b.setAttribute('onclick', b.getAttribute('onclick').replace('scrollToGuide', 'scrollToGuideDock'));
+    });
+    el.querySelectorAll('img').forEach(img => { img.loading = 'eager'; });
+    body.appendChild(el);
+  });
+  document.getElementById('guide-dock').classList.remove('hidden');
+  document.body.classList.add('guide-docked');
+  goToHome();
+}
+
+function closeGuideDock(){
+  document.getElementById('guide-dock').classList.add('hidden');
+  document.body.classList.remove('guide-docked');
+}
+
+function scrollToGuideDock(key){
+  const dock = document.getElementById('guide-dock');
+  const el = document.getElementById('dock-guide-' + key);
+  if (!el) return;
+  const head = dock.querySelector('.guide-dock-head').offsetHeight;
+  const top = el.getBoundingClientRect().top - dock.getBoundingClientRect().top + dock.scrollTop - head - 8;
+  dock.scrollTo({ top });
 }
 
 function scrollToGuide(key){
