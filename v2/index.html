@@ -167,6 +167,13 @@
     padding-top:2px;
     flex-shrink:0;
   }
+  .home-link{
+    background:none; border:none; padding:0; margin-bottom:2px; cursor:pointer;
+    font:inherit; font-size:14.5px; font-weight:600; color:var(--compass-blue);
+    text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:3px;
+    text-decoration-color:color-mix(in srgb, var(--compass-blue) 40%, transparent);
+  }
+  .home-link:hover{text-decoration-color:currentColor;}
   .home-step strong{
     display:block;
     font-size:14.5px;
@@ -1883,13 +1890,13 @@
     </div>
     <p class="view-sub">This platform allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
     <div class="home-steps">
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><strong>Guide</strong><p>New here? Step-by-step instructions for using one test, building a battery of tests, and creating your own test, plus recommendations.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><strong>Projects</strong><p>View all of your current test batteries, how many participants have completed them, and download your data.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><strong>Battery</strong><p>See the tests you have chosen, set their order, add attention checks, and generate the link to send to participants.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><strong>Catalog</strong><p>Browse our catalog of spatial tests that have been adapted for online administration, and add them to your battery.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><strong>Create test</strong><p>Make a test from your own images or a paper-and-pencil test: upload the items and mark where the answer choices are.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><strong>Literature</strong><p>The original source for each test, and papers reporting their psychometrics.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><strong>Profile</strong><p>View and edit your profile information, or change your password.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToGuide()">Guide</button><p>Step-by-step instructions for using the platform, and recommendations.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToDatasets()">Projects</button><p>Your batteries, how many participants have finished, and your data.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToBattery()">Battery</button><p>Put your tests in order, add attention checks, and get the participant link.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><button type="button" class="home-link" onclick="goToCatalog()">Catalog</button><p>Browse spatial tests adapted for online use.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToTestCreator()">Create test</button><p>Make a test from your own images or a paper-and-pencil test.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToLiterature()">Literature</button><p>Original sources and psychometric papers for each test.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="openProfile()">Profile</button><p>Edit your profile or change your password.</p></div></div>
     </div>
 
    </div>
