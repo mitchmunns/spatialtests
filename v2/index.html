@@ -102,6 +102,8 @@
       var(--compass-gold), var(--compass-green));
   }
   @media (max-width:640px){ .shell > div[id^="view-"]:not(#view-home){padding:20px 16px 22px;} }
+  /* Inside the wide page panels the line under each title can use the full width. */
+  .shell > div[id^="view-"] p.view-sub{max-width:none;}
   .header-star{
     position:absolute; z-index:-1; pointer-events:none;
     right:-60px; top:50%; transform:translateY(-50%);
