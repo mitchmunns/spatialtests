@@ -82,7 +82,7 @@
     margin-bottom:14px;
     border-radius:14px;
     background:linear-gradient(125deg, #1C4A86 0%, #2A67B4 52%, #4B35B0 100%);
-    box-shadow:0 0 0 1px rgba(120,150,185,0.45), 0 8px 20px rgba(20,40,63,0.18);
+    box-shadow:0 8px 20px rgba(20,40,63,0.18);
   }
   /* Glass tube: thin concentric rings (rim, highlight, clear body, second
      highlight, outer rim) that read as a clear glass cylinder catching the
@@ -112,7 +112,7 @@
   }
   .shell > div[id^="view-"]:not(#view-home){padding:26px 30px 30px;}
   .shell > div[id^="view-"]:not(#view-home)::before, .home-panel::before{
-    content:''; position:absolute; left:-1px; right:-1px; top:-1px; height:4px;
+    content:''; position:absolute; left:-1px; right:-1px; top:-1px; height:6px;
     border-radius:inherit; border-bottom-left-radius:0; border-bottom-right-radius:0;
     background:linear-gradient(90deg,
       var(--compass-blue), var(--compass-purple), var(--compass-red),
@@ -143,6 +143,9 @@
     background:linear-gradient(180deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0) 60%, rgba(255,255,255,0.10) 100%);
     box-shadow:inset 0 0 0 1px rgba(255,255,255,0.65), inset 0 2px 3px rgba(255,255,255,0.35);
   }
+  /* Banner tube switched off for now (to compare without it); remove this
+     rule to bring it back. */
+  .banner-glass, .banner-glass-rim{display:none;}
   .banner-glass-rim{
     position:absolute; inset:9px; z-index:0; pointer-events:none;
     border-radius:5px;
