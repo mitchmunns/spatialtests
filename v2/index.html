@@ -4301,7 +4301,8 @@ function renderBatteryList(){
 
 // A test's place in the battery: its number in a ring, with curved up and
 // down arrows hugging the ring above and below it. Each position takes one
-// of the logo's ring colours in turn.
+// of the logo's ring colours in turn. A test with a random position shows
+// R in a dashed ring instead of its number.
 const ORDER_COLOURS = ['var(--compass-blue)', 'var(--compass-purple)', 'var(--compass-green)', 'var(--compass-red)', 'var(--compass-gold)'];
 function orderDial(i, count, random = false){
   const arrow = (dir, d, chevron, label, enabled) => `
@@ -4315,7 +4316,7 @@ function orderDial(i, count, random = false){
     <svg class="order-dial" viewBox="0 0 68 92" width="68" height="92" style="--order-colour:${ORDER_COLOURS[i % ORDER_COLOURS.length]}">
       ${arrow(-1, 'M4.86,30.51 A33,33 0 0 1 63.14,30.51 L52.10,36.38 A20.5,20.5 0 0 0 15.90,36.38 Z', 'M28,22 L34,16.5 L40,22', 'Move up', i > 0)}
       <circle class="order-ring${random ? ' random' : ''}" cx="34" cy="46" r="17"/>
-      <text class="order-number" x="34" y="46">${i + 1}</text>
+      <text class="order-number" x="34" y="46">${random ? 'R' : i + 1}</text>
       ${arrow(1, 'M63.14,61.49 A33,33 0 0 1 4.86,61.49 L15.90,55.62 A20.5,20.5 0 0 0 52.10,55.62 Z', 'M28,70 L34,75.5 L40,70', 'Move down', i < count - 1)}
     </svg>`;
 }
