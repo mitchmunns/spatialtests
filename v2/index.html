@@ -394,7 +394,7 @@
   .team-sub li{padding:5px 0;}
   .team-sub li b{font-size:13.5px;}
   .guide-title-row{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
-  .guide-dock-btn{width:auto; padding:8px 14px; font-size:13px;}
+  .guide-title-row .guide-dock-btn{width:auto; flex:0 0 auto; padding:8px 14px; font-size:13px;}
   .guide-dock{
     position:fixed; top:0; right:0; bottom:0; width:min(420px, 92vw);
     background:var(--bg); border-left:1px solid var(--line-strong);
@@ -2193,17 +2193,17 @@
       <p>To use one test in your study, add it to a battery on its own and generate a link. The orange outlines in the pictures show what to click.</p>
       <ol>
         <li>Click <b>Catalog</b> at the top of the page.
-          <figure class="guide-shot"><img src="guide/nav-catalog.png" alt="The buttons at the top of the page, with Catalog outlined" width="674" height="56" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/nav-catalog.png" alt="The buttons at the top of the page, with Catalog outlined" width="752" height="96" loading="lazy"></figure></li>
         <li>Find the test you want and click <b>Configure &amp; add</b> on its card.
-          <figure class="guide-shot narrow"><img src="guide/card-configure.png" alt="A test card in the catalog, with the Configure and add button outlined" width="379" height="604" loading="lazy"></figure></li>
+          <figure class="guide-shot narrow"><img src="guide/card-configure.png" alt="A test card in the catalog, with the Configure and add button outlined" width="348" height="639" loading="lazy"></figure></li>
         <li>Keep the recommended settings, or change them (for example, the number of items or the time per item). Then click <b>Add to battery</b>. This takes you to the <b>Battery</b> page.
-          <figure class="guide-shot"><img src="guide/settings-add.png" alt="The test settings, with the Add to battery button outlined" width="752" height="762" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/settings-add.png" alt="The test settings, with the Add to battery button outlined" width="752" height="669" loading="lazy"></figure></li>
         <li>Type a name for the battery in <b>Battery name</b>.
-          <figure class="guide-shot"><img src="guide/battery-name.png" alt="The Battery name box, outlined" width="586" height="100" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/battery-name.png" alt="The Battery name box, outlined" width="580" height="106" loading="lazy"></figure></li>
         <li>Click <b>Generate pilot link</b> to try the test yourself first. When you are ready to collect data, click <b>Generate final link</b>.
-          <figure class="guide-shot"><img src="guide/generate-buttons.png" alt="The buttons at the bottom of the Battery page, with Generate pilot link and Generate final link outlined" width="622" height="64" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/generate-buttons.png" alt="The buttons at the bottom of the Battery page, with Generate pilot link and Generate final link outlined" width="618" height="62" loading="lazy"></figure></li>
         <li>Click <b>copy</b> next to the link and send it to your participants, for example in Prolific, SONA, Qualtrics or an email.
-          <figure class="guide-shot"><img src="guide/copy-link.png" alt="The participant link, with the copy button outlined" width="544" height="120" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/copy-link.png" alt="The participant link, with the copy button outlined" width="544" height="123" loading="lazy"></figure></li>
         <li>Their results appear on your <b>Projects</b> page, where you can download the data.</li>
       </ol>
     </section>
@@ -2215,11 +2215,11 @@
         <li>Add your first test as above: <b>Catalog</b> &rarr; <b>Configure &amp; add</b> &rarr; <b>Add to battery</b>.</li>
         <li>To add the next test, click <b>+ Add another test</b> on the Battery page (or <b>Catalog</b> at the top) and repeat. Each test has its own settings.</li>
         <li>Set the order on the <b>Battery</b> page: drag a test up or down the list, or click the arrows above and below its number. Participants take the tests from top to bottom.
-          <figure class="guide-shot"><img src="guide/order.png" alt="The list of tests on the Battery page, with the order arrows around a test number outlined, and the Add another test button outlined" width="762" height="559" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/order.png" alt="The list of tests on the Battery page, with the order arrows around a test number outlined, and the Add another test button outlined" width="720" height="560" loading="lazy"></figure></li>
         <li>To put a test in a random position for each participant, switch on <b>Random position</b> on its card on the Battery page; its number ring turns dashed. Items within each test are shown in random order unless you turn off <b>Randomize item order</b> in the test's settings.
-          <figure class="guide-shot"><img src="guide/randomize-position.png" alt="A test card on the Battery page, with the Random position switch outlined" width="750" height="164" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/randomize-position.png" alt="A test card on the Battery page, with the Random position switch outlined" width="687" height="164" loading="lazy"></figure></li>
         <li>If you want, switch on one or more <b>Attention checks</b> on the Battery page. Use <b>&#9881; Settings</b> to change the message shown between tests.
-          <figure class="guide-shot"><img src="guide/attention-settings.png" alt="The Settings button and an attention check switch, outlined" width="762" height="362" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/attention-settings.png" alt="The Settings button and an attention check switch, outlined" width="720" height="388" loading="lazy"></figure></li>
         <li>Click <b>Save</b> to keep a draft. Then click <b>Generate pilot link</b> to try it, or <b>Generate final link</b> to collect data, and send the link to participants.</li>
       </ol>
     </section>
@@ -2230,15 +2230,15 @@
       <ol>
         <li>Click <b>Create test</b> at the top of the page.</li>
         <li>Choose how participants answer: <b>Multiple choice</b> (one correct box), <b>Multiple selections</b> (two correct boxes), <b>Same/different</b> (pairs of boxes) or <b>Fill in the blank</b> (a typed answer). Then click <b>Upload image</b> and choose one of your item images. You use it to mark where the answer choices are.
-          <figure class="guide-shot"><img src="guide/creator-type-upload.png" alt="The answer type menu and the Upload image button, outlined" width="730" height="58" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/creator-type-upload.png" alt="The answer type menu and the Upload image button, outlined" width="580" height="61" loading="lazy"></figure></li>
         <li>If the image is a scan or a photocopy, click <b>Clean up image&hellip;</b> to straighten, crop and tidy it. The same clean-up is applied to all your item images.
-          <figure class="guide-shot narrow"><img src="guide/creator-cleanup.png" alt="The Clean up image button, outlined" width="374" height="58" loading="lazy"></figure></li>
+          <figure class="guide-shot narrow"><img src="guide/creator-cleanup.png" alt="The Clean up image button, outlined" width="170" height="55" loading="lazy"></figure></li>
         <li>Draw a box over each answer choice: drag across empty space to draw a box, drag a box to move it, and drag a corner to resize it. Boxes are lettered A, B, C&hellip; in the order you draw them. Then click <b>Upload items &amp; tag</b> and choose all of your item images at once.
-          <figure class="guide-shot"><img src="guide/creator-boxes.png" alt="An item with a box drawn over each of the four answer choices, and the Upload items and tag button outlined" width="762" height="362" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/creator-boxes.png" alt="An item with a box drawn over each of the four answer choices, and the Upload items and tag button outlined" width="700" height="331" loading="lazy"></figure></li>
         <li>For each item, click the correct box (two boxes for multiple selections, or type the answer for fill in the blank). It turns green. Then click <b>Next item</b>. If an item's choices sit slightly differently, drag its boxes into place. On the last item the button says <b>Finish</b>.
-          <figure class="guide-shot"><img src="guide/creator-tag.png" alt="Tagging an item: box B is marked correct in green, and the Next item button is outlined" width="772" height="380" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/creator-tag.png" alt="Tagging an item: box B is marked correct in green, and the Next item button is outlined" width="712" height="372" loading="lazy"></figure></li>
         <li>Give the test a <b>Test name</b> and a short <b>Description</b>, check the list of items, and click <b>Save test</b>.
-          <figure class="guide-shot"><img src="guide/creator-save.png" alt="The review screen, with the Test name box and the Save test button outlined" width="762" height="488" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/creator-save.png" alt="The review screen, with the Test name box and the Save test button outlined" width="702" height="500" loading="lazy"></figure></li>
         <li>Your test now appears in the <b>Catalog</b> with an <b>Only you</b> badge. Add it to a battery like any other test. Only you can see it unless an administrator adds it to the shared catalog.</li>
       </ol>
     </section>
@@ -2267,7 +2267,7 @@
       </div>
       <div class="team-card">
         <div class="team-head"><span class="team-badge" style="background:#4E2A84; color:#FFFFFF;">NU</span><h2>Northwestern University</h2></div>
-        <ul class="team-list"><li class="team-pi"><b>David Uttal</b><span>Kenneth F. Burgess Professor of Psychology and Education</span><ul class="team-sub"><li><b>Qingzhou Shi</b><span>Postdoctoral Researcher</span></li><li><b>Danielle Rothschild Doyle</b><span>PhD Student</span></li><li><b>Lauren Smith</b><span>PhD Student</span></li></ul></li></ul>
+        <ul class="team-list"><li class="team-pi"><b>David Uttal</b><span>Kenneth F. Burgess Professor of Psychology and Education</span><ul class="team-sub"><li><b>Qingzhou Shi</b><span>Postdoctoral Researcher</span></li><li><b>Danielle Rothschild Doyle</b><span>PhD Student</span></li><li><b>Lauren Smith</b><span>PhD Student</span></li><li><b>Amma Bromley-Perry</b><span>Research Coordinator</span></li></ul></li></ul>
       </div>
       <div class="team-card">
         <div class="team-head"><span class="team-badge" style="background:#9D2235; color:#FFFFFF;">TU</span><h2>Temple University</h2></div>
