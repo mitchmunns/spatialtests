@@ -136,17 +136,18 @@
     border:1px solid var(--line);
     border-radius:8px;
     box-shadow:0 2px 10px rgba(20,40,63,0.06);
-    padding:20px 30px 22px;
+    padding:20px 30px 14px;
   }
   #view-home p.view-sub{margin-bottom:14px;}
-  .home-hero{display:flex; align-items:center; gap:28px; margin-bottom:10px;}
+  .home-hero{display:flex; align-items:center; gap:28px; margin-bottom:6px;}
   .home-hero img{height:120px; width:auto; flex-shrink:0;}
   .home-hero h1.view-title{font-size:26px; line-height:1.25; text-wrap:balance; margin:0;}
   @media (max-width:720px){
     .home-hero{flex-direction:column; align-items:flex-start; gap:12px;}
     .home-hero img{height:80px;}
   }
-  #view-home .home-steps{gap:6px; margin:0;}
+  #view-home .home-steps{gap:4px 28px; margin:0; grid-template-columns:1fr 1fr;}
+  @media (max-width:720px){ #view-home .home-steps{grid-template-columns:1fr;} }
   @media (max-width:640px){ .home-panel{padding:22px 18px 24px;} }
   .home-steps{
     display:grid;
@@ -320,6 +321,16 @@
   .cite-link{color:var(--compass-blue); text-decoration:none; border-bottom:1px solid currentColor;}
   .cite-link:hover{color:var(--ink);}
   .psych-btn{margin-top:8px;}
+  .guide-toc{display:flex; flex-wrap:wrap; gap:6px 8px; margin:-12px 0 24px;}
+  .guide-toc button{background:var(--card); border:1px solid var(--line); border-radius:999px; padding:4px 12px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;}
+  .guide-toc button:hover{border-color:var(--compass-blue); color:var(--compass-blue);}
+  .guide-section{background:var(--card); border:1px solid var(--line); border-radius:6px; padding:18px 24px 14px; margin-bottom:18px; scroll-margin-top:16px;}
+  .guide-section h2{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:19px; margin:0 0 6px;}
+  .guide-section > p{color:var(--ink-soft); font-size:14px; margin:0 0 10px; line-height:1.55;}
+  .guide-section ol, .guide-section ul{margin:0 0 6px; padding-left:22px;}
+  .guide-section li{font-size:14px; line-height:1.55; margin-bottom:7px;}
+  .guide-section li b{font-weight:600; color:var(--ink);}
+  .guide-note{font-size:12.5px; color:var(--ink-faint); margin:4px 0 0;}
   .lit-heading{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:19px; margin:8px 0 12px;}
   .lit-list{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:4px 20px; margin-bottom:32px;}
   .lit-group{font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin:16px 0 4px;}
@@ -1551,7 +1562,9 @@
     flex-wrap:wrap;
     gap:6px;
   }
-  .user-bar .user-email{margin-left:auto; max-width:170px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  /* The account email is shown by name in the strip below the nav, so here
+     it only pushes Profile and Log out to the right. */
+  .user-bar .user-email{margin-left:auto; width:0; overflow:hidden; visibility:hidden;}
   .user-email{
     font-family:'IBM Plex Mono', monospace;
     font-size:12px;
@@ -1834,13 +1847,15 @@
     <div class="brand">Online <span>Spatial Tests</span> and Assessments Repository</div>
     <div class="user-bar">
       <button onclick="goToHome()" data-view="view-home">Home</button>
-      <button class="nb-purple" onclick="goToDatasets()" data-view="view-datasets">Projects</button>
+      <button class="nb-purple" onclick="goToGuide()" data-view="view-guide">Guide</button>
+      <button class="nb-green" onclick="goToDatasets()" data-view="view-datasets">Projects</button>
       <button id="nav-admin" class="hidden nb-gold" onclick="goToAdmin()" data-view="view-admin">All labs</button>
-      <button class="nb-green" onclick="goToBattery()" data-view="view-battery">Battery</button>
-      <button class="nb-red" onclick="goToCatalog()" data-view="view-catalog">Catalog</button>
-      <button onclick="goToLiterature()" data-view="view-literature">Literature</button>
+      <button class="nb-red" onclick="goToBattery()" data-view="view-battery">Battery</button>
+      <button onclick="goToCatalog()" data-view="view-catalog">Catalog</button>
+      <button class="nb-purple" onclick="goToTestCreator()" data-view="view-test-creator">Create test</button>
+      <button class="nb-green" onclick="goToLiterature()" data-view="view-literature">Literature</button>
       <span class="user-email" id="user-email"></span>
-      <button class="nb-purple" onclick="openProfile()">Profile</button>
+      <button class="nb-red" onclick="openProfile()">Profile</button>
       <button class="quiet" onclick="signOut()">Log out</button>
     </div>
     <div id="home-dashboard" class="dash-strip"></div>
@@ -1855,11 +1870,13 @@
     </div>
     <p class="view-sub">This platform allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
     <div class="home-steps">
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><strong>Projects</strong><p>View all of your current test batteries, how many participants have completed them, and download your data.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><strong>Battery</strong><p>Create a new testing battery. Choose from existing spatial tests or create/adapt your own.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-gold);">●</span><div><strong>Catalog</strong><p>Browse our catalog of spatial tests that have been adapted for online administration.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><strong>Literature</strong><p>The original source for each test, and papers reporting their psychometrics.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><strong>Profile</strong><p>View and edit your profile information.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><strong>Guide</strong><p>New here? Step-by-step instructions for using one test, building a battery of tests, and creating your own test, plus recommendations.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><strong>Projects</strong><p>View all of your current test batteries, how many participants have completed them, and download your data.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><strong>Battery</strong><p>See the tests you have chosen, set their order, add attention checks, and generate the link to send to participants.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><strong>Catalog</strong><p>Browse our catalog of spatial tests that have been adapted for online administration, and add them to your battery.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><strong>Create test</strong><p>Make a test from your own images or a paper-and-pencil test: upload the items and mark where the answer choices are.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><strong>Literature</strong><p>The original source for each test, and papers reporting their psychometrics.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><strong>Profile</strong><p>View and edit your profile information, or change your password.</p></div></div>
     </div>
 
    </div>
@@ -2039,6 +2056,74 @@
       </div>
       <div class="summary-table" id="link-summary"></div>
     </div>
+  </div>
+
+  <!-- GUIDE VIEW -->
+  <div id="view-guide" class="hidden">
+    <p class="eyebrow">Guide</p>
+    <h1 class="view-title">How to use OSTAR</h1>
+    <p class="view-sub">Step-by-step instructions for the website, then recommendations for giving spatial tests online.</p>
+
+    <nav class="guide-toc" aria-label="Guide sections">
+      <button type="button" onclick="scrollToGuide('single')">Using a single test</button>
+      <button type="button" onclick="scrollToGuide('multiple')">Using multiple tests</button>
+      <button type="button" onclick="scrollToGuide('custom')">Create a custom test</button>
+      <button type="button" onclick="scrollToGuide('tips')">Recommendations</button>
+    </nav>
+
+    <section class="guide-section" id="guide-single">
+      <h2>Using a single test</h2>
+      <p>To use one test in your study, add it to a battery on its own and generate a link.</p>
+      <ol>
+        <li>Click <b>Catalog</b> at the top of the page.</li>
+        <li>Find the test you want and click <b>Configure &amp; add</b> on its card.</li>
+        <li>Keep the recommended settings, or change them (for example, the number of items or the time per item). Then click <b>Add to battery</b>. This takes you to the <b>Battery</b> page.</li>
+        <li>Type a name for the battery in <b>Battery name</b>.</li>
+        <li>Click <b>Generate pilot link</b> to try the test yourself first. When you are ready to collect data, click <b>Generate final link</b>.</li>
+        <li>Click <b>copy</b> next to the link and send it to your participants, for example in Prolific, SONA, Qualtrics or an email.</li>
+        <li>Their results appear on your <b>Projects</b> page, where you can download the data.</li>
+      </ol>
+    </section>
+
+    <section class="guide-section" id="guide-multiple">
+      <h2>Using multiple tests</h2>
+      <p>To build a battery of several tests, add each test, set the order, and generate one link that runs them all.</p>
+      <ol>
+        <li>Add your first test as above: <b>Catalog</b> &rarr; <b>Configure &amp; add</b> &rarr; <b>Add to battery</b>.</li>
+        <li>To add the next test, click <b>+ Add another test</b> on the Battery page (or <b>Catalog</b> at the top) and repeat. Each test has its own settings.</li>
+        <li>On the <b>Battery</b> page, set the order with the <b>&#9650;</b> and <b>&#9660;</b> arrows next to each test. Participants take the tests from top to bottom.</li>
+        <li>To put a test in a random position for each participant, open its settings and turn on <b>Randomize test position</b>. Items within each test are shown in random order unless you turn off <b>Randomize item order</b>.</li>
+        <li>If you want, switch on one or more <b>Attention checks</b> on the Battery page. Use <b>&#9881; Settings</b> to change the message shown between tests.</li>
+        <li>Click <b>Save</b> to keep a draft. Then click <b>Generate pilot link</b> to try it, or <b>Generate final link</b> to collect data, and send the link to participants.</li>
+      </ol>
+    </section>
+
+    <section class="guide-section" id="guide-custom">
+      <h2>Create a custom test</h2>
+      <p>To create a test from your own images or from an existing paper-and-pencil test, upload a picture of each item and draw a box over each answer choice. Every item needs the same layout, with the answer choices in the same places.</p>
+      <ol>
+        <li>Click <b>Create test</b> at the top of the page.</li>
+        <li>Choose how participants answer: <b>Multiple choice</b> (one correct box), <b>Multiple selections</b> (two correct boxes), <b>Same/different</b> (pairs of boxes) or <b>Fill in the blank</b> (a typed answer).</li>
+        <li>Click <b>Upload image</b> and choose one of your item images. You use it to mark where the answer choices are.</li>
+        <li>If the image is a scan or a photocopy, click <b>Clean up image&hellip;</b> to straighten, crop and tidy it. The same clean-up is applied to all your item images.</li>
+        <li>Draw a box over each answer choice: drag across empty space to draw a box, drag a box to move it, and drag a corner to resize it. Boxes are lettered A, B, C&hellip; in the order you draw them.</li>
+        <li>Click <b>Upload items &amp; tag</b> and choose all of your item images at once.</li>
+        <li>For each item, click the correct box (two boxes for multiple selections, or type the answer for fill in the blank), then click <b>Next item</b>. If an item's choices sit slightly differently, drag its boxes into place. On the last item the button says <b>Finish</b>.</li>
+        <li>Give the test a <b>Test name</b> and a short <b>Description</b>, check the list of items, and click <b>Save test</b>.</li>
+        <li>Your test now appears in the <b>Catalog</b> with an <b>Only you</b> badge. Add it to a battery like any other test. Only you can see it unless an administrator adds it to the shared catalog.</li>
+      </ol>
+    </section>
+
+    <section class="guide-section" id="guide-tips">
+      <h2>Recommendations</h2>
+      <ul>
+        <li><b>The catalog versions are refined, shortened tests.</b> These tests were refined using item response theory (IRT). The standard version of each test in the catalog is the refined, shortened version. See <b>Psychometrics</b> on each test and the <b>Literature</b> page for the studies.</li>
+        <li><b>Give a generous time limit for each item.</b> We recommend a generous time limit per item, such as 1 minute per item, instead of one time limit for the whole test.</li>
+        <li><b>Use reliable measures.</b> It is important to measure spatial ability with reliable tests. These tests have been shown to have high internal reliability.</li>
+        <li><b>Combine three tests.</b> We recommend using three tests together as a combined measure of spatial visualization ability.</li>
+      </ul>
+      <p class="guide-note">More detailed recommendations are coming soon.</p>
+    </section>
   </div>
 
   <!-- LITERATURE VIEW -->
@@ -3332,6 +3417,16 @@ function closePsychometrics(){
 
 const PSYCHOMETRIC_GROUP_LABELS = { rotation: 'Mental rotation', sectioning: 'Cross-sections', folding: 'Folding' };
 
+function goToGuide(){
+  showView('view-guide');
+  window.scrollTo(0, 0);
+}
+
+function scrollToGuide(key){
+  const el = document.getElementById('guide-' + key);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function goToLiterature(){
   renderLiterature();
   showView('view-literature');
@@ -3759,7 +3854,7 @@ function hideItemPreview(){
 }
 
 function showView(id){
-  ['view-home', 'view-literature', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
+  ['view-home', 'view-guide', 'view-literature', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
   document.querySelectorAll('.user-bar button[data-view]').forEach(b => {
@@ -3830,7 +3925,10 @@ function goToCatalog(){
   showView('view-catalog');
 }
 
-function goToTestCreator(){
+async function goToTestCreator(){
+  // Starting over clears whatever is in progress, so ask first.
+  if ((tcTemplateFile || tcItemFiles.length) &&
+      !await appConfirm('Start a new custom test? The test you are working on has not been saved and will be cleared.')) return;
   resetTestCreator();
   showView('view-test-creator');
 }
