@@ -82,7 +82,7 @@
     margin-bottom:14px;
     border-radius:14px;
     background:linear-gradient(125deg, #1C4A86 0%, #2A67B4 52%, #4B35B0 100%);
-    box-shadow:var(--glass-pipe), 0 8px 20px rgba(20,40,63,0.18);
+    box-shadow:0 0 0 1px rgba(120,150,185,0.45), 0 8px 20px rgba(20,40,63,0.18);
   }
   /* Glass tube: thin concentric rings (rim, highlight, clear body, second
      highlight, outer rim) that read as a clear glass cylinder catching the
@@ -121,6 +121,33 @@
   @media (max-width:640px){ .shell > div[id^="view-"]:not(#view-home){padding:20px 16px 22px;} }
   /* Inside the wide page panels the line under each title can use the full width. */
   .shell > div[id^="view-"] p.view-sub{max-width:none;}
+  /* Glass tube built into the banner's edge: a 9px ring (masked) showing a
+     slightly magnified copy of the banner behind it, so the blue and the
+     star lines shift and bend where they cross the tube, as through curved
+     glass. ::after adds the shine; .banner-glass-rim is the tube's inner edge. */
+  .banner-glass{
+    position:absolute; inset:0; z-index:0; pointer-events:none;
+    border-radius:inherit; padding:9px;
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+  .banner-glass-view{
+    position:absolute; inset:0; isolation:isolate; border-radius:inherit;
+    background:linear-gradient(125deg, #1C4A86 0%, #2A67B4 52%, #4B35B0 100%);
+    transform:scale(1.018, 1.11); transform-origin:50% 50%;
+    filter:saturate(1.3) brightness(1.18);
+  }
+  .banner-glass::after{
+    content:''; position:absolute; inset:0; border-radius:inherit;
+    background:linear-gradient(180deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0) 60%, rgba(255,255,255,0.10) 100%);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.65), inset 0 2px 3px rgba(255,255,255,0.35);
+  }
+  .banner-glass-rim{
+    position:absolute; inset:9px; z-index:0; pointer-events:none;
+    border-radius:5px;
+    box-shadow:0 0 0 1px rgba(255,255,255,0.45), 0 0 6px 1px rgba(10,20,60,0.28);
+  }
   .header-star{
     position:absolute; z-index:-1; pointer-events:none;
     right:-60px; top:50%; transform:translateY(-50%);
@@ -1972,6 +1999,8 @@
 <div class="shell hidden" id="app-shell">
   <header class="top">
     <svg class="header-star" viewBox="0 0 400 400" aria-hidden="true"><path d="M200,10 L226.8,135.3 L334.4,65.6 L264.7,173.2 L390,200 L264.7,226.8 L334.4,334.4 L226.8,264.7 L200,390 L173.2,264.7 L65.6,334.4 L135.3,226.8 L10,200 L135.3,173.2 L65.6,65.6 L173.2,135.3 Z"/><circle cx="200" cy="200" r="150"/></svg>
+    <div class="banner-glass" aria-hidden="true"><div class="banner-glass-view"><svg class="header-star" viewBox="0 0 400 400" aria-hidden="true"><path d="M200,10 L226.8,135.3 L334.4,65.6 L264.7,173.2 L390,200 L264.7,226.8 L334.4,334.4 L226.8,264.7 L200,390 L173.2,264.7 L65.6,334.4 L135.3,226.8 L10,200 L135.3,173.2 L65.6,65.6 L173.2,135.3 Z"/><circle cx="200" cy="200" r="150"/></svg></div></div>
+    <div class="banner-glass-rim" aria-hidden="true"></div>
     <div class="brand">Online <span>Spatial Tests</span> and <span class="brand-green">Assessments</span> Repository</div>
     <div class="user-bar">
       <button onclick="goToHome()" data-view="view-home">Home</button>
