@@ -347,6 +347,18 @@
   .cite-link{color:var(--compass-blue); text-decoration:none; border-bottom:1px solid currentColor;}
   .cite-link:hover{color:var(--ink);}
   .psych-btn{margin-top:8px;}
+  .team-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:18px; margin-top:8px;}
+  .team-card{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:18px 20px 14px;}
+  .team-head{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
+  .team-head h2{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:17px; margin:0; line-height:1.25;}
+  .team-badge{flex-shrink:0; min-width:44px; height:44px; padding:0 8px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px; letter-spacing:.02em;}
+  .team-list, .team-sub{list-style:none; margin:0; padding:0;}
+  .team-list li{display:flex; flex-direction:column; padding:7px 0;}
+  .team-list li b{font-size:14.5px; font-weight:600; color:var(--ink);}
+  .team-list li span{font-size:12.5px; color:var(--ink-soft); line-height:1.4;}
+  .team-sub{margin:8px 0 0 4px; padding-left:14px; border-left:2px solid var(--line);}
+  .team-sub li{padding:5px 0;}
+  .team-sub li b{font-size:13.5px;}
   .guide-title-row{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
   .guide-dock-btn{width:auto; padding:8px 14px; font-size:13px;}
   .guide-dock{
@@ -1919,8 +1931,9 @@
       <button onclick="goToCatalog()" data-view="view-catalog">Catalog</button>
       <button class="nb-purple" onclick="goToTestCreator()" data-view="view-test-creator">Create test</button>
       <button class="nb-green" onclick="goToLiterature()" data-view="view-literature">Literature</button>
+      <button class="nb-red" onclick="goToInfo()" data-view="view-info">Info</button>
       <span class="user-email" id="user-email"></span>
-      <button class="nb-red" onclick="openProfile()">Profile</button>
+      <button onclick="openProfile()">Profile</button>
       <button class="quiet" onclick="signOut()">Log out</button>
     </div>
     <div id="home-dashboard" class="dash-strip"></div>
@@ -1941,6 +1954,7 @@
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><button type="button" class="home-link" onclick="goToCatalog()">Catalog</button><p>Browse spatial tests adapted for online use.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToTestCreator()">Create test</button><p>Make a test from your own images or a paper-and-pencil test.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToLiterature()">Literature</button><p>Original sources and psychometric papers for each test.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToInfo()">Info</button><p>Who we are: the researchers behind OSTAR.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="openProfile()">Profile</button><p>Edit your profile or change your password.</p></div></div>
     </div>
 
@@ -2203,6 +2217,31 @@
       </ul>
       <p class="guide-note">More detailed recommendations are coming soon.</p>
     </section>
+  </div>
+
+  <!-- INFO VIEW — who we are -->
+  <div id="view-info" class="hidden">
+    <p class="eyebrow">Info</p>
+    <h1 class="view-title">Who we are</h1>
+    <p class="view-sub">OSTAR is built and maintained by spatial cognition researchers at four universities.</p>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-head"><span class="team-badge" style="background:#003660; color:#FEBC11;">UCSB</span><h2>University of California, Santa Barbara</h2></div>
+        <ul class="team-list"><li class="team-pi"><b>Mary Hegarty</b><span>Distinguished Professor</span><ul class="team-sub"><li><b>Mitch Munns</b><span>PhD Candidate</span></li></ul></li></ul>
+      </div>
+      <div class="team-card">
+        <div class="team-head"><span class="team-badge" style="background:#4E2A84; color:#FFFFFF;">NU</span><h2>Northwestern University</h2></div>
+        <ul class="team-list"><li class="team-pi"><b>David Uttal</b><span>Kenneth F. Burgess Professor of Psychology and Education</span><ul class="team-sub"><li><b>Qingzhou Shi</b><span>Postdoctoral Researcher</span></li><li><b>Danielle Rothschild Doyle</b><span>PhD Student</span></li><li><b>Lauren Smith</b><span>PhD Student</span></li></ul></li></ul>
+      </div>
+      <div class="team-card">
+        <div class="team-head"><span class="team-badge" style="background:#9D2235; color:#FFFFFF;">TU</span><h2>Temple University</h2></div>
+        <ul class="team-list"><li class="team-pi"><b>Nora Newcombe</b><span>Laura H. Carnell Professor of Psychology</span></li></ul>
+      </div>
+      <div class="team-card">
+        <div class="team-head"><span class="team-badge" style="background:#9E1B32; color:#FFFFFF;">UA</span><h2>University of Alabama</h2></div>
+        <ul class="team-list"><li class="team-pi"><b>Joni Lakin</b><span>Professor</span></li><li class="team-pi"><b>Stefanie Wind</b><span>Professor</span></li></ul>
+      </div>
+    </div>
   </div>
 
   <!-- LITERATURE VIEW -->
@@ -3549,6 +3588,11 @@ function scrollToGuide(key){
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function goToInfo(){
+  showView('view-info');
+  window.scrollTo(0, 0);
+}
+
 function goToLiterature(){
   renderLiterature();
   showView('view-literature');
@@ -3976,7 +4020,7 @@ function hideItemPreview(){
 }
 
 function showView(id){
-  ['view-home', 'view-guide', 'view-literature', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
+  ['view-home', 'view-guide', 'view-info', 'view-literature', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
   document.querySelectorAll('.user-bar button[data-view]').forEach(b => {
