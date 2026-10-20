@@ -330,6 +330,9 @@
   .guide-section ol, .guide-section ul{margin:0 0 6px; padding-left:22px;}
   .guide-section li{font-size:14px; line-height:1.55; margin-bottom:7px;}
   .guide-section li b{font-weight:600; color:var(--ink);}
+  .guide-shot{margin:10px 0 14px;}
+  .guide-shot img{display:block; max-width:min(100%, 600px); height:auto; border:1px solid var(--line); border-radius:6px; box-shadow:0 2px 8px rgba(20,40,63,0.08); background:#fff;}
+  .guide-shot.narrow img{max-width:min(100%, 320px);}
   .guide-note{font-size:12.5px; color:var(--ink-faint); margin:4px 0 0;}
   .lit-heading{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:19px; margin:8px 0 12px;}
   .lit-list{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:4px 20px; margin-bottom:32px;}
@@ -967,10 +970,18 @@
     border-radius:4px;
     padding:16px 18px;
     display:grid;
-    grid-template-columns:28px 1fr auto;
+    grid-template-columns:68px 1fr auto;
     gap:16px;
     align-items:center;
   }
+  .battery-item[draggable="true"]{cursor:grab; position:relative;}
+  .battery-item.dragging{opacity:0.45;}
+  .battery-item.drop-before::before, .battery-item.drop-after::after{
+    content:''; position:absolute; left:0; right:0; height:3px; border-radius:2px;
+    background:var(--compass-blue); box-shadow:0 0 0 2px rgba(42,103,180,0.18);
+  }
+  .battery-item.drop-before::before{top:-9px;}
+  .battery-item.drop-after::after{bottom:-9px;}
   .battery-order{
     display:flex;
     flex-direction:column;
@@ -983,18 +994,16 @@
     color:var(--ink-faint);
     margin-bottom:2px;
   }
-  .reorder-btn{
-    background:none;
-    border:1px solid var(--line);
-    border-radius:2px;
-    width:20px; height:16px;
-    font-size:9px;
-    line-height:1;
-    color:var(--ink-soft);
-    padding:0;
-  }
-  .reorder-btn:hover{border-color:var(--line-strong); color:var(--ink);}
-  .reorder-btn:disabled{opacity:0.3; cursor:default;}
+  .order-dial{display:block; overflow:visible;}
+  .order-ring{fill:#fff; stroke:var(--order-colour); stroke-width:3;}
+  .order-number{font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:19px; fill:var(--order-colour); text-anchor:middle; dominant-baseline:central;}
+  .order-band{fill:color-mix(in srgb, var(--order-colour) 22%, #fff); stroke:color-mix(in srgb, var(--order-colour) 55%, #fff); stroke-width:1; transition:fill .12s ease;}
+  .order-chevron{fill:none; stroke:var(--order-colour); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; pointer-events:none;}
+  .order-arrow{cursor:pointer; outline:none;}
+  .order-arrow:hover .order-band, .order-arrow:focus-visible .order-band{fill:color-mix(in srgb, var(--order-colour) 45%, #fff);}
+  .order-arrow:focus-visible .order-band{stroke:var(--ink); stroke-width:1.5;}
+  .order-arrow.off{cursor:default; opacity:0.28;}
+  .order-arrow.off:hover .order-band{fill:color-mix(in srgb, var(--order-colour) 22%, #fff);}
   .battery-item h4{
     font-family:'Space Grotesk', sans-serif;
     font-size:15px;
@@ -2041,7 +2050,7 @@
   <!-- LINK VIEW -->
   <div id="view-link" class="hidden">
     <p class="eyebrow">03 — Ready</p>
-    <h1 class="view-title">Battery ready</h1>
+    <h1 class="view-title">Generate participant link</h1>
     <p class="view-sub">Send this link to your participant. It opens the Unity WebGL build and runs each test below in order.</p>
     <div class="link-panel">
       <div class="status-line" id="link-status-line"><span class="status-dot"></span>session created</div>
@@ -2072,14 +2081,20 @@
 
     <section class="guide-section" id="guide-single">
       <h2>Using a single test</h2>
-      <p>To use one test in your study, add it to a battery on its own and generate a link.</p>
+      <p>To use one test in your study, add it to a battery on its own and generate a link. The orange outlines in the pictures show what to click.</p>
       <ol>
-        <li>Click <b>Catalog</b> at the top of the page.</li>
-        <li>Find the test you want and click <b>Configure &amp; add</b> on its card.</li>
-        <li>Keep the recommended settings, or change them (for example, the number of items or the time per item). Then click <b>Add to battery</b>. This takes you to the <b>Battery</b> page.</li>
-        <li>Type a name for the battery in <b>Battery name</b>.</li>
-        <li>Click <b>Generate pilot link</b> to try the test yourself first. When you are ready to collect data, click <b>Generate final link</b>.</li>
-        <li>Click <b>copy</b> next to the link and send it to your participants, for example in Prolific, SONA, Qualtrics or an email.</li>
+        <li>Click <b>Catalog</b> at the top of the page.
+          <figure class="guide-shot"><img src="guide/nav-catalog.png" alt="The buttons at the top of the page, with Catalog outlined" width="674" height="56" loading="lazy"></figure></li>
+        <li>Find the test you want and click <b>Configure &amp; add</b> on its card.
+          <figure class="guide-shot narrow"><img src="guide/card-configure.png" alt="A test card in the catalog, with the Configure and add button outlined" width="379" height="604" loading="lazy"></figure></li>
+        <li>Keep the recommended settings, or change them (for example, the number of items or the time per item). Then click <b>Add to battery</b>. This takes you to the <b>Battery</b> page.
+          <figure class="guide-shot"><img src="guide/settings-add.png" alt="The test settings, with the Add to battery button outlined" width="752" height="762" loading="lazy"></figure></li>
+        <li>Type a name for the battery in <b>Battery name</b>.
+          <figure class="guide-shot"><img src="guide/battery-name.png" alt="The Battery name box, outlined" width="586" height="100" loading="lazy"></figure></li>
+        <li>Click <b>Generate pilot link</b> to try the test yourself first. When you are ready to collect data, click <b>Generate final link</b>.
+          <figure class="guide-shot"><img src="guide/generate-buttons.png" alt="The buttons at the bottom of the Battery page, with Generate pilot link and Generate final link outlined" width="622" height="64" loading="lazy"></figure></li>
+        <li>Click <b>copy</b> next to the link and send it to your participants, for example in Prolific, SONA, Qualtrics or an email.
+          <figure class="guide-shot"><img src="guide/copy-link.png" alt="The participant link, with the copy button outlined" width="544" height="136" loading="lazy"></figure></li>
         <li>Their results appear on your <b>Projects</b> page, where you can download the data.</li>
       </ol>
     </section>
@@ -2090,9 +2105,12 @@
       <ol>
         <li>Add your first test as above: <b>Catalog</b> &rarr; <b>Configure &amp; add</b> &rarr; <b>Add to battery</b>.</li>
         <li>To add the next test, click <b>+ Add another test</b> on the Battery page (or <b>Catalog</b> at the top) and repeat. Each test has its own settings.</li>
-        <li>On the <b>Battery</b> page, set the order with the <b>&#9650;</b> and <b>&#9660;</b> arrows next to each test. Participants take the tests from top to bottom.</li>
-        <li>To put a test in a random position for each participant, open its settings and turn on <b>Randomize test position</b>. Items within each test are shown in random order unless you turn off <b>Randomize item order</b>.</li>
-        <li>If you want, switch on one or more <b>Attention checks</b> on the Battery page. Use <b>&#9881; Settings</b> to change the message shown between tests.</li>
+        <li>Set the order on the <b>Battery</b> page: drag a test up or down the list, or click the arrows above and below its number. Participants take the tests from top to bottom.
+          <figure class="guide-shot"><img src="guide/order.png" alt="The list of tests on the Battery page, with the order arrows around a test number outlined, and the Add another test button outlined" width="762" height="494" loading="lazy"></figure></li>
+        <li>To put a test in a random position for each participant, open its settings and turn on <b>Randomize test position</b>. Items within each test are shown in random order unless you turn off <b>Randomize item order</b>.
+          <figure class="guide-shot"><img src="guide/randomize-position.png" alt="The Randomize test position switch, outlined" width="700" height="170" loading="lazy"></figure></li>
+        <li>If you want, switch on one or more <b>Attention checks</b> on the Battery page. Use <b>&#9881; Settings</b> to change the message shown between tests.
+          <figure class="guide-shot"><img src="guide/attention-settings.png" alt="The Settings button and an attention check switch, outlined" width="762" height="362" loading="lazy"></figure></li>
         <li>Click <b>Save</b> to keep a draft. Then click <b>Generate pilot link</b> to try it, or <b>Generate final link</b> to collect data, and send the link to participants.</li>
       </ol>
     </section>
@@ -2102,13 +2120,16 @@
       <p>To create a test from your own images or from an existing paper-and-pencil test, upload a picture of each item and draw a box over each answer choice. Every item needs the same layout, with the answer choices in the same places.</p>
       <ol>
         <li>Click <b>Create test</b> at the top of the page.</li>
-        <li>Choose how participants answer: <b>Multiple choice</b> (one correct box), <b>Multiple selections</b> (two correct boxes), <b>Same/different</b> (pairs of boxes) or <b>Fill in the blank</b> (a typed answer).</li>
-        <li>Click <b>Upload image</b> and choose one of your item images. You use it to mark where the answer choices are.</li>
-        <li>If the image is a scan or a photocopy, click <b>Clean up image&hellip;</b> to straighten, crop and tidy it. The same clean-up is applied to all your item images.</li>
-        <li>Draw a box over each answer choice: drag across empty space to draw a box, drag a box to move it, and drag a corner to resize it. Boxes are lettered A, B, C&hellip; in the order you draw them.</li>
-        <li>Click <b>Upload items &amp; tag</b> and choose all of your item images at once.</li>
-        <li>For each item, click the correct box (two boxes for multiple selections, or type the answer for fill in the blank), then click <b>Next item</b>. If an item's choices sit slightly differently, drag its boxes into place. On the last item the button says <b>Finish</b>.</li>
-        <li>Give the test a <b>Test name</b> and a short <b>Description</b>, check the list of items, and click <b>Save test</b>.</li>
+        <li>Choose how participants answer: <b>Multiple choice</b> (one correct box), <b>Multiple selections</b> (two correct boxes), <b>Same/different</b> (pairs of boxes) or <b>Fill in the blank</b> (a typed answer). Then click <b>Upload image</b> and choose one of your item images. You use it to mark where the answer choices are.
+          <figure class="guide-shot"><img src="guide/creator-type-upload.png" alt="The answer type menu and the Upload image button, outlined" width="730" height="58" loading="lazy"></figure></li>
+        <li>If the image is a scan or a photocopy, click <b>Clean up image&hellip;</b> to straighten, crop and tidy it. The same clean-up is applied to all your item images.
+          <figure class="guide-shot narrow"><img src="guide/creator-cleanup.png" alt="The Clean up image button, outlined" width="374" height="58" loading="lazy"></figure></li>
+        <li>Draw a box over each answer choice: drag across empty space to draw a box, drag a box to move it, and drag a corner to resize it. Boxes are lettered A, B, C&hellip; in the order you draw them. Then click <b>Upload items &amp; tag</b> and choose all of your item images at once.
+          <figure class="guide-shot"><img src="guide/creator-boxes.png" alt="An item with a box drawn over each of the four answer choices, and the Upload items and tag button outlined" width="762" height="362" loading="lazy"></figure></li>
+        <li>For each item, click the correct box (two boxes for multiple selections, or type the answer for fill in the blank). It turns green. Then click <b>Next item</b>. If an item's choices sit slightly differently, drag its boxes into place. On the last item the button says <b>Finish</b>.
+          <figure class="guide-shot"><img src="guide/creator-tag.png" alt="Tagging an item: box B is marked correct in green, and the Next item button is outlined" width="772" height="380" loading="lazy"></figure></li>
+        <li>Give the test a <b>Test name</b> and a short <b>Description</b>, check the list of items, and click <b>Save test</b>.
+          <figure class="guide-shot"><img src="guide/creator-save.png" alt="The review screen, with the Test name box and the Save test button outlined" width="762" height="488" loading="lazy"></figure></li>
         <li>Your test now appears in the <b>Catalog</b> with an <b>Only you</b> badge. Add it to a battery like any other test. Only you can see it unless an administrator adds it to the shared catalog.</li>
       </ol>
     </section>
@@ -4086,12 +4107,9 @@ function renderBatteryList(){
   wrap.innerHTML = `<div class="battery-list">${battery.map((item, i) => {
     const test = TESTS.find(t => t.id === item.testId);
     return `
-      <div class="battery-item">
-        <div class="battery-order">
-          <span class="order-num">${i + 1}</span>
-          <button class="reorder-btn" onclick="moveBatteryItem(${i}, -1)" ${i === 0 ? 'disabled' : ''}>▲</button>
-          <button class="reorder-btn" onclick="moveBatteryItem(${i}, 1)" ${i === battery.length - 1 ? 'disabled' : ''}>▼</button>
-        </div>
+      <div class="battery-item" draggable="true" ondragstart="batteryDragStart(event, ${i})" ondragover="batteryDragOver(event, ${i})"
+           ondragleave="batteryDragLeave(event)" ondrop="batteryDrop(event, ${i})" ondragend="batteryDragEnd()">
+        <div class="battery-order">${orderDial(i, battery.length)}</div>
         <div>
           <h4>${escapeHtml(test.name)}</h4>
           <div class="param-summary">${paramSummary(test, item.params)}</div>
@@ -4105,11 +4123,75 @@ function renderBatteryList(){
   }).join('')}</div>`;
 }
 
+// A test's place in the battery: its number in a ring, with curved up and
+// down arrows hugging the ring above and below it. Each position takes one
+// of the logo's ring colours in turn.
+const ORDER_COLOURS = ['var(--compass-blue)', 'var(--compass-purple)', 'var(--compass-green)', 'var(--compass-red)', 'var(--compass-gold)'];
+function orderDial(i, count){
+  const arrow = (dir, d, chevron, label, enabled) => `
+    <g class="order-arrow${enabled ? '' : ' off'}" ${enabled
+      ? `role="button" tabindex="0" aria-label="${label}" onclick="moveBatteryItem(${i}, ${dir})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();moveBatteryItem(${i}, ${dir});}"`
+      : 'aria-hidden="true"'}>
+      <path class="order-band" d="${d}"/>
+      <path class="order-chevron" d="${chevron}"/>
+    </g>`;
+  return `
+    <svg class="order-dial" viewBox="0 0 68 92" width="68" height="92" style="--order-colour:${ORDER_COLOURS[i % ORDER_COLOURS.length]}">
+      ${arrow(-1, 'M4.86,30.51 A33,33 0 0 1 63.14,30.51 L52.10,36.38 A20.5,20.5 0 0 0 15.90,36.38 Z', 'M28,22 L34,16.5 L40,22', 'Move up', i > 0)}
+      <circle class="order-ring" cx="34" cy="46" r="17"/>
+      <text class="order-number" x="34" y="46">${i + 1}</text>
+      ${arrow(1, 'M63.14,61.49 A33,33 0 0 1 4.86,61.49 L15.90,55.62 A20.5,20.5 0 0 0 52.10,55.62 Z', 'M28,70 L34,75.5 L40,70', 'Move down', i < count - 1)}
+    </svg>`;
+}
+
 function moveBatteryItem(index, direction){
   const target = index + direction;
   if (target < 0 || target >= battery.length) return;
   [battery[index], battery[target]] = [battery[target], battery[index]];
   renderBatteryList();
+}
+
+// Drag and drop: pick up a test card and drop it above or below another.
+// A line shows where it will land (top or bottom half of the card under the
+// pointer); the arrows still work for one step at a time.
+let batteryDragFrom = null;
+function batteryDragStart(event, index){
+  batteryDragFrom = index;
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', String(index));
+  requestAnimationFrame(() => event.target.classList.add('dragging'));
+}
+function batteryDropSide(event){
+  const r = event.currentTarget.getBoundingClientRect();
+  return event.clientY < r.top + r.height / 2 ? 'before' : 'after';
+}
+function batteryDragOver(event, index){
+  if (batteryDragFrom === null) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+  const side = batteryDropSide(event);
+  event.currentTarget.classList.toggle('drop-before', side === 'before' && index !== batteryDragFrom);
+  event.currentTarget.classList.toggle('drop-after', side === 'after' && index !== batteryDragFrom);
+}
+function batteryDragLeave(event){
+  event.currentTarget.classList.remove('drop-before', 'drop-after');
+}
+function batteryDrop(event, index){
+  event.preventDefault();
+  const from = batteryDragFrom;
+  batteryDragFrom = null;
+  if (from === null) return;
+  let to = batteryDropSide(event) === 'before' ? index : index + 1;
+  if (from < to) to -= 1;
+  if (to !== from){
+    const [item] = battery.splice(from, 1);
+    battery.splice(to, 0, item);
+  }
+  renderBatteryList();
+}
+function batteryDragEnd(){
+  batteryDragFrom = null;
+  document.querySelectorAll('.battery-item').forEach(el => el.classList.remove('dragging', 'drop-before', 'drop-after'));
 }
 
 function removeFromBattery(index){
