@@ -214,6 +214,19 @@
     text-decoration-color:color-mix(in srgb, var(--compass-blue) 40%, transparent);
   }
   .home-link:hover{text-decoration-color:currentColor;}
+  /* Home at a comfortable size on laptop and desktop screens. */
+  @media (min-width:721px){
+    .home-panel{padding:26px 34px 28px;}
+    .home-hero{gap:40px; margin-bottom:28px;}
+    .home-hero img{height:150px;}
+    .home-intro{padding-top:6px;}
+    .home-hero h1.view-title{font-size:27px; margin-bottom:6px;}
+    #view-home .home-intro p.view-sub{font-size:16.5px; line-height:1.6;}
+    #view-home .home-steps{gap:14px;}
+    #view-home .home-step{padding:14px 16px 15px;}
+    #view-home .home-link{font-size:16.5px; margin-bottom:4px;}
+    #view-home .home-step p{font-size:14px; line-height:1.5;}
+  }
   .home-step strong{
     display:block;
     font-size:14.5px;
