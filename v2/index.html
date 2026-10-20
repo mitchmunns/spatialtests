@@ -4067,8 +4067,32 @@ function showView(id){
 
 function goToHome(){
   showView('view-home');
-  renderHomeDashboard();
+  fitHomeToScreen();
+  renderHomeDashboard().then(fitHomeToScreen, fitHomeToScreen);
 }
+
+// Home is meant to be seen whole, without scrolling: if the window is too
+// short for it, the Home panel is shrunk (never below 70%) until it fits.
+// Re-checked on resize and once fonts and the dashboard strip have loaded.
+function fitHomeToScreen(){
+  const home = document.getElementById('view-home');
+  const panel = document.querySelector('.home-panel');
+  if (!panel || !home || home.classList.contains('hidden')) return;
+  panel.style.zoom = '';
+  if (window.innerWidth <= 720) return;
+  const shell = document.querySelector('.shell');
+  const bottomPad = shell ? parseFloat(getComputedStyle(shell).paddingBottom) || 0 : 0;
+  const top = panel.getBoundingClientRect().top + window.scrollY;
+  const room = window.innerHeight - top - Math.min(bottomPad, 16);
+  const natural = panel.offsetHeight;
+  if (natural > room) panel.style.zoom = Math.max(0.7, room / natural).toFixed(3);
+}
+let fitHomeTimer = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(fitHomeTimer);
+  fitHomeTimer = setTimeout(fitHomeToScreen, 80);
+});
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitHomeToScreen());
 
 // Slim Home dashboard: how many of your studies are running or piloting,
 // and how many participants the running ones have.
