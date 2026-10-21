@@ -98,20 +98,20 @@
   }
   /* Each page's content sits on a white panel whose top edge is a thin
      stripe in the logo's five colours. Home has its own panel (.home-panel). */
-  .shell > div[id^="view-"]:not(#view-home), .home-panel{
+  .shell > div[id^="view-"]:not(#view-home), .home-panel, .auth-panel{
     position:relative;
     background:var(--card);
     border:1px solid transparent;
     border-radius:12px;
     box-shadow:0 6px 16px rgba(20,40,63,0.08);
   }
-  .shell > div[id^="view-"]:not(#view-home)::after, .home-panel::after{
+  .shell > div[id^="view-"]:not(#view-home)::after, .home-panel::after, .auth-panel::after{
     content:''; position:absolute; inset:-1px; border-radius:inherit; pointer-events:none;
     box-shadow:var(--glass-pipe);
     clip-path:inset(3px -12px -12px -12px);
   }
   .shell > div[id^="view-"]:not(#view-home){padding:26px 30px 30px;}
-  .shell > div[id^="view-"]:not(#view-home)::before, .home-panel::before{
+  .shell > div[id^="view-"]:not(#view-home)::before, .home-panel::before, .auth-panel::before{
     content:''; position:absolute; left:-1px; right:-1px; top:-1px; height:6px;
     border-radius:inherit; border-bottom-left-radius:0; border-bottom-right-radius:0;
     background:linear-gradient(90deg,
@@ -1615,15 +1615,28 @@
 
   /* ---------- Auth ---------- */
   .auth-shell{
-    max-width:400px;
-    margin:96px auto 0;
-    padding:0 24px;
+    max-width:1080px;
+    margin:0 auto;
+    padding:18px 24px 32px;
   }
+  .auth-banner{padding-bottom:20px;}
+  .auth-panel{
+    display:grid; grid-template-columns:1.25fr 1fr; gap:40px; align-items:center;
+    padding:34px 40px 36px;
+  }
+  .auth-welcome img{height:130px; width:auto; display:block; margin-bottom:18px;}
+  .auth-welcome h1.view-title{font-size:27px; font-weight:700; margin:0 0 8px;}
+  .auth-welcome p.view-sub{font-size:16.5px; line-height:1.6; margin:0 0 12px; max-width:none;}
+  .auth-start{font-size:14px; color:var(--ink-faint); margin:0;}
   .auth-card{
-    background:var(--card);
+    background:var(--bg);
     border:1px solid var(--line);
-    border-radius:4px;
-    padding:32px 28px;
+    border-radius:10px;
+    padding:28px 26px;
+  }
+  @media (max-width:820px){
+    .auth-panel{grid-template-columns:1fr; gap:24px; padding:24px 20px 26px;}
+    .auth-welcome img{height:90px;}
   }
   .auth-tabs{
     display:flex;
@@ -1643,7 +1656,7 @@
     border:none;
     color:var(--ink-soft);
   }
-  .auth-tab.active{background:var(--ink); color:#fff;}
+  .auth-tab.active{background:var(--compass-blue); color:#fff;}
   .field-block{margin-bottom:14px;}
   .field-block label{
     display:block;
@@ -1976,10 +1989,16 @@
 
 <!-- AUTH SCREEN -->
 <div id="view-auth" class="auth-shell">
-  <div class="landing-intro">
-    <p class="eyebrow">Online Spatial Tests and Assessments Repository</p>
-    <h1 class="view-title">Build and run spatial cognition batteries</h1>
-    <p class="view-sub">Pick from a catalog of real spatial-cognition tests, configure exactly which items and settings each one uses, and generate a single link that runs the whole battery for a participant. Log in to get started.</p>
+  <header class="top auth-banner">
+    <svg class="header-star" viewBox="0 0 400 400" aria-hidden="true"><path d="M200,10 L226.8,135.3 L334.4,65.6 L264.7,173.2 L390,200 L264.7,226.8 L334.4,334.4 L226.8,264.7 L200,390 L173.2,264.7 L65.6,334.4 L135.3,226.8 L10,200 L135.3,173.2 L65.6,65.6 L173.2,135.3 Z"/><circle cx="200" cy="200" r="150"/></svg>
+    <div class="brand">Online <span>Spatial Tests</span> and <span class="brand-green">Assessments</span> Repository</div>
+  </header>
+  <div class="auth-panel">
+  <div class="auth-welcome">
+    <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
+    <h1 class="view-title">Welcome!</h1>
+    <p class="view-sub">OSTAR makes spatial tests accessible to all researchers. Put tests together into a battery, send participants one link, and download your data.</p>
+    <p class="auth-start">Log in or create an account to get started.</p>
   </div>
   <div class="auth-card">
     <div class="auth-tabs">
@@ -1996,6 +2015,7 @@
     </div>
     <button class="btn accent" id="auth-submit" onclick="submitAuth()">Log in</button>
     <div class="auth-msg" id="auth-msg"></div>
+  </div>
   </div>
 </div>
 
