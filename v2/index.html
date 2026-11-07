@@ -1836,13 +1836,26 @@
   .user-bar .nav-menu-list button:last-child{margin-bottom:4px;}
   .user-bar .nav-menu-list button::before, .user-bar .nav-menu-list button::after{display:none;}
   .user-bar .nav-menu-list button:hover, .user-bar .nav-menu-list button:focus-visible{background:var(--bg); color:var(--compass-blue); outline:none;}
+  .top-row{display:flex; align-items:center; justify-content:space-between; gap:8px 16px; flex-wrap:wrap; margin-top:-4px;}
+  .top-actions{display:flex; align-items:center; gap:4px; margin-left:auto;}
+  .top-link{
+    background:none; border:none; cursor:pointer; padding:6px 9px; border-radius:6px;
+    color:rgba(255,255,255,0.9); font-family:'Inter', sans-serif; font-size:13px; font-weight:500;
+  }
+  .top-link:hover, .top-link:focus-visible{background:rgba(255,255,255,0.16); color:#fff; outline:none;}
   .guide-icon{
-    position:absolute; top:14px; right:16px; z-index:2;
-    width:32px; height:32px; border-radius:50%; cursor:pointer;
+    position:relative; z-index:2; margin-left:6px;
+    display:flex; align-items:center; gap:8px; height:32px; padding:0 14px 0 6px;
+    border-radius:16px; cursor:pointer;
     background:rgba(255,255,255,0.18); color:#fff; border:1.5px solid rgba(255,255,255,0.7);
-    font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:16px; line-height:1;
+    font-family:'Inter', sans-serif; font-weight:600; font-size:13px; line-height:1; white-space:nowrap;
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 6px rgba(10,20,60,0.25);
   }
+  .guide-icon-mark{
+    width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:#fff; color:var(--compass-blue); font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:13px;
+  }
+  body.guide-docked .guide-icon-mark{background:var(--compass-blue); color:#fff;}
   .guide-icon:hover, .guide-icon:focus-visible{background:rgba(255,255,255,0.32); outline:none;}
   body.guide-docked .guide-icon{background:#fff; color:var(--compass-blue);}
   .user-bar button:focus-visible{outline:2px solid var(--compass-gold); outline-offset:2px;}
@@ -2061,27 +2074,31 @@
     <div class="header-art" aria-hidden="true"><svg class="header-star" viewBox="0 0 400 400" aria-hidden="true"><path d="M200,10 L226.8,135.3 L334.4,65.6 L264.7,173.2 L390,200 L264.7,226.8 L334.4,334.4 L226.8,264.7 L200,390 L173.2,264.7 L65.6,334.4 L135.3,226.8 L10,200 L135.3,173.2 L65.6,65.6 L173.2,135.3 Z"/><circle cx="200" cy="200" r="150"/></svg></div>
     <div class="banner-glass" aria-hidden="true"><div class="banner-glass-view"><svg class="header-star" viewBox="0 0 400 400" aria-hidden="true"><path d="M200,10 L226.8,135.3 L334.4,65.6 L264.7,173.2 L390,200 L264.7,226.8 L334.4,334.4 L226.8,264.7 L200,390 L173.2,264.7 L65.6,334.4 L135.3,226.8 L10,200 L135.3,173.2 L65.6,65.6 L173.2,135.3 Z"/><circle cx="200" cy="200" r="150"/></svg></div></div>
     <div class="banner-glass-rim" aria-hidden="true"></div>
+    <div class="top-row">
     <div class="brand">Online <span>Spatial Tests</span> and <span class="brand-green">Assessments</span> Repository</div>
-    <button type="button" class="guide-icon" onclick="toggleGuideDock()" aria-label="Open the guide" title="Guide">?</button>
+    <div class="top-actions">
+    <button type="button" class="top-link" onclick="openProfile()">Profile</button>
+    <button type="button" class="top-link" onclick="signOut()">Log out</button>
+    <button type="button" class="guide-icon" id="guide-toggle" onclick="toggleGuideDock()" aria-controls="guide-dock" aria-expanded="false"><span class="guide-icon-mark" aria-hidden="true">?</span><span id="guide-toggle-label">Open guide</span></button>
+    </div>
+    </div>
     <div class="user-bar">
       <button onclick="goToHome()" data-view="view-home">Home</button>
-      <button class="nb-purple" onclick="goToDatasets()" data-view="view-datasets">Projects</button>
+      <button class="nb-purple" onclick="goToDatasets()" data-view="view-datasets">My Projects</button>
       <button id="nav-admin" class="hidden nb-gold" onclick="goToAdmin()" data-view="view-admin">All labs</button>
       <div class="nav-menu">
         <button class="nb-green nav-menu-btn" type="button" aria-haspopup="true" aria-expanded="false"
-                data-views="view-battery view-test-creator" onclick="toggleNavMenu(this)">Create &#9662;</button>
+                data-views="view-battery view-test-creator" onclick="toggleNavMenu(this)">Build &#9662;</button>
         <div class="nav-menu-list" role="menu">
           <button type="button" role="menuitem" onclick="closeNavMenus(); goToBattery()">Battery</button>
           <button type="button" role="menuitem" onclick="closeNavMenus(); goToTestCreator()">Test</button>
         </div>
       </div>
-      <button class="nb-red" onclick="goToCatalog()" data-view="view-catalog">Catalog</button>
+      <button class="nb-red" onclick="goToCatalog()" data-view="view-catalog">Test Catalog</button>
       <button onclick="goToLiterature()" data-view="view-literature">Literature</button>
       <button class="nb-purple" onclick="goToSharedData()" data-view="view-shared">Shared data</button>
       <button class="nb-green" onclick="goToInfo()" data-view="view-info">Info</button>
       <span class="user-email" id="user-email"></span>
-      <button class="nb-red" onclick="openProfile()">Profile</button>
-      <button class="quiet" onclick="signOut()">Log out</button>
     </div>
     <div id="home-dashboard" class="dash-strip"></div>
   </header>
@@ -2098,9 +2115,9 @@
     </div>
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToGuide()">Guide</button><p>Step-by-step instructions for using the platform, and recommendations.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToDatasets()">Projects</button><p>Your batteries, how many participants have finished, and your data.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToDatasets()">My Projects</button><p>Your batteries, how many participants have finished, and your data.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToBattery()">Battery</button><p>Put your tests in order, add attention checks, and get the participant link.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><button type="button" class="home-link" onclick="goToCatalog()">Catalog</button><p>Browse spatial tests adapted for online use.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><button type="button" class="home-link" onclick="goToCatalog()">Test Catalog</button><p>Browse spatial tests adapted for online use.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToTestCreator()">Create test</button><p>Make a test from your own images or a paper-and-pencil test.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToLiterature()">Literature</button><p>Original sources and psychometric papers for each test.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToSharedData()">Shared data</button><p>Data sets collected with these tests, free for other researchers to use.</p></div></div>
@@ -2306,8 +2323,8 @@
       <h2>Using a single test</h2>
       <p>To use one test in your study, add it to a battery on its own and generate a link. The orange outlines in the pictures show what to click.</p>
       <ol>
-        <li>Click <b>Catalog</b> at the top of the page.
-          <figure class="guide-shot"><img src="guide/nav-catalog.png" alt="The buttons at the top of the page, with Catalog outlined" width="752" height="96" loading="lazy"></figure></li>
+        <li>Click <b>Test Catalog</b> at the top of the page.
+          <figure class="guide-shot"><img src="guide/nav-catalog.png" alt="The buttons at the top of the page, with Test Catalog outlined" width="754" height="148" loading="lazy"></figure></li>
         <li>Find the test you want and click <b>Configure &amp; add</b> on its card.
           <figure class="guide-shot narrow"><img src="guide/card-configure.png" alt="A test card in the catalog, with the Configure and add button outlined" width="348" height="639" loading="lazy"></figure></li>
         <li>Keep the recommended settings, or change them (for example, the number of items or the time per item). Then click <b>Add to battery</b>. This takes you to the <b>Battery</b> page.
@@ -2318,7 +2335,7 @@
           <figure class="guide-shot"><img src="guide/generate-buttons.png" alt="The buttons at the bottom of the Battery page, with Generate pilot link and Generate final link outlined" width="618" height="62" loading="lazy"></figure></li>
         <li>Click <b>copy</b> next to the link and send it to your participants, for example in Prolific, SONA, Qualtrics or an email.
           <figure class="guide-shot"><img src="guide/copy-link.png" alt="The participant link, with the copy button outlined" width="544" height="123" loading="lazy"></figure></li>
-        <li>Their results appear on your <b>Projects</b> page, where you can download the data.</li>
+        <li>Their results appear on your <b>My Projects</b> page, where you can download the data.</li>
       </ol>
     </section>
 
@@ -2326,8 +2343,8 @@
       <h2>Using multiple tests</h2>
       <p>To build a battery of several tests, add each test, set the order, and generate one link that runs them all.</p>
       <ol>
-        <li>Add your first test as above: <b>Catalog</b> &rarr; <b>Configure &amp; add</b> &rarr; <b>Add to battery</b>.</li>
-        <li>To add the next test, click <b>+ Add another test</b> on the Battery page (or <b>Catalog</b> at the top) and repeat. Each test has its own settings.</li>
+        <li>Add your first test as above: <b>Test Catalog</b> &rarr; <b>Configure &amp; add</b> &rarr; <b>Add to battery</b>.</li>
+        <li>To add the next test, click <b>+ Add another test</b> on the Battery page (or <b>Test Catalog</b> at the top) and repeat. Each test has its own settings.</li>
         <li>Set the order on the <b>Battery</b> page: drag a test up or down the list, or click the arrows above and below its number. Participants take the tests from top to bottom.
           <figure class="guide-shot"><img src="guide/order.png" alt="The list of tests on the Battery page, with the order arrows around a test number outlined, and the Add another test button outlined" width="720" height="560" loading="lazy"></figure></li>
         <li>To put a test in a random position for each participant, switch on <b>Random position</b> on its card on the Battery page; its number ring turns dashed. Items within each test are shown in random order unless you turn off <b>Randomize item order</b> in the test's settings.
@@ -2342,7 +2359,7 @@
       <h2>Create a custom test</h2>
       <p>To create a test from your own images or from an existing paper-and-pencil test, upload a picture of each item and draw a box over each answer choice. Every item needs the same layout, with the answer choices in the same places.</p>
       <ol>
-        <li>Point to <b>Create</b> at the top of the page and choose <b>Test</b>.</li>
+        <li>Point to <b>Build</b> at the top of the page and choose <b>Test</b>.</li>
         <li>Choose how participants answer: <b>Multiple choice</b> (one correct box), <b>Multiple selections</b> (two correct boxes), <b>Same/different</b> (pairs of boxes) or <b>Fill in the blank</b> (a typed answer). Then click <b>Upload image</b> and choose one of your item images. You use it to mark where the answer choices are.
           <figure class="guide-shot"><img src="guide/creator-type-upload.png" alt="The answer type menu and the Upload image button, outlined" width="580" height="61" loading="lazy"></figure></li>
         <li>If the image is a scan or a photocopy, click <b>Clean up image&hellip;</b> to straighten, crop and tidy it. The same clean-up is applied to all your item images.
@@ -2353,7 +2370,7 @@
           <figure class="guide-shot"><img src="guide/creator-tag.png" alt="Tagging an item: box B is marked correct in green, and the Next item button is outlined" width="712" height="372" loading="lazy"></figure></li>
         <li>Give the test a <b>Test name</b> and a short <b>Description</b>, check the list of items, and click <b>Save test</b>.
           <figure class="guide-shot"><img src="guide/creator-save.png" alt="The review screen, with the Test name box and the Save test button outlined" width="702" height="500" loading="lazy"></figure></li>
-        <li>Your test now appears in the <b>Catalog</b> with an <b>Only you</b> badge. Add it to a battery like any other test. Only you can see it unless an administrator adds it to the shared catalog.</li>
+        <li>Your test now appears in the <b>Test Catalog</b> with an <b>Only you</b> badge. Add it to a battery like any other test. Only you can see it unless an administrator adds it to the shared catalog.</li>
       </ol>
     </section>
 
@@ -2713,6 +2730,7 @@ function showApp(session){
   isAdmin = ADMIN_EMAILS.includes((session.user.email || '').toLowerCase());
   document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
   goToHome();
+  openGuideOnLogin();
   fetchAndMergeCustomTests();
   refreshAdminStatus();
 }
@@ -3738,7 +3756,17 @@ function openGuideDock(goHome = true){
   });
   document.getElementById('guide-dock').classList.remove('hidden');
   document.body.classList.add('guide-docked');
+  updateGuideToggle();
+  try { localStorage.removeItem('ostarGuideClosed'); } catch (e) {}
   if (goHome) goToHome();
+}
+
+// At login the guide opens beside the page, unless this browser closed it
+// last time or the window is too narrow to show both side by side.
+function openGuideOnLogin(){
+  let closedBefore = false;
+  try { closedBefore = localStorage.getItem('ostarGuideClosed') === '1'; } catch (e) {}
+  if (!closedBefore && window.innerWidth >= 1100) openGuideDock(false);
 }
 
 // The Create menu opens on hover, on keyboard focus, or by click/tap.
@@ -3764,9 +3792,19 @@ function toggleGuideDock(){
   else closeGuideDock();
 }
 
+function updateGuideToggle(){
+  const open = !document.getElementById('guide-dock').classList.contains('hidden');
+  const btn = document.getElementById('guide-toggle');
+  if (!btn) return;
+  document.getElementById('guide-toggle-label').textContent = open ? 'Close guide' : 'Open guide';
+  btn.setAttribute('aria-expanded', String(open));
+}
+
 function closeGuideDock(){
   document.getElementById('guide-dock').classList.add('hidden');
   document.body.classList.remove('guide-docked');
+  updateGuideToggle();
+  try { localStorage.setItem('ostarGuideClosed', '1'); } catch (e) {}
 }
 
 function scrollToGuideDock(key){
