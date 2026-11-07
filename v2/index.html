@@ -221,7 +221,7 @@
   }
   /* Home links as tiles, each with a thin border in the logo's five colours
      (the same stripe as the top edge of the page panels). */
-  #view-home .home-steps{gap:10px; margin:0; grid-template-columns:repeat(4, 1fr);}
+  #view-home .home-steps{gap:10px; margin:0; grid-template-columns:repeat(3, 1fr);}
   #view-home .home-step{
     border:1px solid transparent; border-radius:9px; padding:9px 12px 10px;
     background:
@@ -428,6 +428,14 @@
   .cite-link{color:var(--compass-blue); text-decoration:none; border-bottom:1px solid currentColor;}
   .cite-link:hover{color:var(--ink);}
   .psych-btn{margin-top:8px;}
+  .data-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:18px; margin-top:8px;}
+  .data-card{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:18px 20px 16px;}
+  .data-head{display:flex; align-items:center; gap:12px; margin-bottom:10px;}
+  .data-head h2{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:17px; margin:0;}
+  .data-badge{flex-shrink:0; min-width:44px; height:44px; padding:0 8px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:var(--compass-green); color:#fff; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;}
+  .data-meta{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint); margin:2px 0 0;}
+  .data-desc{font-size:14px; color:var(--ink-soft); line-height:1.55; margin:0 0 8px;}
+  .data-soon{font-size:12.5px; color:var(--ink-faint); margin:0;}
   .team-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:18px; margin-top:8px;}
   .team-card{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:18px 20px 14px;}
   .team-head{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
@@ -1730,7 +1738,7 @@
     align-items:center;
     justify-content:flex-start;
     flex-wrap:wrap;
-    gap:6px;
+    gap:5px;
   }
   /* The account email is shown by name in the strip below the nav, so here
      it only pushes Profile and Log out to the right. */
@@ -1755,9 +1763,9 @@
     isolation:isolate;
     background:transparent;
     border:none;
-    font-size:12.5px;
+    font-size:12px;
     font-weight:500;
-    padding:7px 24px 8px 11px;
+    padding:7px 22px 8px 9px;
     margin:0 var(--d) var(--d) 0;
     color:var(--ink);
     white-space:nowrap;
@@ -1772,7 +1780,7 @@
     border:1px solid var(--edge-line);
     background:
       linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 48%),
-      radial-gradient(circle closest-side, color-mix(in srgb, var(--led) 22%, #C3CFDB) 0 62%, color-mix(in srgb, var(--led) 14%, rgba(120,140,165,0.5)) 70% 82%, transparent 100%) no-repeat right 11px center / 6px 6px,
+      radial-gradient(circle closest-side, color-mix(in srgb, var(--led) 22%, #C3CFDB) 0 62%, color-mix(in srgb, var(--led) 14%, rgba(120,140,165,0.5)) 70% 82%, transparent 100%) no-repeat right 9px center / 6px 6px,
       linear-gradient(180deg, rgba(247,250,253,0.94) 0%, rgba(232,239,246,0.92) 100%);
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.95), inset 1px 0 0 rgba(255,255,255,0.6);
     z-index:-1;
@@ -1795,7 +1803,7 @@
   .user-bar button:hover::before, .user-bar button.nav-current::before{
     background:
       linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0) 48%),
-      radial-gradient(circle closest-side, color-mix(in srgb, var(--led) 85%, transparent) 0 40%, color-mix(in srgb, var(--led) 25%, transparent) 60%, transparent 100%) no-repeat right 7px center / 14px 14px,
+      radial-gradient(circle closest-side, color-mix(in srgb, var(--led) 85%, transparent) 0 40%, color-mix(in srgb, var(--led) 25%, transparent) 60%, transparent 100%) no-repeat right 5px center / 14px 14px,
       radial-gradient(40% 90% at calc(100% - 14px) 50%, color-mix(in srgb, var(--led) 7%, transparent) 0%, transparent 70%),
       linear-gradient(180deg, rgba(247,250,253,0.94) 0%, rgba(232,239,246,0.92) 100%);
   }
@@ -2033,9 +2041,10 @@
       <button onclick="goToCatalog()" data-view="view-catalog">Catalog</button>
       <button class="nb-purple" onclick="goToTestCreator()" data-view="view-test-creator">Create test</button>
       <button class="nb-green" onclick="goToLiterature()" data-view="view-literature">Literature</button>
-      <button class="nb-red" onclick="goToInfo()" data-view="view-info">Info</button>
+      <button class="nb-red" onclick="goToSharedData()" data-view="view-shared">Shared data</button>
+      <button onclick="goToInfo()" data-view="view-info">Info</button>
       <span class="user-email" id="user-email"></span>
-      <button onclick="openProfile()">Profile</button>
+      <button class="nb-purple" onclick="openProfile()">Profile</button>
       <button class="quiet" onclick="signOut()">Log out</button>
     </div>
     <div id="home-dashboard" class="dash-strip"></div>
@@ -2058,6 +2067,7 @@
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><button type="button" class="home-link" onclick="goToCatalog()">Catalog</button><p>Browse spatial tests adapted for online use.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToTestCreator()">Create test</button><p>Make a test from your own images or a paper-and-pencil test.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToLiterature()">Literature</button><p>Original sources and psychometric papers for each test.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToSharedData()">Shared data</button><p>Data sets collected with these tests, free for other researchers to use.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToInfo()">Info</button><p>Who we are: the researchers behind OSTAR.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="openProfile()">Profile</button><p>Edit your profile or change your password.</p></div></div>
     </div>
@@ -2344,6 +2354,23 @@
       <div class="team-card">
         <div class="team-head"><span class="team-badge" style="background:#9E1B32; color:#FFFFFF;">UA</span><h2>University of Alabama</h2></div>
         <ul class="team-list"><li class="team-pi"><b>Joni Lakin</b><span>Professor of Educational Research, ESPRMC</span></li><li class="team-pi"><b>Stefanie Wind</b><span>Professor of Measurement and Evaluation, ESPRMC</span></li></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHARED DATA VIEW -->
+  <div id="view-shared" class="hidden">
+    <p class="eyebrow">Shared data</p>
+    <h1 class="view-title">Shared data</h1>
+    <p class="view-sub">Data sets collected with the tests in the catalog, shared for other researchers to use. Each one lists the tests, the sample, and how to cite it.</p>
+    <div class="data-grid">
+      <div class="data-card">
+        <div class="data-head">
+          <span class="data-badge">PFT</span>
+          <div><h2>Paper Folding Test</h2><p class="data-meta">Data set coming soon</p></div>
+        </div>
+        <p class="data-desc">Responses to the Paper Folding Test collected online.</p>
+        <p class="data-soon">The download will appear here.</p>
       </div>
     </div>
   </div>
@@ -3692,6 +3719,11 @@ function scrollToGuide(key){
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function goToSharedData(){
+  showView('view-shared');
+  window.scrollTo(0, 0);
+}
+
 function goToInfo(){
   showView('view-info');
   window.scrollTo(0, 0);
@@ -4124,7 +4156,7 @@ function hideItemPreview(){
 }
 
 function showView(id){
-  ['view-home', 'view-guide', 'view-info', 'view-literature', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
+  ['view-home', 'view-guide', 'view-info', 'view-shared', 'view-literature', 'view-catalog', 'view-battery', 'view-link', 'view-datasets', 'view-admin', 'view-test-creator'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
   document.querySelectorAll('.user-bar button[data-view]').forEach(b => {
