@@ -455,6 +455,7 @@
   .team-sub li{padding:5px 0;}
   .team-sub li b{font-size:13.5px;}
   .guide-title-row{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;}
+  .guide-title-row .new-project-btn{width:auto; flex:0 0 auto; padding:9px 16px; font-size:14px;}
   .guide-title-row .guide-dock-btn{width:auto; flex:0 0 auto; padding:8px 14px; font-size:13px;}
   .guide-dock{
     position:fixed; top:0; right:0; bottom:0; width:min(420px, 92vw);
@@ -2096,7 +2097,7 @@
       </div>
       <button class="nb-red" onclick="goToCatalog()" data-view="view-catalog">Test Catalog</button>
       <button onclick="goToLiterature()" data-view="view-literature">Literature</button>
-      <button class="nb-purple" onclick="goToSharedData()" data-view="view-shared">Shared data</button>
+      <button class="nb-purple" onclick="goToSharedData()" data-view="view-shared">Shared Data</button>
       <button class="nb-green" onclick="goToInfo()" data-view="view-info">Info</button>
       <span class="user-email" id="user-email"></span>
     </div>
@@ -2116,11 +2117,11 @@
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToGuide()">Guide</button><p>Step-by-step instructions for using the platform, and recommendations.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToDatasets()">My Projects</button><p>Your batteries, how many participants have finished, and your data.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToBattery()">Battery</button><p>Put your tests in order, add attention checks, and get the participant link.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToBattery()">Build a battery</button><p>Put your tests in order, add attention checks, and get the participant link.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><button type="button" class="home-link" onclick="goToCatalog()">Test Catalog</button><p>Browse spatial tests adapted for online use.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToTestCreator()">Create test</button><p>Make a test from your own images or a paper-and-pencil test.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToTestCreator()">Build a test</button><p>Make a test from your own images or a paper-and-pencil test.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToLiterature()">Literature</button><p>Original sources and psychometric papers for each test.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToSharedData()">Shared data</button><p>Data sets collected with these tests, free for other researchers to use.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToSharedData()">Shared Data</button><p>Data sets collected with these tests, free for other researchers to use.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToInfo()">Info</button><p>Who we are: the researchers behind OSTAR.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="openProfile()">Profile</button><p>Edit your profile or change your password.</p></div></div>
     </div>
@@ -2414,7 +2415,7 @@
   <!-- SHARED DATA VIEW -->
   <div id="view-shared" class="hidden">
     <p class="eyebrow">Shared data</p>
-    <h1 class="view-title">Shared data</h1>
+    <h1 class="view-title">Shared Data</h1>
     <p class="view-sub">Data sets collected with the tests in the catalog, shared for other researchers to use. Each one lists the tests, the sample, and how to cite it. Anyone can see this page without logging in at <a href="https://spatialtesting.org/data/" target="_blank" rel="noopener">spatialtesting.org/data</a>.</p>
     <div class="data-grid">
       <div class="data-card">
@@ -2444,7 +2445,10 @@
   <!-- PROJECTS VIEW -->
   <div id="view-datasets" class="hidden">
     <p class="eyebrow">Data</p>
-    <h1 class="view-title">Your projects</h1>
+    <div class="guide-title-row">
+      <h1 class="view-title">My Projects</h1>
+      <button class="btn primary new-project-btn" type="button" onclick="startNewProject()">+ Start new project</button>
+    </div>
     <p class="view-sub">Every battery you've saved, piloted, or run, with its tests, timing, and participant data in one place. Draft and pilot batteries can be edited or deleted; run batteries are locked — duplicate one to make a similar battery.</p>
     <div id="dataset-list-wrap"></div>
     <div id="shared-list-wrap"></div>
@@ -4623,7 +4627,16 @@ function removeFromBattery(index){
   renderBatteryList();
 }
 
-function startNewBattery(){
+// A new project is a new, empty battery: it opens on the Battery page,
+// where the guidance says what to do first.
+function startNewProject(){
+  if (battery.length && !currentBatteryId &&
+      !confirm('Start a new project? The unsaved battery you are building will be cleared.')) return;
+  startNewBattery(false);
+  goToBattery();
+}
+
+function startNewBattery(toCatalog = true){
   battery = [];
   batteryName = '';
   breakMessage = '';
@@ -4631,7 +4644,7 @@ function startNewBattery(){
   currentBatteryId = null;
   batteryStatus = 'draft';
   updateBatteryBadge();
-  goToCatalog();
+  if (toCatalog) goToCatalog();
 }
 
 // Inserts (first save) or updates (every save after) the batteries row for
