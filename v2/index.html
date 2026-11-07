@@ -435,7 +435,10 @@
   .data-badge{flex-shrink:0; min-width:44px; height:44px; padding:0 8px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:var(--compass-green); color:#fff; font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:14px;}
   .data-meta{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-faint); margin:2px 0 0;}
   .data-desc{font-size:14px; color:var(--ink-soft); line-height:1.55; margin:0 0 8px;}
-  .data-soon{font-size:12.5px; color:var(--ink-faint); margin:0;}
+  .data-note{font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin:0 0 12px;}
+  .data-note code{font-family:'IBM Plex Mono', monospace; font-size:11.5px; background:var(--card); border:1px solid var(--line); border-radius:3px; padding:0 4px;}
+  .data-links{display:flex; gap:8px; flex-wrap:wrap;}
+  .data-links .btn{width:auto; padding:8px 14px; font-size:13px; text-decoration:none; display:inline-block;}
   .team-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(340px, 1fr)); gap:18px; margin-top:8px;}
   .team-card{background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:18px 20px 14px;}
   .team-head{display:flex; align-items:center; gap:12px; margin-bottom:12px;}
@@ -2367,10 +2370,14 @@
       <div class="data-card">
         <div class="data-head">
           <span class="data-badge">PFT</span>
-          <div><h2>Paper Folding Test</h2><p class="data-meta">Data set coming soon</p></div>
+          <div><h2>Paper Folding Test</h2><p class="data-meta">Prolific · January 2024 · n = 499 · 20 items</p></div>
         </div>
-        <p class="data-desc">Responses to the Paper Folding Test collected online.</p>
-        <p class="data-soon">The download will appear here.</p>
+        <p class="data-desc">All 20 items of the Paper Folding Test, taken online by a Prolific sample. Item-by-item accuracy and response times, with demographics. Mean score 12.5 of 20 (SD 4.5).</p>
+        <p class="data-note">Not screened for low effort (see the <code>attention_check</code> column) or for fast responses.</p>
+        <div class="data-links">
+          <a class="btn accent" href="shared-data/PFT_Prolific_Jan2024.csv" download>Download data (CSV, 207 KB)</a>
+          <a class="btn secondary" href="shared-data/PFT_Prolific_Jan2024_codebook.csv" download>Codebook (CSV)</a>
+        </div>
       </div>
     </div>
   </div>

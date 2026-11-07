@@ -1,0 +1,25 @@
+column,meaning
+id,Participant number in this data set (1-499). Not linked to any Prolific ID.
+total_correct,Number of the 20 items answered correctly (0-20).
+mean_seconds_per_item,"Mean response time per item, in seconds."
+correct_PFT1 ... correct_PFT20,"1 = correct, 0 = incorrect, for each of the 20 Paper Folding Test items."
+seconds_PFT1 ... seconds_PFT20,"Response time for each item, in seconds (minimum 5 s per item)."
+attention_check,"Answer to the end-of-study question: ""Took part seriously"" or ""Clicked through (asked for data to be thrown away)"". Participants were told they would be paid either way. Not used to remove anyone."
+age,"Age in years (18-34; ""35 or over"" was an option, chosen by no one)."
+gender,"Male, Female, Non-binary / third gender, or Prefer not to say."
+ethnicity,"White, Black/African American, Asian/Asian American, American Indian, Alaska Native, Native Hawaiian/Pacific Islander, or None of the above."
+hispanic,Hispanic/Latino: Yes or No.
+education,Current educational status.
+employment,"Military Employment, Civilian Employment, or Not Employed."
+high_school_gpa,Self-reported high school GPA (0-5).
+high_school_math_courses,"Math courses taken in high school, separated by semicolons."
+parents_education,Highest education of either parent; 'Other' is explained in parents_education_other.
+parents_education_other,Free-text answer when parents_education is 'Other'.
+native_language,English or Other; 'Other' is named in native_language_other.
+native_language_other,Free-text native language.
+us_region,"North-East, South-West, West, South-East, or Midwest."
+home_location,"In a City, In Suburbs, or In a Small Town/Rural."
+normal_or_corrected_vision,Normal or corrected-to-normal vision: Yes or No.
+vision_explain,Free-text explanation when the answer was 'No'.
+demographics_survey_seconds,"Time spent on the demographics survey, in seconds."
+(blank),No answer recorded (2 participants have no demographics).
