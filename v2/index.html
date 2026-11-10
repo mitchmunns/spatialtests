@@ -501,6 +501,9 @@
   .lit-row:last-child{border-bottom:none;}
   .lit-test{font-size:13.5px; font-weight:500;}
   .lit-icons{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;}
+  .lit-test-inline{display:flex; align-items:center; gap:10px;}
+  .lit-test-inline .lit-icons{margin-top:0; flex:0 0 auto;}
+  .lit-test-inline .lit-icon{width:auto;}
   .lit-icon{display:flex; flex-direction:column; align-items:center; gap:3px; width:64px;}
   .lit-icon svg{overflow:visible;}
   .lit-icon small{font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:400; color:var(--ink-faint); text-align:center; line-height:1.2;}
@@ -3874,7 +3877,7 @@ function renderLiterature(){
   const rank = id => { const i = ORDER.indexOf(id); return i < 0 ? ORDER.length : i; };
   const original = TESTS.filter(t => t.citation).sort((a, b) => rank(a.id) - rank(b.id)).map(t => `
     <div class="lit-row">
-      <div class="lit-test">${escapeHtml(t.name)}${litIcons([t.id], false)}</div>
+      <div class="lit-test lit-test-inline">${litIcons([t.id], false)}<span>${escapeHtml(t.name)}</span></div>
       <div class="lit-cites">${link(t.citation, t.scholarQuery)}${t.citation2 ? `; ${link(t.citation2, t.scholarQuery2)}` : ''}</div>
     </div>
   `).join('');
