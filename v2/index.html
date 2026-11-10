@@ -3755,7 +3755,7 @@ function closePsychometrics(){
   document.getElementById('psych-panel').classList.add('hidden');
 }
 
-const PSYCHOMETRIC_GROUP_LABELS = { rotation: 'Mental rotation', sectioning: 'Cross-sections', folding: 'Folding' };
+const PSYCHOMETRIC_GROUP_LABELS = { rotation: 'Mental rotation', folding: 'Mental folding', sectioning: 'Mental sectioning' };
 
 function goToGuide(){
   showView('view-guide');
@@ -3873,14 +3873,17 @@ function litIcons(ids, labels = true){
 
 function renderLiterature(){
   const link = (text, query) => `<a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(query)}" target="_blank" rel="noopener">${escapeHtml(text)}</a>`;
-  const original = TESTS.filter(t => t.citation).map(t => `
+  // Same order as the catalog: rotation, folding, then sectioning.
+  const ORDER = ['VK', 'PSVT', 'Flags', 'DAT', 'SD', 'PFT', 'SBST', 'MC'];
+  const rank = id => { const i = ORDER.indexOf(id); return i < 0 ? ORDER.length : i; };
+  const original = TESTS.filter(t => t.citation).sort((a, b) => rank(a.id) - rank(b.id)).map(t => `
     <div class="lit-row">
       <div class="lit-test">${escapeHtml(t.name)}${litIcons([t.id], false)}</div>
       <div class="lit-cites">${link(t.citation, t.scholarQuery)}${t.citation2 ? `; ${link(t.citation2, t.scholarQuery2)}` : ''}</div>
     </div>
   `).join('');
 
-  const psych = Object.entries(PSYCHOMETRIC_SOURCES).map(([group, sources]) => `
+  const psych = ['rotation', 'folding', 'sectioning'].filter(g => PSYCHOMETRIC_SOURCES[g]).map(group => [group, PSYCHOMETRIC_SOURCES[group]]).map(([group, sources]) => `
     <h3 class="lit-group">${PSYCHOMETRIC_GROUP_LABELS[group] || group}</h3>
     ${sources.map(src => `
       <div class="lit-row">
