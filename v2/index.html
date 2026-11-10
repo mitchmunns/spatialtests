@@ -500,6 +500,10 @@
   .lit-row{display:grid; grid-template-columns:minmax(180px, 1fr) 2fr; gap:16px; padding:11px 0; border-bottom:1px solid var(--line);}
   .lit-row:last-child{border-bottom:none;}
   .lit-test{font-size:13.5px; font-weight:500;}
+  .lit-icons{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px;}
+  .lit-icon{display:flex; flex-direction:column; align-items:center; gap:3px; width:64px;}
+  .lit-icon svg{overflow:visible;}
+  .lit-icon small{font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:400; color:var(--ink-faint); text-align:center; line-height:1.2;}
   .lit-cites{font-size:13px; color:var(--ink-soft); line-height:1.5;}
   @media (max-width:640px){ .lit-row{grid-template-columns:1fr; gap:4px;} }
   .psych-panel{
@@ -3715,14 +3719,14 @@ function linkCitations(text){
 // A source without a url is shown as a plain citation (not yet published).
 const PSYCHOMETRIC_SOURCES = {
   rotation: [
-    { cite: 'Munns & Hegarty (2026)', note: 'Reevaluating and revising measures of mental rotation (Intelligence): item selection and psychometrics for the rotation tests used here.', url: 'https://www.sciencedirect.com/science/article/pii/S0160289626000395' },
+    { cite: 'Munns & Hegarty (2026)', about: ['VK', 'PSVT', 'Flags'], note: 'Reevaluating and revising measures of mental rotation (Intelligence): item selection and psychometrics for the rotation tests used here.', url: 'https://www.sciencedirect.com/science/article/pii/S0160289626000395' },
     { cite: 'Rajeb, Krist, Shi, Oyeniran, Wind & Lakin (2024)', note: 'Which item features make mental rotation items harder.', url: 'https://doi.org/10.3390/jintelligence13010002' },
   ],
   sectioning: [
-    { cite: 'Munns, He, Topete & Hegarty (2023)', note: 'Item response theory analysis of cross-section tests; refined short forms.', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10672093/' },
+    { cite: 'Munns, He, Topete & Hegarty (2023)', about: ['SBST', 'MC'], note: 'Item response theory analysis of cross-section tests; refined short forms.', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC10672093/' },
   ],
   folding: [
-    { cite: 'Munns & Hegarty (2026, in prep)', note: 'Item response theory analysis of three paper-folding measures (PFT, DAT and SD); the best items form a hybrid test checked on a new sample.' },
+    { cite: 'Munns & Hegarty (2026, in prep)', about: ['PFT', 'DAT', 'SD'], note: 'Item response theory analysis of three paper-folding measures (PFT, DAT and SD); the best items form a hybrid test checked on a new sample.' },
     { cite: 'Burte, Gardony, Hutton & Taylor (2019)', tests: ['PFT'], note: 'Problem features and solution strategies in the Paper Folding Test.', url: 'https://doi.org/10.1016/j.paid.2018.08.009' },
   ],
 };
@@ -3855,11 +3859,23 @@ function goToLiterature(){
   showView('view-literature');
 }
 
+// Still (not spinning) copies of the catalog icons, one per test a paper
+// is about, each with the test's short name under it.
+function litIcons(ids, labels = true){
+  const shown = (ids || []).filter(id => ICON_SHAPES[id]);
+  if (!shown.length) return '';
+  return `<span class="lit-icons">${shown.map(id => {
+    const t = TESTS.find(x => x.id === id);
+    const name = t ? t.shortName : id;
+    return `<span class="lit-icon" title="${escapeHtml(t ? t.name : id)}"><svg class="shape-still" data-shape="${id}" width="34" height="34" viewBox="-0.68 -0.68 1.36 1.36" aria-hidden="true"></svg>${labels ? `<small>${escapeHtml(name.replace(/ \(.*\)$/, ''))}</small>` : ''}</span>`;
+  }).join('')}</span>`;
+}
+
 function renderLiterature(){
   const link = (text, query) => `<a class="cite-link" href="https://scholar.google.com/scholar?q=${encodeURIComponent(query)}" target="_blank" rel="noopener">${escapeHtml(text)}</a>`;
   const original = TESTS.filter(t => t.citation).map(t => `
     <div class="lit-row">
-      <div class="lit-test">${escapeHtml(t.name)}</div>
+      <div class="lit-test">${escapeHtml(t.name)}${litIcons([t.id], false)}</div>
       <div class="lit-cites">${link(t.citation, t.scholarQuery)}${t.citation2 ? `; ${link(t.citation2, t.scholarQuery2)}` : ''}</div>
     </div>
   `).join('');
@@ -3868,7 +3884,7 @@ function renderLiterature(){
     <h3 class="lit-group">${PSYCHOMETRIC_GROUP_LABELS[group] || group}</h3>
     ${sources.map(src => `
       <div class="lit-row">
-        <div class="lit-test"><a class="cite-link" href="${src.url || citationUrl(src.cite)}" target="_blank" rel="noopener">${escapeHtml(src.cite)}</a></div>
+        <div class="lit-test"><a class="cite-link" href="${src.url || citationUrl(src.cite)}" target="_blank" rel="noopener">${escapeHtml(src.cite)}</a>${litIcons(src.about || src.tests)}</div>
         <div class="lit-cites">${escapeHtml(src.note)}</div>
       </div>
     `).join('')}
@@ -3880,6 +3896,7 @@ function renderLiterature(){
     <h2 class="lit-heading">Psychometrics</h2>
     <div class="lit-list">${psych}</div>
   `;
+  document.querySelectorAll('#literature-wrap svg.shape-still').forEach(svg => drawShapeIcon(svg, 0.6));
 }
 
 // Catalog sections, in the order shown. Tests keep their TESTS order within one.
