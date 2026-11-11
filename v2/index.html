@@ -1657,12 +1657,25 @@
   .auth-start{font-size:14px; color:var(--ink-faint); margin:0;}
   .auth-panel.auth-catalog{display:block;}
   .auth-back{width:auto; padding:7px 14px; font-size:13px; margin-bottom:18px;}
-  .auth-about{grid-column:1 / -1; border-top:1px solid var(--line); padding-top:26px; font-size:15.5px; line-height:1.65; color:var(--ink-soft);}
+  .auth-about{font-size:15.5px; line-height:1.6; color:var(--ink-soft); margin-bottom:20px;}
   .auth-about p{margin:0 0 12px;}
   .auth-about p:last-child{margin-bottom:0;}
   .auth-about ul{margin:0 0 14px; padding-left:22px;}
   .auth-about li{margin-bottom:4px;}
-  .auth-about a{color:var(--compass-blue); font-weight:500;}
+  .auth-catalog-btn{
+    display:flex; align-items:center; gap:16px; width:100%; text-align:left; cursor:pointer;
+    padding:12px 18px; border-radius:12px; border:1.5px solid var(--compass-blue);
+    background:linear-gradient(135deg, #EEF4FC, #F6F1FC); color:var(--ink);
+    box-shadow:0 2px 0 rgba(42,103,180,0.25), 0 6px 16px rgba(42,103,180,0.12);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .auth-catalog-btn:hover{transform:translateY(-2px); box-shadow:0 4px 0 rgba(42,103,180,0.25), 0 10px 22px rgba(42,103,180,0.18);}
+  .auth-catalog-btn:focus-visible{outline:3px solid var(--compass-blue); outline-offset:2px;}
+  .auth-catalog-icons{display:flex; gap:6px; flex:0 0 auto;}
+  .auth-catalog-words{display:flex; flex-direction:column; gap:3px;}
+  .auth-catalog-words strong{font-family:'Space Grotesk', sans-serif; font-size:17px; color:var(--compass-blue);}
+  .auth-catalog-words small{font-size:13px; color:var(--ink-soft);}
+  @media (max-width:480px){ .auth-catalog-icons svg{width:34px; height:34px;} .auth-catalog-btn{gap:10px; padding:10px 12px;} }
   .auth-card{
     background:var(--bg);
     border:1px solid var(--line);
@@ -2068,8 +2081,19 @@
   <div class="auth-panel" id="auth-main">
   <div class="auth-welcome">
     <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
-    <p class="view-sub">OSTAR is a platform and repository for spatial tests. Our goal is to make spatial tests accessible for all researchers and provide recommendations for which tests to use. You can use this platform to collect data with standard spatial tests, create custom batteries of those tests, or create and administer custom tests.</p>
-    <p class="auth-start">Log in or create an account to get started.</p>
+    <div class="auth-about">
+    <p>We know that spatial skills are important for learning and for success in school and college.</p>
+    <ul>
+      <li>Many educators and researchers are interested in assessing spatial skills.</li>
+      <li>But it can be difficult to determine which test should be used to measure which ability.</li>
+      <li>And tests are often hard to find and many are proprietary and expensive.</li>
+    </ul>
+    <p>OSTAR provides a novel approach to making, distributing, and analyzing spatial tests. We are a National Science Foundation-funded collaborative project dedicated to developing high-quality, open-access assessments of spatial cognition. Our team is evaluating existing measures and creating reliable, research-based tools that enable researchers and educators to assess a broad range of spatial skills.</p>
+    </div>
+    <button type="button" class="auth-catalog-btn" onclick="showPublicCatalog()">
+      <span class="auth-catalog-icons"><svg class="shape-icon" data-shape="VK" data-period="13" width="46" height="46" viewBox="-0.68 -0.68 1.36 1.36" aria-hidden="true"></svg><svg class="shape-icon" data-shape="PFT" data-period="13" width="46" height="46" viewBox="-0.68 -0.68 1.36 1.36" aria-hidden="true"></svg><svg class="shape-icon" data-shape="SBST" data-period="13" width="46" height="46" viewBox="-0.68 -0.68 1.36 1.36" aria-hidden="true"></svg></span>
+      <span class="auth-catalog-words"><strong>Browse the Test Catalog &rarr;</strong><small>Tests, instructions, and how to use them</small></span>
+    </button>
   </div>
   <div class="auth-card">
     <div class="auth-tabs">
@@ -2086,16 +2110,6 @@
     </div>
     <button class="btn accent" id="auth-submit" onclick="submitAuth()">Log in</button>
     <div class="auth-msg" id="auth-msg"></div>
-  </div>
-  <div class="auth-about">
-    <p>We know that spatial skills are important for learning and for success in school and college.</p>
-    <ul>
-      <li>Many educators and researchers are interested in assessing spatial skills.</li>
-      <li>But it can be difficult to determine which test should be used to measure which ability.</li>
-      <li>And tests are often hard to find and many are proprietary and expensive.</li>
-    </ul>
-    <p>OSTAR provides a novel approach to making, distributing, and analyzing spatial tests. We are a National Science Foundation-funded collaborative project dedicated to developing high-quality, open-access assessments of spatial cognition. Our team is evaluating existing measures and creating reliable, research-based tools that enable researchers and educators to assess a broad range of spatial skills.</p>
-    <p><a href="#catalog" onclick="showPublicCatalog(); return false;">You can find tests, instructions, and how to use them here.</a></p>
   </div>
   </div>
   <div class="auth-panel auth-catalog hidden" id="auth-catalog">
