@@ -1655,6 +1655,8 @@
   .auth-welcome h1.view-title{font-size:27px; font-weight:700; margin:0 0 8px;}
   .auth-welcome p.view-sub{font-size:16.5px; line-height:1.6; margin:0 0 12px; max-width:none;}
   .auth-start{font-size:14px; color:var(--ink-faint); margin:0;}
+  .auth-panel.auth-catalog{display:block;}
+  .auth-back{width:auto; padding:7px 14px; font-size:13px; margin-bottom:18px;}
   .auth-about{grid-column:1 / -1; border-top:1px solid var(--line); padding-top:26px; font-size:15.5px; line-height:1.65; color:var(--ink-soft);}
   .auth-about p{margin:0 0 12px;}
   .auth-about p:last-child{margin-bottom:0;}
@@ -2063,7 +2065,7 @@
     <div class="header-art" aria-hidden="true"><svg class="header-star" viewBox="0 0 400 400" aria-hidden="true"><path d="M200,10 L226.8,135.3 L334.4,65.6 L264.7,173.2 L390,200 L264.7,226.8 L334.4,334.4 L226.8,264.7 L200,390 L173.2,264.7 L65.6,334.4 L135.3,226.8 L10,200 L135.3,173.2 L65.6,65.6 L173.2,135.3 Z"/><circle cx="200" cy="200" r="150"/></svg></div>
     <div class="brand">Online <span>Spatial Tests</span> and <span class="brand-green">Assessments</span> Repository</div>
   </header>
-  <div class="auth-panel">
+  <div class="auth-panel" id="auth-main">
   <div class="auth-welcome">
     <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
     <p class="view-sub">OSTAR is a platform and repository for spatial tests. Our goal is to make spatial tests accessible for all researchers and provide recommendations for which tests to use. You can use this platform to collect data with standard spatial tests, create custom batteries of those tests, or create and administer custom tests.</p>
@@ -2093,8 +2095,14 @@
       <li>And tests are often hard to find and many are proprietary and expensive.</li>
     </ul>
     <p>OSTAR provides a novel approach to making, distributing, and analyzing spatial tests. We are a National Science Foundation-funded collaborative project dedicated to developing high-quality, open-access assessments of spatial cognition. Our team is evaluating existing measures and creating reliable, research-based tools that enable researchers and educators to assess a broad range of spatial skills.</p>
-    <p><a href="https://sites.northwestern.edu/spatialtesting/available-tests/" target="_blank" rel="noopener">You can find tests, instructions, and how to use them here.</a></p>
+    <p><a href="#catalog" onclick="showPublicCatalog(); return false;">You can find tests, instructions, and how to use them here.</a></p>
   </div>
+  </div>
+  <div class="auth-panel auth-catalog hidden" id="auth-catalog">
+    <button type="button" class="btn secondary auth-back" onclick="hidePublicCatalog()">&larr; Back to log in</button>
+    <h1 class="view-title">Test Catalog</h1>
+    <p class="view-sub">The tests available on OSTAR. Log in or create an account to add them to a battery and collect data.</p>
+    <div class="catalog-grid" id="public-catalog-grid"></div>
   </div>
 </div>
 
@@ -2783,7 +2791,23 @@ async function refreshAdminStatus(){
   document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
 }
 
+// Before login: the Test Catalog, read-only, opened from the login page.
+function showPublicCatalog(){
+  renderCatalog('public-catalog-grid', true);
+  document.getElementById('auth-main').classList.add('hidden');
+  document.getElementById('auth-catalog').classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+function hidePublicCatalog(){
+  closePsychometrics();
+  document.getElementById('auth-catalog').classList.add('hidden');
+  document.getElementById('auth-main').classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
 function showAuth(){
+  hidePublicCatalog();
   document.getElementById('app-shell').classList.add('hidden');
   document.getElementById('view-auth').classList.remove('hidden');
   document.getElementById('auth-email').value = '';
@@ -3924,8 +3948,9 @@ const CATALOG_GROUPS = [
   { key: 'sectioning', title: 'Mental sectioning', ids: ['SBST', 'MC'] },
 ];
 
-function renderCatalog(){
-  const grid = document.getElementById('catalog-grid');
+function renderCatalog(gridId = 'catalog-grid', publicView = false){
+  const grid = document.getElementById(gridId);
+  const pre = publicView ? 'public-' : '';
   // Attention checks aren't full tests to configure — they're offered as a
   // quick add-on toggle from the battery view instead (see renderAttentionChecks()).
   // Custom-test names and descriptions are typed by researchers and now show
@@ -3944,14 +3969,17 @@ function renderCatalog(){
         <span><strong>${t.stats.items}</strong> items</span>
         ${t.stats.timeLabel ? `<span><strong>${t.stats.timeLabel}</strong></span>` : ''}
       </div>
-      <button class="btn" onclick="openCustomize('${t.id}')">Configure &amp; add</button>
+      ${publicView
+        ? `<button class="btn" onclick="hidePublicCatalog()">Log in to add</button>`
+        : `<button class="btn" onclick="openCustomize('${t.id}')">Configure &amp; add</button>`}
       ${PSYCHOMETRICS_BY_TEST[t.id] ? `<button class="btn secondary psych-btn" onclick="openPsychometrics('${t.id}')">Psychometrics</button>` : ''}
     </div>
   `;
 
   // Grouped by what the tests measure, with a row of jump links on top.
   // Anything not in a group (demographics, custom tests) goes under Other.
-  const shown = TESTS.filter(t => !t.attentionCheck && !t.hiddenFromCatalog);
+  const shown = TESTS.filter(t => !t.attentionCheck && !t.hiddenFromCatalog &&
+    !(publicView && String(t.id).startsWith('custom:')));
   const grouped = new Set(CATALOG_GROUPS.flatMap(g => g.ids));
   const groups = CATALOG_GROUPS
     .map(g => ({ ...g, tests: shown.filter(t => g.ids.includes(t.id)) }))
@@ -3961,10 +3989,10 @@ function renderCatalog(){
   grid.innerHTML = `
     <nav class="catalog-toc" aria-label="Catalog sections">
       <span class="catalog-toc-label">Jump to</span>
-      ${groups.map(g => `<button type="button" onclick="scrollToCatalogGroup('${g.key}')">${g.title}</button>`).join('')}
+      ${groups.map(g => `<button type="button" onclick="scrollToCatalogGroup('${pre}${g.key}')">${g.title}</button>`).join('')}
     </nav>
     ${groups.map(g => `
-      <h2 class="catalog-group-head" id="catalog-group-${g.key}">${g.title}</h2>
+      <h2 class="catalog-group-head" id="catalog-group-${pre}${g.key}">${g.title}</h2>
       ${g.tests.map(card).join('')}
       <div class="catalog-back-top"><button type="button" onclick="window.scrollTo({ top: 0, behavior: 'smooth' })">↑ Back to top</button></div>
     `).join('')}
