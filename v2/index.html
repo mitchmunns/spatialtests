@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spatial Test Repository</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
@@ -4468,7 +4468,7 @@ function paramSummary(test, params){
     } else if (typeof val === 'boolean'){
       val = val ? 'yes' : 'no';
     }
-    return `${f.label.toLowerCase()}: ${val}`;
+    return `${f.label.toLowerCase()}: ${escapeHtml(val)}`;
   }).filter(Boolean).join(' · ');
 }
 
@@ -5664,7 +5664,10 @@ function copyDatasetLink(sessionId){
 
 function csvEscape(val){
   if (val === null || val === undefined) return '';
-  const str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+  let str = typeof val === 'object' ? JSON.stringify(val) : String(val);
+  // A text cell starting with = + - @ (or tab/return) runs as a formula in
+  // Excel; a leading ' keeps it as text. Plain numbers like -0.5 are left alone.
+  if (/^[=+\-@\t\r]/.test(str) && !/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(str)) str = "'" + str;
   return /[",\n]/.test(str) ? '"' + str.replace(/"/g, '""') + '"' : str;
 }
 
