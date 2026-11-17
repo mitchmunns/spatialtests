@@ -4454,6 +4454,7 @@ function fitHomeToScreen(){
   const panel = document.querySelector('.home-panel');
   if (!panel || !home || home.classList.contains('hidden')) return;
   panel.style.zoom = '';
+  panel.style.minHeight = '';
   if (window.innerWidth <= 720) return;
   const shell = document.querySelector('.shell');
   const bottomPad = shell ? parseFloat(getComputedStyle(shell).paddingBottom) || 0 : 0;
@@ -4461,6 +4462,9 @@ function fitHomeToScreen(){
   const room = window.innerHeight - top - Math.min(bottomPad, 16);
   const natural = panel.offsetHeight;
   if (natural > room) panel.style.zoom = Math.max(0.7, room / natural).toFixed(3);
+  // A short Home is stretched down to the bottom of the window instead of
+  // leaving empty space below it; its content stays centred inside.
+  else panel.style.minHeight = Math.floor(window.innerHeight - top - bottomPad) + 'px';
 }
 let fitHomeTimer = 0;
 window.addEventListener('resize', () => {
