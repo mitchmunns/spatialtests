@@ -213,11 +213,15 @@
   .home-hero{display:flex; align-items:flex-start; gap:36px; margin-bottom:22px;}
   .home-intro{padding-top:5px;}
   .home-hero img{height:120px; width:auto; flex-shrink:0;}
+  .home-intro{flex:1; text-align:center;}
+  .home-hero img.nsf-logo{height:96px;}
   .home-hero h1.view-title{font-size:21px; font-weight:700; line-height:1.25; margin:0 0 4px;}
   #view-home .home-intro p.view-sub{margin:0;}
   @media (max-width:720px){
-    .home-hero{flex-direction:column; align-items:flex-start; gap:12px;}
+    .home-hero{flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;}
     .home-hero img{height:80px;}
+    .home-hero img.nsf-logo{height:64px; order:1;}
+    .home-intro{order:2; flex:1 1 100%; text-align:left;}
   }
   /* Home links as tiles, each with a thin border in the logo's five colours
      (the same stripe as the top edge of the page panels). */
@@ -266,6 +270,7 @@
     .home-panel{padding:26px 34px 28px;}
     .home-hero{gap:40px; margin-bottom:28px;}
     .home-hero img{height:150px;}
+    .home-hero img.nsf-logo{height:118px;}
     .home-intro{padding-top:6px;}
     .home-hero h1.view-title{font-size:27px; margin-bottom:6px;}
     #view-home .home-intro p.view-sub{font-size:16.5px; line-height:1.6;}
@@ -1659,7 +1664,9 @@
   .auth-back{width:auto; padding:7px 14px; font-size:13px; margin-bottom:18px;}
   /* Same two columns as the panel, so the button lines up with the login box. */
   .auth-top{grid-column:1 / -1; display:grid; grid-template-columns:1.25fr 1fr; gap:16px 40px; align-items:center; margin-bottom:-8px;}
+  .auth-logos{display:flex; align-items:center; gap:22px;}
   .auth-top img{height:130px; width:auto; display:block;}
+  .auth-top img.nsf-logo{height:112px;}
   .auth-about{font-size:15.5px; line-height:1.6; color:var(--ink-soft);}
   .auth-about p{margin:0 0 12px;}
   .auth-about p:last-child{margin-bottom:0;}
@@ -1689,6 +1696,8 @@
     .auth-panel{grid-template-columns:1fr; gap:24px; padding:24px 20px 26px;}
     .auth-top{grid-template-columns:1fr;}
     .auth-top img{height:90px;}
+    .auth-top img.nsf-logo{height:72px;}
+    .auth-logos{gap:12px;}
   }
   .auth-tabs{
     display:flex;
@@ -2084,7 +2093,10 @@
   </header>
   <div class="auth-panel" id="auth-main">
   <div class="auth-top">
-    <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
+    <div class="auth-logos">
+      <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
+      <img class="nsf-logo" src="nsf_logo.webp" alt="National Science Foundation" width="320" height="320">
+    </div>
     <button type="button" class="auth-catalog-btn" onclick="showPublicCatalog()">
       <span class="auth-catalog-icons"><svg class="shape-icon" data-shape="VK" data-period="13" width="40" height="40" viewBox="-0.68 -0.68 1.36 1.36" aria-hidden="true"></svg><svg class="shape-icon" data-shape="PFT" data-period="13" width="40" height="40" viewBox="-0.68 -0.68 1.36 1.36" aria-hidden="true"></svg><svg class="shape-icon" data-shape="SBST" data-period="13" width="40" height="40" viewBox="-0.68 -0.68 1.36 1.36" aria-hidden="true"></svg></span>
       <span class="auth-catalog-words"><strong>Browse the Test Catalog &rarr;</strong><small>Tests, instructions, and how to use them</small></span>
@@ -2169,6 +2181,7 @@
         <h1 class="view-title">Welcome!</h1>
         <p class="view-sub">This is a platform and repository for making spatial tests accessible for all researchers. It allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
       </div>
+      <img class="nsf-logo" src="nsf_logo.webp" alt="National Science Foundation" width="320" height="320">
     </div>
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToGuide()">Guide</button><p>Step-by-step instructions for using the platform, and recommendations.</p></div></div>
