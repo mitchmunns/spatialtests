@@ -280,6 +280,19 @@
     #view-home .home-link{font-size:16.5px; margin-bottom:4px;}
     #view-home .home-step p{font-size:14px; line-height:1.5;}
   }
+  /* Wide screens: laid out like the login page. Logos above the text on the
+     left; the page links on the right, where the login box is. */
+  @media (min-width:900px){
+    .home-panel{display:grid; grid-template-columns:1.2fr 1fr; gap:36px; align-items:center;}
+    .home-hero{flex-direction:column; align-items:stretch; gap:18px; margin-bottom:0;}
+    .home-hero img{height:120px;}
+    .home-hero img.nsf-logo{height:102px;}
+    .home-logos{gap:22px;}
+    #view-home .home-steps{grid-template-columns:1fr 1fr; gap:10px;}
+    #view-home .home-step{padding:10px 13px 11px;}
+    #view-home .home-link{font-size:15.5px; margin-bottom:2px;}
+    #view-home .home-step p{font-size:13px; line-height:1.45;}
+  }
   .home-step strong{
     display:block;
     font-size:14.5px;
