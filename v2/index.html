@@ -284,10 +284,33 @@
      left; the page links on the right, where the login box is. */
   @media (min-width:900px){
     .home-panel{display:grid; grid-template-columns:1.2fr 1fr; gap:36px; align-items:center;}
-    .home-hero{flex-direction:column; align-items:stretch; gap:18px; margin-bottom:0;}
+    .home-hero{flex-direction:column; align-items:stretch; justify-content:center; gap:22px; margin-bottom:0;
+      align-self:stretch; position:relative;}
     .home-hero img{height:120px;}
     .home-hero img.nsf-logo{height:102px;}
-    .home-logos{gap:22px;}
+    .home-logos{gap:48px; position:relative; padding-bottom:22px;}
+    /* Thin drafting lines in the compass colours: one under the logos, one
+       between the text and the page links, joined by a small ring. Each line
+       ends in a short tick, like a line on a technical drawing. */
+    .home-logos::after{
+      content:''; position:absolute; left:0; right:-18px; bottom:-3.5px; height:7px; pointer-events:none;
+      background:
+        linear-gradient(90deg, var(--compass-blue), var(--compass-purple), var(--compass-red), var(--compass-gold), var(--compass-green)) center / 100% 1px no-repeat,
+        linear-gradient(var(--compass-blue), var(--compass-blue)) left / 1px 100% no-repeat;
+      opacity:.7;
+    }
+    .home-hero::after{
+      content:''; position:absolute; top:0; bottom:0; right:-21.5px; width:7px; pointer-events:none;
+      background:
+        linear-gradient(180deg, var(--compass-blue), var(--compass-purple), var(--compass-red), var(--compass-gold), var(--compass-green)) center / 1px 100% no-repeat,
+        linear-gradient(var(--compass-blue), var(--compass-blue)) top / 100% 1px no-repeat,
+        linear-gradient(var(--compass-green), var(--compass-green)) bottom / 100% 1px no-repeat;
+      opacity:.7;
+    }
+    .home-logos::before{
+      content:''; position:absolute; right:-22px; bottom:-4px; width:8px; height:8px; box-sizing:border-box;
+      border-radius:50%; border:1.5px solid var(--compass-purple); background:var(--card); z-index:1; pointer-events:none;
+    }
     #view-home .home-steps{grid-template-columns:1fr 1fr; gap:10px;}
     #view-home .home-step{padding:10px 13px 11px;}
     #view-home .home-link{font-size:15.5px; margin-bottom:2px;}
