@@ -514,6 +514,14 @@
   .guide-shot.narrow img{max-width:min(100%, 320px);}
   .guide-note{font-size:12.5px; color:var(--ink-faint); margin:4px 0 0;}
   .lit-heading{font-family:'Space Grotesk', sans-serif; font-weight:600; font-size:19px; margin:8px 0 12px;}
+  .lit-section{border:1px solid var(--line); border-radius:6px; background:var(--card); margin-bottom:12px;}
+  .lit-section > summary.lit-heading{list-style:none; cursor:pointer; margin:0; padding:12px 16px; display:flex; align-items:center; gap:10px; user-select:none;}
+  .lit-section > summary.lit-heading::-webkit-details-marker{display:none;}
+  .lit-section > summary.lit-heading::before{content:''; width:8px; height:8px; border-right:2px solid var(--compass-blue); border-bottom:2px solid var(--compass-blue); transform:rotate(-45deg); transition:transform .15s ease; flex:0 0 auto;}
+  .lit-section[open] > summary.lit-heading::before{transform:rotate(45deg);}
+  .lit-section > summary.lit-heading:hover{color:var(--compass-blue);}
+  .lit-count{font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:400; color:var(--ink-faint);}
+  .lit-section > .lit-list{border:none; border-top:1px solid var(--line); border-radius:0; margin:0;}
   .lit-list{background:var(--card); border:1px solid var(--line); border-radius:4px; padding:4px 20px; margin-bottom:32px;}
   .lit-group{font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); margin:16px 0 4px;}
   .lit-row{display:grid; grid-template-columns:minmax(180px, 1fr) 2fr; gap:16px; padding:11px 0; border-bottom:1px solid var(--line);}
@@ -2179,7 +2187,7 @@
       </div>
       <button class="nb-red" onclick="goToCatalog()" data-view="view-catalog">Test Catalog</button>
       <button onclick="goToLiterature()" data-view="view-literature">Literature</button>
-      <button class="nb-purple" onclick="goToSharedData()" data-view="view-shared">Shared Data</button>
+      <button class="nb-purple" onclick="goToSharedData()" data-view="view-shared">Open Data</button>
       <button class="nb-green" onclick="goToInfo()" data-view="view-info">Info</button>
       <span class="user-email" id="user-email"></span>
     </div>
@@ -2212,7 +2220,7 @@
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-blue);">●</span><div><button type="button" class="home-link" onclick="goToCatalog()">Test Catalog</button><p>Browse spatial tests adapted for online use.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToTestCreator()">Build a test</button><p>Make a test from your own images or a paper-and-pencil test.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-green);">●</span><div><button type="button" class="home-link" onclick="goToLiterature()">Literature</button><p>Original sources and psychometric papers for each test.</p></div></div>
-      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToSharedData()">Shared Data</button><p>Data sets collected with these tests, free for other researchers to use.</p></div></div>
+      <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToSharedData()">Open Data</button><p>Data sets collected with these tests, free for other researchers to use.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="goToInfo()">Info</button><p>Who we are: the researchers behind OSTAR.</p></div></div>
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-red);">●</span><div><button type="button" class="home-link" onclick="openProfile()">Profile</button><p>Edit your profile or change your password.</p></div></div>
     </div>
@@ -2412,7 +2420,7 @@
       <p>To use one test in your study, add it to a battery on its own and generate a link. The orange outlines in the pictures show what to click.</p>
       <ol>
         <li>Click <b>Test Catalog</b> at the top of the page.
-          <figure class="guide-shot"><img src="guide/nav-catalog.png" alt="The buttons at the top of the page, with Test Catalog outlined" width="754" height="148" loading="lazy"></figure></li>
+          <figure class="guide-shot"><img src="guide/nav-catalog.png" alt="The buttons at the top of the page, with Test Catalog outlined" width="648" height="110" loading="lazy"></figure></li>
         <li>Find the test you want and click <b>Configure &amp; add</b> on its card.
           <figure class="guide-shot narrow"><img src="guide/card-configure.png" alt="A test card in the catalog, with the Configure and add button outlined" width="348" height="639" loading="lazy"></figure></li>
         <li>Keep the recommended settings, or change them (for example, the number of items or the time per item). Then click <b>Add to battery</b>. This takes you to the <b>Battery</b> page.
@@ -2501,8 +2509,8 @@
 
   <!-- SHARED DATA VIEW -->
   <div id="view-shared" class="hidden">
-    <p class="eyebrow">Shared data</p>
-    <h1 class="view-title">Shared Data</h1>
+    <p class="eyebrow">Open data</p>
+    <h1 class="view-title">Open Data</h1>
     <div class="data-grid">
       <div class="data-card">
         <div class="data-head">
@@ -4008,11 +4016,18 @@ function renderLiterature(){
     `).join('')}
   `).join('');
 
+  // Each section starts collapsed; click its heading to open it.
+  const nOriginal = TESTS.filter(t => t.citation).length;
+  const nPsych = Object.values(PSYCHOMETRIC_SOURCES).reduce((n, list) => n + list.length, 0);
   document.getElementById('literature-wrap').innerHTML = `
-    <h2 class="lit-heading">Original tests</h2>
-    <div class="lit-list">${original}</div>
-    <h2 class="lit-heading">Psychometrics</h2>
-    <div class="lit-list">${psych}</div>
+    <details class="lit-section">
+      <summary class="lit-heading">Original tests <span class="lit-count">${nOriginal}</span></summary>
+      <div class="lit-list">${original}</div>
+    </details>
+    <details class="lit-section">
+      <summary class="lit-heading">Psychometrics <span class="lit-count">${nPsych}</span></summary>
+      <div class="lit-list">${psych}</div>
+    </details>
   `;
   document.querySelectorAll('#literature-wrap svg.shape-still').forEach(svg => drawShapeIcon(svg, 0.6));
 }
