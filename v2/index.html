@@ -210,23 +210,20 @@
   #view-home p.view-sub{margin-bottom:14px;}
   /* Text top-aligned with the drawn part of the logo (the image has about
      7px of white above the compass at this size). */
-  .home-hero{display:flex; align-items:center; gap:36px; margin-bottom:18px;}
-  .home-intro{padding-top:5px;}
-  .home-hero img{height:120px; width:auto; flex-shrink:0;}
-  .home-intro{flex:1; text-align:center;}
-  .home-hero img.nsf-logo{height:96px;}
-  .home-about{font-size:15px; line-height:1.55; color:var(--ink-soft); margin-bottom:22px;}
+  .home-hero{display:flex; align-items:flex-start; gap:36px; margin-bottom:22px;}
+  .home-logos{display:flex; align-items:center; gap:18px; flex-shrink:0;}
+  .home-hero img{height:80px; width:auto; flex-shrink:0;}
+  .home-hero img.nsf-logo{height:64px;}
+  .home-about{flex:1; min-width:0; font-size:15px; line-height:1.55; color:var(--ink-soft);}
   .home-about p{margin:0 0 8px;}
   .home-about p:last-child{margin-bottom:0;}
   .home-about ul{margin:0 0 10px; padding-left:22px;}
   .home-about li{margin-bottom:2px;}
-  .home-hero h1.view-title{font-size:21px; font-weight:700; line-height:1.25; margin:0 0 4px;}
-  #view-home .home-intro p.view-sub{margin:0;}
+  .home-hero h1.view-title{font-size:21px; font-weight:700; line-height:1.25; margin:0 0 6px; color:var(--ink);}
   @media (max-width:720px){
-    .home-hero{flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;}
+    .home-hero{flex-direction:column; gap:14px;}
     .home-hero img{height:80px;}
-    .home-hero img.nsf-logo{height:64px; order:1;}
-    .home-intro{order:2; flex:1 1 100%; text-align:left;}
+    .home-hero img.nsf-logo{height:64px;}
   }
   /* Home links as tiles, each with a thin border in the logo's five colours
      (the same stripe as the top edge of the page panels). */
@@ -273,13 +270,11 @@
   /* Home at a comfortable size on laptop and desktop screens. */
   @media (min-width:721px){
     .home-panel{padding:26px 34px 28px;}
-    .home-hero{gap:40px; margin-bottom:14px;}
-    .home-about{font-size:15.5px; line-height:1.5; margin-bottom:22px;}
-    .home-hero img{height:112px;}
-    .home-hero img.nsf-logo{height:92px;}
-    .home-intro{padding-top:6px;}
+    .home-hero{gap:36px; margin-bottom:24px;}
+    .home-about{font-size:15.5px; line-height:1.5;}
+    .home-hero img{height:84px;}
+    .home-hero img.nsf-logo{height:68px;}
     .home-hero h1.view-title{font-size:27px; margin-bottom:6px;}
-    #view-home .home-intro p.view-sub{font-size:16.5px; line-height:1.6;}
     #view-home .home-steps{gap:14px;}
     #view-home .home-step{padding:14px 16px 15px;}
     #view-home .home-link{font-size:16.5px; margin-bottom:4px;}
@@ -2182,20 +2177,20 @@
   <div id="view-home">
    <div class="home-panel">
     <div class="home-hero">
-      <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
-      <div class="home-intro">
-        <h1 class="view-title">Welcome!</h1>
+      <div class="home-logos">
+        <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
+        <img class="nsf-logo" src="nsf_logo.webp" alt="National Science Foundation" width="320" height="320">
       </div>
-      <img class="nsf-logo" src="nsf_logo.webp" alt="National Science Foundation" width="320" height="320">
-    </div>
-    <div class="home-about">
-      <p>We know that spatial skills are important for learning and for success in school and college.</p>
-      <ul>
-        <li>Many educators and researchers are interested in assessing spatial skills.</li>
-        <li>But it can be difficult to determine which test should be used to measure which ability.</li>
-        <li>And tests are often hard to find and many are proprietary and expensive.</li>
-      </ul>
-      <p>OSTAR provides a novel approach to making, distributing, and analyzing spatial tests. We are a National Science Foundation-funded collaborative project dedicated to developing high-quality, open-access assessments of spatial cognition. Our team is evaluating existing measures and creating reliable, research-based tools that enable researchers and educators to assess a broad range of spatial skills.</p>
+      <div class="home-about">
+        <h1 class="view-title">Welcome!</h1>
+        <p>We know that spatial skills are important for learning and for success in school and college.</p>
+        <ul>
+          <li>Many educators and researchers are interested in assessing spatial skills.</li>
+          <li>But it can be difficult to determine which test should be used to measure which ability.</li>
+          <li>And tests are often hard to find and many are proprietary and expensive.</li>
+        </ul>
+        <p>OSTAR provides a novel approach to making, distributing, and analyzing spatial tests. We are a National Science Foundation-funded collaborative project dedicated to developing high-quality, open-access assessments of spatial cognition. Our team is evaluating existing measures and creating reliable, research-based tools that enable researchers and educators to assess a broad range of spatial skills.</p>
+      </div>
     </div>
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToGuide()">Guide</button><p>Step-by-step instructions for using the platform, and recommendations.</p></div></div>
@@ -2838,11 +2833,31 @@ async function refreshAdminStatus(){
   document.getElementById('nav-admin').classList.toggle('hidden', !isAdmin);
 }
 
+// The login page is meant to be seen whole: on a short window it is shrunk
+// (never below 65%) until it fits. Phones keep the normal, scrolling layout.
+function fitAuthToScreen(){
+  const shell = document.getElementById('view-auth');
+  const main = document.getElementById('auth-main');
+  if (!shell || !main) return;
+  shell.style.zoom = '';
+  if (shell.classList.contains('hidden') || main.classList.contains('hidden') || window.innerWidth <= 820) return;
+  const natural = shell.offsetHeight;
+  if (natural > window.innerHeight) shell.style.zoom = Math.max(0.65, window.innerHeight / natural).toFixed(3);
+}
+let fitAuthTimer = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(fitAuthTimer);
+  fitAuthTimer = setTimeout(fitAuthToScreen, 80);
+});
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitAuthToScreen());
+window.addEventListener('load', () => fitAuthToScreen());
+
 // Before login: the Test Catalog, read-only, opened from the login page.
 function showPublicCatalog(){
   renderCatalog('public-catalog-grid', true);
   document.getElementById('auth-main').classList.add('hidden');
   document.getElementById('auth-catalog').classList.remove('hidden');
+  fitAuthToScreen();
   window.scrollTo(0, 0);
 }
 
@@ -2850,6 +2865,7 @@ function hidePublicCatalog(){
   closePsychometrics();
   document.getElementById('auth-catalog').classList.add('hidden');
   document.getElementById('auth-main').classList.remove('hidden');
+  fitAuthToScreen();
   window.scrollTo(0, 0);
 }
 
