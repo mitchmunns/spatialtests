@@ -2862,8 +2862,11 @@ function fitAuthToScreen(){
   if (!shell || !main) return;
   shell.style.zoom = '';
   if (shell.classList.contains('hidden') || main.classList.contains('hidden') || window.innerWidth <= 820) return;
-  const natural = shell.offsetHeight;
-  if (natural > window.innerHeight) shell.style.zoom = Math.max(0.65, window.innerHeight / natural).toFixed(3);
+  const html = document.documentElement;
+  const overflowBefore = html.style.overflowY;
+  html.style.overflowY = 'hidden';  // measure without a scrollbar (see fitHomeToScreen)
+  if (shell.offsetHeight > window.innerHeight) fitZoom(shell, window.innerHeight, 0.65);
+  html.style.overflowY = overflowBefore;
 }
 let fitAuthTimer = 0;
 window.addEventListener('resize', () => {
@@ -4449,6 +4452,21 @@ function goToHome(){
 // Home is meant to be seen whole, without scrolling: if the window is too
 // short for it, the Home panel is shrunk (never below 70%) until it fits.
 // Re-checked on resize and once fonts and the dashboard strip have loaded.
+// The largest zoom (between `min` and 1) at which `el` is at most `room`
+// pixels tall on screen. A shrunk element is laid out wider in its own units,
+// so its text rewraps and its height jumps; a halving search copes with that.
+function fitZoom(el, room, min){
+  const tall = z => { el.style.zoom = z.toFixed(4); return el.offsetHeight * z; };
+  let lo = min, hi = 1;
+  if (tall(hi) <= room){ el.style.zoom = ''; return 1; }
+  for (let i = 0; i < 12; i++){
+    const mid = (lo + hi) / 2;
+    if (tall(mid) <= room) lo = mid; else hi = mid;
+  }
+  el.style.zoom = lo.toFixed(4);
+  return lo;
+}
+
 function fitHomeToScreen(){
   const home = document.getElementById('view-home');
   const panel = document.querySelector('.home-panel');
@@ -4456,15 +4474,33 @@ function fitHomeToScreen(){
   panel.style.zoom = '';
   panel.style.minHeight = '';
   if (window.innerWidth <= 720) return;
+  // Measure without a scrollbar: a scrollbar that shows only until Home is
+  // fitted narrows the page, so the text wraps more and Home would come out
+  // smaller than it needs to be.
+  const html = document.documentElement;
+  const overflowBefore = html.style.overflowY;
+  html.style.overflowY = 'hidden';
   const shell = document.querySelector('.shell');
   const bottomPad = shell ? parseFloat(getComputedStyle(shell).paddingBottom) || 0 : 0;
   const top = panel.getBoundingClientRect().top + window.scrollY;
-  const room = window.innerHeight - top - Math.min(bottomPad, 16);
+  const room = window.innerHeight - top - bottomPad;
   const natural = panel.offsetHeight;
-  if (natural > room) panel.style.zoom = Math.max(0.7, room / natural).toFixed(3);
-  // A short Home is stretched down to the bottom of the window instead of
+  // A shrunk panel is laid out wider in its own units, so its text wraps less
+  // and it comes out shorter than planned. Re-measure until it fills the room.
+  const z = natural > room ? fitZoom(panel, room, 0.7) : 1;
+  // A Home that fits is stretched down to the bottom of the window instead of
   // leaving empty space below it; its content stays centred inside.
-  else panel.style.minHeight = Math.floor(window.innerHeight - top - bottomPad) + 'px';
+  if (z >= 1){ panel.style.zoom = ''; panel.style.minHeight = Math.floor(room) + 'px'; }
+  html.style.overflowY = overflowBefore;
+}
+// Refit whenever the banner changes height, e.g. when the studies bar loads.
+if (window.ResizeObserver){
+  let fitBannerTimer = 0;
+  const banner = document.querySelector('#app-shell header.top');
+  if (banner) new ResizeObserver(() => {
+    clearTimeout(fitBannerTimer);
+    fitBannerTimer = setTimeout(fitHomeToScreen, 30);
+  }).observe(banner);
 }
 let fitHomeTimer = 0;
 window.addEventListener('resize', () => {
