@@ -2180,6 +2180,44 @@
       inset 0 1px 0 rgba(255,255,255,.95),
       inset 0 -1px 0 rgba(255,255,255,.95);
   }
+
+  /* Scroll bars styled like the glass rod: the track is a ruler scale (a short
+     tick every 8px, a long one every 40px) and the thumb is a glass bar with
+     square ends, shaded like the rod (no lens here: browsers cannot bend what
+     is behind a scroll bar). Firefox gets plain matching colours. */
+  ::-webkit-scrollbar{width:12px; height:12px;}
+  ::-webkit-scrollbar-track:vertical{
+    background:
+      repeating-linear-gradient(180deg, rgba(20,40,63,.40) 0 1px, transparent 1px 40px) right / 7px 100% no-repeat,
+      repeating-linear-gradient(180deg, rgba(20,40,63,.22) 0 1px, transparent 1px 8px) right / 4px 100% no-repeat,
+      #f3f6fb;
+    border-left:1px solid rgba(42,103,180,.12);
+  }
+  ::-webkit-scrollbar-track:horizontal{
+    background:
+      repeating-linear-gradient(90deg, rgba(20,40,63,.40) 0 1px, transparent 1px 40px) bottom / 100% 7px no-repeat,
+      repeating-linear-gradient(90deg, rgba(20,40,63,.22) 0 1px, transparent 1px 8px) bottom / 100% 4px no-repeat,
+      #f3f6fb;
+    border-top:1px solid rgba(42,103,180,.12);
+  }
+  ::-webkit-scrollbar-thumb{border-radius:2px; border:1px solid rgba(42,103,180,.32);}
+  ::-webkit-scrollbar-thumb:vertical{
+    background:linear-gradient(90deg,
+      rgba(255,255,255,.95) 0, rgba(42,103,180,.28) 10%, rgba(42,103,180,.10) 22%,
+      rgba(225,235,250,.55) 32%, rgba(255,255,255,.95) 42%, rgba(235,242,252,.6) 54%,
+      rgba(215,228,246,.55) 70%, rgba(42,103,180,.12) 82%, rgba(42,103,180,.28) 92%, rgba(255,255,255,.95) 100%), #e3ecf8;
+  }
+  ::-webkit-scrollbar-thumb:horizontal{
+    background:linear-gradient(180deg,
+      rgba(255,255,255,.95) 0, rgba(42,103,180,.28) 10%, rgba(42,103,180,.10) 22%,
+      rgba(225,235,250,.55) 32%, rgba(255,255,255,.95) 42%, rgba(235,242,252,.6) 54%,
+      rgba(215,228,246,.55) 70%, rgba(42,103,180,.12) 82%, rgba(42,103,180,.28) 92%, rgba(255,255,255,.95) 100%), #e3ecf8;
+  }
+  ::-webkit-scrollbar-thumb:hover{border-color:rgba(42,103,180,.55); background-color:#d3e1f4;}
+  ::-webkit-scrollbar-corner{background:#f3f6fb;}
+  @supports not selector(::-webkit-scrollbar){
+    *{scrollbar-color:#c9d9ef #f3f6fb;}
+  }
 </style>
 </head>
 <body>
