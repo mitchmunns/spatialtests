@@ -210,11 +210,16 @@
   #view-home p.view-sub{margin-bottom:14px;}
   /* Text top-aligned with the drawn part of the logo (the image has about
      7px of white above the compass at this size). */
-  .home-hero{display:flex; align-items:flex-start; gap:36px; margin-bottom:22px;}
+  .home-hero{display:flex; align-items:center; gap:36px; margin-bottom:18px;}
   .home-intro{padding-top:5px;}
   .home-hero img{height:120px; width:auto; flex-shrink:0;}
   .home-intro{flex:1; text-align:center;}
   .home-hero img.nsf-logo{height:96px;}
+  .home-about{font-size:15px; line-height:1.55; color:var(--ink-soft); margin-bottom:22px;}
+  .home-about p{margin:0 0 8px;}
+  .home-about p:last-child{margin-bottom:0;}
+  .home-about ul{margin:0 0 10px; padding-left:22px;}
+  .home-about li{margin-bottom:2px;}
   .home-hero h1.view-title{font-size:21px; font-weight:700; line-height:1.25; margin:0 0 4px;}
   #view-home .home-intro p.view-sub{margin:0;}
   @media (max-width:720px){
@@ -268,9 +273,10 @@
   /* Home at a comfortable size on laptop and desktop screens. */
   @media (min-width:721px){
     .home-panel{padding:26px 34px 28px;}
-    .home-hero{gap:40px; margin-bottom:28px;}
-    .home-hero img{height:150px;}
-    .home-hero img.nsf-logo{height:118px;}
+    .home-hero{gap:40px; margin-bottom:14px;}
+    .home-about{font-size:15.5px; line-height:1.5; margin-bottom:22px;}
+    .home-hero img{height:112px;}
+    .home-hero img.nsf-logo{height:92px;}
     .home-intro{padding-top:6px;}
     .home-hero h1.view-title{font-size:27px; margin-bottom:6px;}
     #view-home .home-intro p.view-sub{font-size:16.5px; line-height:1.6;}
@@ -2179,9 +2185,17 @@
       <img src="ostar_logo.png" alt="OSTAR — Online Spatial Tests and Assessments Repository">
       <div class="home-intro">
         <h1 class="view-title">Welcome!</h1>
-        <p class="view-sub">This is a platform and repository for making spatial tests accessible for all researchers. It allows you to assemble existing tests into a battery and generate a link to give to participants. Data are stored in our database and accessible from your Projects page. You can download raw data or processed data. You can also create new tests from image files.</p>
       </div>
       <img class="nsf-logo" src="nsf_logo.webp" alt="National Science Foundation" width="320" height="320">
+    </div>
+    <div class="home-about">
+      <p>We know that spatial skills are important for learning and for success in school and college.</p>
+      <ul>
+        <li>Many educators and researchers are interested in assessing spatial skills.</li>
+        <li>But it can be difficult to determine which test should be used to measure which ability.</li>
+        <li>And tests are often hard to find and many are proprietary and expensive.</li>
+      </ul>
+      <p>OSTAR provides a novel approach to making, distributing, and analyzing spatial tests. We are a National Science Foundation-funded collaborative project dedicated to developing high-quality, open-access assessments of spatial cognition. Our team is evaluating existing measures and creating reliable, research-based tools that enable researchers and educators to assess a broad range of spatial skills.</p>
     </div>
     <div class="home-steps">
       <div class="home-step"><span class="home-step-num" style="color:var(--compass-purple);">●</span><div><button type="button" class="home-link" onclick="goToGuide()">Guide</button><p>Step-by-step instructions for using the platform, and recommendations.</p></div></div>
