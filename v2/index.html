@@ -3648,6 +3648,7 @@ let breakMessageCounter = '';
 let currentBatteryId = null;
 let batteryStatus = 'draft';
 let currentDatasetRows = [];
+let currentSharedRows = [];
 
 // Local record of generated links, used only to sketch the datasets view in
 // DEV_MODE (real mode reads from the `batteries` table instead). Seeded with
@@ -5261,6 +5262,7 @@ async function revokeShare(batteryId, email){
 // reuses the same card markup/classes as renderDatasets() for visual
 // consistency, minus any action that assumes ownership.
 function renderSharedBatteries(rows){
+  currentSharedRows = rows || [];
   const wrap = document.getElementById('shared-list-wrap');
   if (!rows || rows.length === 0){ wrap.innerHTML = ''; return; }
 
@@ -6428,8 +6430,14 @@ async function downloadCleanCSV(sessionId){
     return;
   }
 
-  const datasetRow = currentDatasetRows.find(r => r.id === sessionId) || currentAdminRows.find(r => r.id === sessionId);
-  const testIds = datasetRow ? datasetRow.items.map(i => i.testId) : [];
+  // Shared projects count too: without the battery's test list the file
+  // would come out with only the id and date columns.
+  const datasetRow = [...currentDatasetRows, ...currentSharedRows, ...currentAdminRows].find(r => r.id === sessionId);
+  if (!datasetRow){
+    await appAlert('Could not find the test list for this battery. Please reload the page and try again.');
+    return;
+  }
+  const testIds = datasetRow.items.map(i => i.testId);
 
   let rawTrials;
   try {
